@@ -1,0 +1,27 @@
+{
+  "name": "SportsHub",
+  "short_name": "SportsHub", 
+  "description": "Your Sports Universe - Live scores, news, and betting lines",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030213",
+  "theme_color": "#030213",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23030213'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui' font-size='28' font-weight='bold' fill='white'%3ESH%3C/text%3E%3C/svg%3E",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='48' fill='%23030213'/%3E%3Ctext x='96' y='125' text-anchor='middle' font-family='system-ui' font-size='84' font-weight='bold' fill='white'%3ESH%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23030213'/%3E%3Ctext x='256' y='335' text-anchor='middle' font-family='system-ui' font-size='224' font-weight='bold' fill='white'%3ESH%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>SportsHub - Your Sports Universe</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="application-name" content="SportsHub" />
+  <meta name="apple-mobile-web-app-title" content="SportsHub" />
+  <meta name="description" content="Your Sports Universe - Live scores, news, and betting lines" />
+  
+  <!-- iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#030213" />
+  <meta name="msapplication-TileColor" content="#030213" />
+  
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Icons -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23030213'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui' font-size='28' font-weight='bold' fill='white'%3ESH%3C/text%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='48' fill='%23030213'/%3E%3Ctext x='96' y='125' text-anchor='middle' font-family='system-ui' font-size='84' font-weight='bold' fill='white'%3ESH%3C/text%3E%3C/svg%3E" />
+  
+  <!-- Prevent zoom on iOS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  
+  <!-- iOS Status Bar -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  
+  <!-- Preload CSS -->
+  <link rel="preload" href="/styles/globals.css" as="style" />
+  <link rel="stylesheet" href="/styles/globals.css" />
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
