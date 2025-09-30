@@ -2,12 +2,16 @@ use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod cache;
+mod data_loader;
 mod error;
 mod schema;
 mod server;
 mod uses;
 
+use async_std::sync::{Arc, Mutex};
+
 use cache::Cache;
+use data_loader::DataLoader;
 use error::Result;
 use server::Server;
 
@@ -16,7 +20,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "arb-rs=debug,tower_http=debug".into()),
+                .unwrap_or_else(|_| "arb=debug,tower_http=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -25,7 +29,11 @@ async fn main() -> Result<()> {
 
     let redis_url = std::env::var("REDIS_URL")
         .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-    let cache = Cache::new(&redis_url).await?;
+    let cache = Arc::new(Mutex::new(Cache::new(&redis_url).await?));
+
+    info!("Pre-loading team data from JSON files...");
+    let data_loader = DataLoader::new(cache.clone());
+    data_loader.preload_teams_only().await?;
 
     let server = Server::new(cache);
     server

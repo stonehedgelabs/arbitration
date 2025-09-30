@@ -31,6 +31,9 @@ pub enum Error {
     #[error("Invalid league: {0}")]
     InvalidLeague(String),
 
+    #[error("Invalid data type: {0}")]
+    InvalidDataType(String),
+
     #[error("Cache miss for key: {0}")]
     CacheMiss(String),
 

@@ -1,3 +1,3 @@
-pub mod teams;
-pub mod schedule;
 pub mod headshots;
+pub mod schedule;
+pub mod teams;

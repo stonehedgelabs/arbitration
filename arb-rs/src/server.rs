@@ -1,32 +1,40 @@
+use async_std::sync::{Arc, Mutex};
+
 use axum::{routing::get, Router};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
 
 use crate::cache::Cache;
-use crate::uses::{health_check, team_profile, UseCases};
+use crate::uses::{
+    headshots, health_check, play_by_play, schedule, team_profile, teams, UseCaseState,
+};
 
 pub struct Server {
-    cache: Cache,
+    cache: Arc<Mutex<Cache>>,
 }
 
 impl Server {
-    pub fn new(cache: Cache) -> Self {
+    pub fn new(cache: Arc<Mutex<Cache>>) -> Self {
         Self { cache }
     }
 
     pub fn build(self) -> Router {
-        let use_cases = UseCases::new(self.cache);
+        let use_case_state = UseCaseState::new(self.cache);
 
         Router::new()
             .route("/health", get(health_check))
             .route("/api/team-profile", get(team_profile))
+            .route("/api/v1/teams", get(teams))
+            .route("/api/v1/schedule", get(schedule))
+            .route("/api/v1/headshots", get(headshots))
+            .route("/api/v1/play-by-play", get(play_by_play))
             .layer(
                 ServiceBuilder::new()
                     .layer(TraceLayer::new_for_http())
                     .layer(CorsLayer::permissive()),
             )
-            .with_state(use_cases)
+            .with_state(use_case_state)
     }
 
     pub async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
