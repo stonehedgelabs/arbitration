@@ -1,8 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
 import {
-  Clock,
   Eye,
   Heart,
   MessageCircle,
@@ -10,8 +6,17 @@ import {
   Play,
   Trophy,
   Star,
+  Check,
 } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import {
+  Badge,
+  Card,
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Image,
+} from "@chakra-ui/react";
 
 interface ForYouItem {
   id: string;
@@ -29,274 +34,443 @@ interface ForYouSectionProps {
   onToggleFavorite: (teamName: string) => void;
 }
 
-export function ForYouSection({
-  items,
-  favoriteTeams,
-  onToggleFavorite,
-}: ForYouSectionProps) {
-  const renderGameCard = (item: ForYouItem) => {
-    const game = item.data;
+export function ForYouSection({ items }: ForYouSectionProps) {
+  const renderSocialCard = (item: ForYouItem) => {
+    const post = item.data;
     return (
-      <Card key={item.id} className="active:scale-[0.98] transition-transform">
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                style={{
-                  borderColor: item.leagueColor,
-                  color: item.leagueColor,
-                }}
+      <Card.Root
+        key={item.id}
+        bg="white"
+        borderRadius="12px"
+        shadow="sm"
+        border="1px"
+        borderColor="gray.200"
+        mb="4"
+        _active={{ transform: "scale(0.98)" }}
+        transition="all 0.2s"
+      >
+        <Card.Body p="4">
+          <VStack align="stretch" gap="3">
+            {/* Header with profile and timestamp */}
+            <HStack justify="space-between" align="center">
+              <HStack gap="3">
+                <Box
+                  w="10"
+                  h="10"
+                  borderRadius="full"
+                  bg="gray.200"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  overflow="hidden"
+                >
+                  <Image
+                    src={post.profileImage || "/api/placeholder/40/40"}
+                    alt={post.author}
+                    w="full"
+                    h="full"
+                    objectFit="cover"
+                  />
+                </Box>
+                <VStack align="start" gap="0">
+                  <HStack gap="2">
+                    <Text fontSize="sm" fontWeight="semibold" color="gray.900">
+                      {post.author}
+                    </Text>
+                    <Box w="4" h="4" color="blue.500">
+                      <Check size={16} />
+                    </Box>
+                  </HStack>
+                  <HStack gap="2">
+                    <Badge
+                      variant="solid"
+                      bg="red.500"
+                      color="white"
+                      fontSize="xs"
+                      px="2"
+                      py="1"
+                      borderRadius="full"
+                    >
+                      {item.league}
+                    </Badge>
+                    <Text fontSize="xs" color="gray.500">
+                      {item.timestamp}
+                    </Text>
+                  </HStack>
+                </VStack>
+              </HStack>
+            </HStack>
+
+            {/* Post content */}
+            <Text fontSize="sm" color="gray.900" lineHeight="1.5">
+              {post.content}
+            </Text>
+
+            {/* Engagement metrics */}
+            <HStack gap="6" pt="2">
+              <HStack gap="1">
+                <Box w="4" h="4" color="gray.500">
+                  <Heart size={16} />
+                </Box>
+                <Text fontSize="xs" color="gray.500">
+                  {post.likes}
+                </Text>
+              </HStack>
+              <HStack gap="1">
+                <Box w="4" h="4" color="gray.500">
+                  <MessageCircle size={16} />
+                </Box>
+                <Text fontSize="xs" color="gray.500">
+                  {post.comments}
+                </Text>
+              </HStack>
+              <HStack gap="1">
+                <Box w="4" h="4" color="gray.500">
+                  <Share size={16} />
+                </Box>
+                <Text fontSize="xs" color="gray.500">
+                  {post.shares}
+                </Text>
+              </HStack>
+            </HStack>
+          </VStack>
+        </Card.Body>
+      </Card.Root>
+    );
+  };
+
+  const renderNewsCard = (item: ForYouItem) => {
+    const article = item.data;
+    return (
+      <Card.Root
+        key={item.id}
+        bg="white"
+        borderRadius="12px"
+        shadow="sm"
+        border="1px"
+        borderColor="gray.200"
+        mb="4"
+        _active={{ transform: "scale(0.98)" }}
+        transition="all 0.2s"
+      >
+        <Card.Body p="4">
+          <HStack gap="4" align="start">
+            <Box
+              w="20"
+              h="20"
+              borderRadius="8px"
+              bg="gray.200"
+              overflow="hidden"
+              flexShrink="0"
+            >
+              <Image
+                src={article.thumbnail || "/api/placeholder/80/80"}
+                alt={article.title}
+                w="full"
+                h="full"
+                objectFit="cover"
+              />
+            </Box>
+            <VStack align="start" gap="2" flex="1">
+              <HStack gap="2">
+                <Badge
+                  variant="solid"
+                  bg="blue.500"
+                  color="white"
+                  fontSize="xs"
+                  px="2"
+                  py="1"
+                  borderRadius="full"
+                >
+                  {item.league}
+                </Badge>
+                <Text fontSize="xs" color="gray.500">
+                  {item.timestamp}
+                </Text>
+              </HStack>
+              <Text
+                fontSize="sm"
+                fontWeight="semibold"
+                color="gray.900"
+                lineHeight="1.4"
               >
-                {item.league}
-              </Badge>
-              {item.priority === "high" && (
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              )}
-            </div>
-            <span className="text-sm text-muted-foreground">
-              {item.timestamp}
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-gray-300 rounded-full flex-shrink-0"></div>
-                <span className="truncate">{game.awayTeam.name}</span>
-              </span>
-              <span className="font-mono font-medium">
-                {game.awayTeam.score}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-gray-300 rounded-full flex-shrink-0"></div>
-                <span className="truncate">{game.homeTeam.name}</span>
-              </span>
-              <span className="font-mono font-medium">
-                {game.homeTeam.score}
-              </span>
-            </div>
-            {game.status === "live" && (
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-red-600 font-medium">
-                  LIVE - {game.quarter}
-                </span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                {article.title}
+              </Text>
+              <Text
+                fontSize="xs"
+                color="gray.600"
+                lineHeight="1.4"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                display="-webkit-box"
+                style={{ WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+              >
+                {article.excerpt}
+              </Text>
+            </VStack>
+          </HStack>
+        </Card.Body>
+      </Card.Root>
     );
   };
 
   const renderVideoCard = (item: ForYouItem) => {
     const video = item.data;
     return (
-      <Card
+      <Card.Root
         key={item.id}
-        className="active:scale-[0.98] transition-transform cursor-pointer group overflow-hidden"
+        bg="white"
+        borderRadius="12px"
+        shadow="sm"
+        border="1px"
+        borderColor="gray.200"
+        mb="4"
+        _active={{ transform: "scale(0.98)" }}
+        transition="all 0.2s"
+        overflow="hidden"
       >
-        <div className="relative">
-          <ImageWithFallback
-            src={video.thumbnail}
-            alt={video.title}
-            className="w-full h-40 object-cover"
-          />
-          <div className="absolute inset-0 bg-black/20 group-active:bg-black/40 transition-colors flex items-center justify-center">
-            <Play className="w-12 h-12 text-white opacity-90" />
-          </div>
-          <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs">
-            {video.duration}
-          </div>
-          <div className="absolute top-2 left-2">
+        <Box position="relative">
+          <Box
+            w="full"
+            h="200px"
+            bg="gray.200"
+            position="relative"
+            overflow="hidden"
+          >
+            <Image
+              src={video.thumbnail || "/api/placeholder/400/200"}
+              alt={video.title}
+              w="full"
+              h="full"
+              objectFit="cover"
+            />
             <Badge
-              variant="outline"
-              className="bg-black/50 border-white text-white"
+              position="absolute"
+              top="3"
+              left="3"
+              variant="solid"
+              bg="black"
+              color="white"
+              fontSize="xs"
+              px="2"
+              py="1"
+              borderRadius="full"
             >
               {item.league}
             </Badge>
-          </div>
-        </div>
-        <CardContent className="p-3">
-          <h3 className="font-medium leading-tight mb-2 line-clamp-2">
-            {video.title}
-          </h3>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Eye className="w-3 h-3" />
-              <span>{video.views}</span>
-            </div>
-            <span>{item.timestamp}</span>
-          </div>
-        </CardContent>
-      </Card>
+            <Box
+              position="absolute"
+              top="50%"
+              left="50%"
+              transform="translate(-50%, -50%)"
+              w="16"
+              h="16"
+              bg="blackAlpha.600"
+              borderRadius="full"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Box w="8" h="8" color="white" ml="1">
+                <Play size={32} />
+              </Box>
+            </Box>
+            <Text
+              position="absolute"
+              bottom="3"
+              right="3"
+              fontSize="xs"
+              color="white"
+              bg="blackAlpha.600"
+              px="2"
+              py="1"
+              borderRadius="4px"
+            >
+              {video.duration}
+            </Text>
+          </Box>
+          <Card.Body p="4">
+            <VStack align="start" gap="2">
+              <Text
+                fontSize="sm"
+                fontWeight="semibold"
+                color="gray.900"
+                lineHeight="1.4"
+              >
+                {video.title}
+              </Text>
+              <HStack gap="4">
+                <HStack gap="1">
+                  <Box w="4" h="4" color="gray.500">
+                    <Eye size={16} />
+                  </Box>
+                  <Text fontSize="xs" color="gray.500">
+                    {video.views}
+                  </Text>
+                </HStack>
+                <Text fontSize="xs" color="gray.500">
+                  {item.timestamp}
+                </Text>
+              </HStack>
+            </VStack>
+          </Card.Body>
+        </Box>
+      </Card.Root>
     );
   };
 
-  const renderSocialCard = (item: ForYouItem) => {
-    const post = item.data;
+  const renderGameCard = (item: ForYouItem) => {
+    const game = item.data;
     return (
-      <Card key={item.id} className="active:scale-[0.98] transition-transform">
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <ImageWithFallback
-                src={post.authorAvatar}
-                alt={post.author}
-                className="w-8 h-8 rounded-full flex-shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium truncate text-sm">
-                    {post.author}
-                  </span>
-                  {post.verified && (
-                    <span className="text-blue-500 text-xs">✓</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="text-xs"
-                    style={{
-                      borderColor: item.leagueColor,
-                      color: item.leagueColor,
-                    }}
-                  >
-                    {item.league}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {item.timestamp}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-sm mb-3 leading-tight">{post.content}</p>
-
-          <div className="flex items-center justify-around pt-2 border-t">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <Heart className="w-3 h-3" />
-              <span className="text-xs">
-                {post.likes > 1000
-                  ? `${(post.likes / 1000).toFixed(1)}k`
-                  : post.likes}
-              </span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <MessageCircle className="w-3 h-3" />
-              <span className="text-xs">{post.comments}</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <Share className="w-3 h-3" />
-              <span className="text-xs">{post.shares}</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderNewsCard = (item: ForYouItem) => {
-    const news = item.data;
-    return (
-      <Card
+      <Card.Root
         key={item.id}
-        className="active:scale-[0.98] transition-transform cursor-pointer"
+        bg="white"
+        borderRadius="12px"
+        shadow="sm"
+        border="1px"
+        borderColor="gray.200"
+        mb="4"
+        _active={{ transform: "scale(0.98)" }}
+        transition="all 0.2s"
       >
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <ImageWithFallback
-              src={news.image}
-              alt={news.title}
-              className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+        <Card.Body p="4">
+          <VStack align="stretch" gap="3">
+            {/* Header with league and timestamp */}
+            <HStack justify="space-between" align="center">
+              <HStack gap="2">
                 <Badge
-                  variant="outline"
-                  className="text-xs"
-                  style={{
-                    borderColor: item.leagueColor,
-                    color: item.leagueColor,
-                  }}
+                  variant="solid"
+                  bg="red.500"
+                  color="white"
+                  fontSize="xs"
+                  px="2"
+                  py="1"
+                  borderRadius="full"
                 >
                   {item.league}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {item.timestamp}
-                </span>
-              </div>
-              <h3 className="font-medium leading-tight mb-1 line-clamp-2">
-                {news.title}
-              </h3>
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {news.summary}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                {item.priority === "high" && (
+                  <Box w="4" h="4" color="yellow.400">
+                    <Star size={16} fill="currentColor" />
+                  </Box>
+                )}
+              </HStack>
+              <Text fontSize="xs" color="gray.500">
+                {item.timestamp}
+              </Text>
+            </HStack>
+
+            {/* Game content */}
+            <VStack gap="3">
+              <HStack justify="space-between" align="center" w="full">
+                <HStack gap="3">
+                  <Box
+                    w="6"
+                    h="6"
+                    borderRadius="full"
+                    bg="gray.300"
+                    flexShrink="0"
+                  />
+                  <Text fontSize="sm" fontWeight="medium" color="gray.900">
+                    {game.awayTeam.name}
+                  </Text>
+                </HStack>
+                <Text fontSize="sm" fontWeight="bold" color="gray.900">
+                  {game.awayTeam.score}
+                </Text>
+              </HStack>
+              <HStack justify="space-between" align="center" w="full">
+                <HStack gap="3">
+                  <Box
+                    w="6"
+                    h="6"
+                    borderRadius="full"
+                    bg="gray.300"
+                    flexShrink="0"
+                  />
+                  <Text fontSize="sm" fontWeight="medium" color="gray.900">
+                    {game.homeTeam.name}
+                  </Text>
+                </HStack>
+                <Text fontSize="sm" fontWeight="bold" color="gray.900">
+                  {game.homeTeam.score}
+                </Text>
+              </HStack>
+              {game.status === "live" && (
+                <HStack gap="2" pt="2">
+                  <Box
+                    w="2"
+                    h="2"
+                    bg="red.500"
+                    borderRadius="full"
+                    animation="pulse 2s infinite"
+                  />
+                  <Text fontSize="xs" color="red.600" fontWeight="medium">
+                    LIVE - {game.quarter}
+                  </Text>
+                </HStack>
+              )}
+            </VStack>
+          </VStack>
+        </Card.Body>
+      </Card.Root>
     );
   };
 
-  const renderItem = (item: ForYouItem) => {
-    switch (item.type) {
-      case "game":
-        return renderGameCard(item);
-      case "video":
-        return renderVideoCard(item);
-      case "social":
-        return renderSocialCard(item);
-      case "news":
-        return renderNewsCard(item);
-      default:
-        return null;
+  const renderContent = () => {
+    if (items.length === 0) {
+      return (
+        <VStack gap="6" py="12" textAlign="center">
+          <Box w="12" h="12" color="gray.400">
+            <Trophy size={48} />
+          </Box>
+          <VStack gap="2">
+            <Text fontSize="lg" fontWeight="semibold" color="gray.900">
+              No content yet
+            </Text>
+            <Text fontSize="sm" color="gray.600">
+              Follow your favorite teams to see personalized content here.
+            </Text>
+          </VStack>
+        </VStack>
+      );
     }
+
+    return (
+      <VStack gap="4" align="stretch">
+        {items.map((item) => {
+          switch (item.type) {
+            case "game":
+              return renderGameCard(item);
+            case "video":
+              return renderVideoCard(item);
+            case "news":
+              return renderNewsCard(item);
+            case "social":
+              return renderSocialCard(item);
+            default:
+              return null;
+          }
+        })}
+      </VStack>
+    );
   };
 
   return (
-    <div className="space-y-3 p-4 pb-20">
-      <div className="flex items-center gap-2 mb-4">
-        <h2>For You</h2>
-        <Trophy className="w-5 h-5 text-yellow-500" />
-      </div>
-
-      {favoriteTeams.length > 0 && (
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground mb-2">Following</p>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {favoriteTeams.map((team, index) => (
-              <Badge
-                key={index}
-                variant="secondary"
-                className="whitespace-nowrap"
-              >
-                {team}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-3">{items.map(renderItem)}</div>
-    </div>
+    <Box minH="100vh" bg="gray.50">
+      <Box p="4">
+        <VStack gap="6" align="stretch">
+          <VStack gap="2" align="start">
+            <Text fontSize="xl" fontWeight="bold" color="gray.900">
+              For You
+            </Text>
+            <Text fontSize="sm" color="gray.600">
+              Personalized content based on your favorite teams
+            </Text>
+          </VStack>
+          {renderContent()}
+        </VStack>
+      </Box>
+    </Box>
   );
 }

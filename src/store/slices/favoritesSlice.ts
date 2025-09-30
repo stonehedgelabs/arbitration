@@ -6,7 +6,7 @@ interface FavoritesState {
 
 const loadFavoritesFromStorage = (userType: string | null): string[] => {
   if (!userType) return [];
-  const stored = localStorage.getItem(`sportshub-favorites-${userType}`);
+  const stored = localStorage.getItem(`arb-favorites-${userType}`);
   return stored ? JSON.parse(stored) : [];
 };
 
@@ -25,7 +25,7 @@ const favoritesSlice = createSlice({
       if (!state.teams.includes(action.payload.team)) {
         state.teams.push(action.payload.team);
         localStorage.setItem(
-          `sportshub-favorites-${action.payload.userType}`,
+          `arb-favorites-${action.payload.userType}`,
           JSON.stringify(state.teams)
         );
       }
@@ -33,14 +33,14 @@ const favoritesSlice = createSlice({
     removeFavoriteTeam: (state, action: PayloadAction<{ team: string; userType: string }>) => {
       state.teams = state.teams.filter(team => team !== action.payload.team);
       localStorage.setItem(
-        `sportshub-favorites-${action.payload.userType}`,
+        `arb-favorites-${action.payload.userType}`,
         JSON.stringify(state.teams)
       );
     },
     setFavoriteTeams: (state, action: PayloadAction<{ teams: string[]; userType: string }>) => {
       state.teams = action.payload.teams;
       localStorage.setItem(
-        `sportshub-favorites-${action.payload.userType}`,
+        `arb-favorites-${action.payload.userType}`,
         JSON.stringify(action.payload.teams)
       );
     },

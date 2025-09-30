@@ -1,6 +1,6 @@
 {
-  "name": "SportsHub",
-  "short_name": "SportsHub", 
+  "name": "Arbitration",
+  "short_name": "Arbitration",
   "description": "Your Sports Universe - Live scores, news, and betting lines",
   "start_url": "/",
   "display": "standalone",

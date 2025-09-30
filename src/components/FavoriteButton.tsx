@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { Heart } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "@chakra-ui/react";
 
 interface FavoriteButtonProps {
   teamName: string;
@@ -32,7 +32,7 @@ export function FavoriteButton({
   if (variant === "button") {
     return (
       <Button
-        variant={isFavorite ? "default" : "outline"}
+        variant={isFavorite ? "solid" : "outline"}
         size="sm"
         onClick={(e) => {
           e.stopPropagation();

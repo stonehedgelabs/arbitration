@@ -68,10 +68,10 @@ A comprehensive mobile-first sports application built with React, TypeScript, an
 ```
 ├── App.tsx                 # Main app component
 ├── components/            
-│   ├── SplashScreen.tsx   # iOS-style splash screen
-│   ├── LoginScreen.tsx    # Authentication options  
-│   ├── WelcomeOnboarding.tsx # 3-screen onboarding
-│   ├── SportsApp.tsx      # Main app container
+│   ├── Splash.tsx   # iOS-style splash screen
+│   ├── Login.tsx    # Authentication options  
+│   ├── Welcome.tsx # 3-screen onboarding
+│   ├── Arbitration.tsx      # Main app container
 │   └── ...                # Feature components
 ├── theme/
 │   └── index.ts           # Chakra UI theme configuration

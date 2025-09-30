@@ -1,5 +1,10 @@
-import { OnboardingScreen } from "../components/OnboardingScreen";
+import { Onboarding as OnboardingComponent } from "../components/Onboarding.tsx";
+import { AppLayout } from "../components/AppLayout";
 
 export default function Onboarding() {
-  return <OnboardingScreen />;
+  return (
+    <AppLayout>
+      <OnboardingComponent />
+    </AppLayout>
+  );
 }

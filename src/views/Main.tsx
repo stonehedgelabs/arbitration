@@ -1,5 +1,10 @@
-import { SportsApp } from "../components/SportsApp";
+import { Arbitration } from "../components/Arbitration.tsx";
+import { AppLayout } from "../components/AppLayout";
 
 export default function Main() {
-  return <SportsApp />;
+  return (
+    <AppLayout>
+      <Arbitration />
+    </AppLayout>
+  );
 }

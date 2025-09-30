@@ -154,7 +154,7 @@ CREATE TABLE user_preferences (
     UNIQUE(user_id)
 );
 
--- Betting odds and lines (for BetSection component)
+-- Betting odds and lines (for Bet component)
 CREATE TABLE betting_lines (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,

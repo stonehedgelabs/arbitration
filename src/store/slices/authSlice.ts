@@ -10,7 +10,7 @@ interface AuthState {
 
 const initialState: AuthState = {
   userType: null,
-  hasSeenWelcome: !!localStorage.getItem('sportshub-welcome-seen'),
+  hasSeenWelcome: !!localStorage.getItem('arb-welcome-seen'),
   isAuthenticated: false,
 };
 
@@ -25,7 +25,7 @@ const authSlice = createSlice({
     setHasSeenWelcome: (state, action: PayloadAction<boolean>) => {
       state.hasSeenWelcome = action.payload;
       if (action.payload) {
-        localStorage.setItem('sportshub-welcome-seen', 'true');
+        localStorage.setItem('arb-welcome-seen', 'true');
       }
     },
     logout: (state) => {

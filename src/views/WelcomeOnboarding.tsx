@@ -11,6 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { useAppDispatch } from "../store/hooks";
 import { setHasSeenWelcome } from "../store/slices/authSlice";
+import { AppLayout } from "../components/AppLayout";
 
 // Simple SVG icon components
 const TrophyIcon = () => (
@@ -125,38 +126,38 @@ export function WelcomeOnboarding() {
   const IconComponent = currentScreenData.icon;
 
   return (
-    <Box
-      minH="100vh"
-      display="flex"
-      flexDirection="column"
-      position="relative"
-      overflow="hidden"
-      className="ios-safe-top ios-safe-bottom"
-    >
-      {/* Top Navigation */}
+    <AppLayout className="ios-safe-top ios-safe-bottom">
       <Box
-        position="absolute"
-        top={4}
-        left={4}
-        right={4}
-        zIndex={10}
-        className="ios-safe-top"
+        minH="100vh"
+        display="flex"
+        flexDirection="column"
+        position="relative"
+        overflow="hidden"
       >
-        <HStack justify="space-between">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={handlePrevious}
-            isDisabled={currentScreen === 0}
-            visibility={currentScreen === 0 ? "hidden" : "visible"}
-            color="#717182"
-            _dark={{ color: "oklch(0.708 0 0)" }}
-            _hover={{
-              color: "#030213",
-              _dark: { color: "oklch(0.985 0 0)" },
-            }}
-            className="ios-button-press"
-            leftIcon={
+        {/* Top Navigation */}
+        <Box
+          position="absolute"
+          top={4}
+          left={4}
+          right={4}
+          zIndex={10}
+          className="ios-safe-top"
+        >
+          <HStack justify="space-between">
+            {/* Back Button */}
+            <Button
+              variant="ghost"
+              onClick={handlePrevious}
+              isDisabled={currentScreen === 0}
+              visibility={currentScreen === 0 ? "hidden" : "visible"}
+              color="#717182"
+              _dark={{ color: "oklch(0.708 0 0)" }}
+              _hover={{
+                color: "#030213",
+                _dark: { color: "oklch(0.985 0 0)" },
+              }}
+              className="ios-button-press"
+            >
               <svg
                 width="16"
                 height="16"
@@ -165,233 +166,239 @@ export function WelcomeOnboarding() {
               >
                 <path d="M15 18l-6-6 6-6" />
               </svg>
+              Back
+            </Button>
+
+            {/* Skip Button */}
+            <Button
+              variant="ghost"
+              onClick={handleSkip}
+              color="#717182"
+              _dark={{ color: "oklch(0.708 0 0)" }}
+              _hover={{
+                color: "#030213",
+                _dark: { color: "oklch(0.985 0 0)" },
+              }}
+              className="ios-button-press"
+            >
+              Skip
+            </Button>
+          </HStack>
+        </Box>
+
+        {/* Main Content */}
+        <Box
+          flex={1}
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          p={6}
+          position="relative"
+          w="full"
+          minH="0"
+        >
+          <AnimatePresence initial={false} custom={direction} mode="wait">
+            <motion.div
+              key={currentScreen}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 },
+              }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={1}
+              onDragEnd={(e, { offset, velocity }) => {
+                const swipe = swipePower(offset.x, velocity.x);
+
+                if (swipe < -swipeConfidenceThreshold) {
+                  handleNext();
+                } else if (swipe > swipeConfidenceThreshold) {
+                  handlePrevious();
+                }
+              }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                width: "100%",
+                height: "100%",
+                padding: "0 1rem",
+              }}
+            >
+              <VStack gap="8" maxW="sm" w="full">
+                {/* Icon */}
+                <Box
+                  w="128px"
+                  h="128px"
+                  borderRadius="24px"
+                  bg={currentScreenData.colorGradient}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  shadow="2xl"
+                >
+                  <IconComponent />
+                </Box>
+
+                {/* Content */}
+                <VStack gap="6" maxW="sm" w="full">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Text fontSize="2xl" fontWeight="bold" mb={4}>
+                      {currentScreenData.title}
+                    </Text>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <Text
+                      fontSize="xl"
+                      color="#717182"
+                      _dark={{ color: "oklch(0.708 0 0)" }}
+                      mb={6}
+                    >
+                      {currentScreenData.subtitle}
+                    </Text>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <Text
+                      color="#717182"
+                      _dark={{ color: "oklch(0.708 0 0)" }}
+                      lineHeight="relaxed"
+                    >
+                      {currentScreenData.description}
+                    </Text>
+                  </motion.div>
+                </VStack>
+              </VStack>
+            </motion.div>
+          </AnimatePresence>
+        </Box>
+
+        {/* Next/Let's Go Button */}
+        <Box display="flex" justifyContent="center" mb={8}>
+          <Button
+            onClick={handleNext}
+            className="ios-button ios-button-press"
+            px={8}
+            borderRadius="12px"
+            bg={
+              currentScreen === onboardingScreens.length - 1
+                ? "linear-gradient(to right, #a855f7, #ec4899)"
+                : undefined
+            }
+            _hover={
+              currentScreen === onboardingScreens.length - 1
+                ? { bg: "linear-gradient(to right, #9333ea, #db2777)" }
+                : undefined
+            }
+            rightIcon={
+              currentScreen === onboardingScreens.length - 1 ? (
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+              ) : (
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              )
             }
           >
-            Back
+            {currentScreen === onboardingScreens.length - 1
+              ? "Let's Go"
+              : "Next"}
           </Button>
+        </Box>
 
-          {/* Skip Button */}
-          <Button
-            variant="ghost"
-            onClick={handleSkip}
-            color="#717182"
-            _dark={{ color: "oklch(0.708 0 0)" }}
-            _hover={{
-              color: "#030213",
-              _dark: { color: "oklch(0.985 0 0)" },
-            }}
-            className="ios-button-press"
-          >
-            Skip
-          </Button>
+        {/* Progress Dots */}
+        <HStack justify="center" gap="2" mb={8}>
+          {onboardingScreens.map((_, index) => (
+            <IconButton
+              key={index}
+              onClick={() => handleDotClick(index)}
+              aria-label={`Go to screen ${index + 1}`}
+              size="xs"
+              variant="unstyled"
+              className="ios-button-press"
+              w="8px"
+              h="8px"
+              minW="8px"
+              borderRadius="full"
+            >
+              <motion.div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  backgroundColor:
+                    index === currentScreen ? "#030213" : "#ececf0",
+                }}
+                animate={{
+                  scale: index === currentScreen ? 1.3 : 1,
+                  opacity: index === currentScreen ? 1 : 0.6,
+                }}
+                transition={{ duration: 0.2 }}
+              />
+            </IconButton>
+          ))}
         </HStack>
-      </Box>
 
-      {/* Main Content */}
-      <Box
-        flex={1}
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        p={6}
-        position="relative"
-      >
-        <AnimatePresence initial={false} custom={direction} mode="wait">
+        {/* Swipe Hint */}
+        {currentScreen === 0 && (
           <motion.div
-            key={currentScreen}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={1}
-            onDragEnd={(e, { offset, velocity }) => {
-              const swipe = swipePower(offset.x, velocity.x);
-
-              if (swipe < -swipeConfidenceThreshold) {
-                handleNext();
-              } else if (swipe > swipeConfidenceThreshold) {
-                handlePrevious();
-              }
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ delay: 2, duration: 0.5 }}
             style={{
               position: "absolute",
-              inset: 0,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              bottom: "96px",
+              left: 0,
+              right: 0,
               textAlign: "center",
             }}
           >
-            <VStack spacing={8} maxW="sm">
-              {/* Icon */}
-              <Box
-                w="128px"
-                h="128px"
-                borderRadius="24px"
-                bg={currentScreenData.colorGradient}
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                shadow="2xl"
-              >
-                <IconComponent />
-              </Box>
-
-              {/* Content */}
-              <VStack spacing={6} maxW="sm">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <Text fontSize="2xl" fontWeight="bold" mb={4}>
-                    {currentScreenData.title}
-                  </Text>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <Text
-                    fontSize="xl"
-                    color="#717182"
-                    _dark={{ color: "oklch(0.708 0 0)" }}
-                    mb={6}
-                  >
-                    {currentScreenData.subtitle}
-                  </Text>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <Text
-                    color="#717182"
-                    _dark={{ color: "oklch(0.708 0 0)" }}
-                    lineHeight="relaxed"
-                  >
-                    {currentScreenData.description}
-                  </Text>
-                </motion.div>
-              </VStack>
-            </VStack>
+            <Text
+              fontSize="xs"
+              color="#717182"
+              _dark={{ color: "oklch(0.708 0 0)" }}
+            >
+              Swipe left or tap Next to continue
+            </Text>
           </motion.div>
-        </AnimatePresence>
+        )}
       </Box>
-
-      {/* Next/Let's Go Button */}
-      <Box display="flex" justifyContent="center" mb={8}>
-        <Button
-          onClick={handleNext}
-          className="ios-button ios-button-press"
-          px={8}
-          borderRadius="12px"
-          bg={
-            currentScreen === onboardingScreens.length - 1
-              ? "linear-gradient(to right, #a855f7, #ec4899)"
-              : undefined
-          }
-          _hover={
-            currentScreen === onboardingScreens.length - 1
-              ? { bg: "linear-gradient(to right, #9333ea, #db2777)" }
-              : undefined
-          }
-          rightIcon={
-            currentScreen === onboardingScreens.length - 1 ? (
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-              </svg>
-            ) : (
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            )
-          }
-        >
-          {currentScreen === onboardingScreens.length - 1 ? "Let's Go" : "Next"}
-        </Button>
-      </Box>
-
-      {/* Progress Dots */}
-      <HStack justify="center" spacing={2} mb={8}>
-        {onboardingScreens.map((_, index) => (
-          <IconButton
-            key={index}
-            onClick={() => handleDotClick(index)}
-            aria-label={`Go to screen ${index + 1}`}
-            size="xs"
-            variant="unstyled"
-            className="ios-button-press"
-            w="8px"
-            h="8px"
-            minW="8px"
-            borderRadius="full"
-          >
-            <motion.div
-              style={{
-                width: "100%",
-                height: "100%",
-                borderRadius: "50%",
-                backgroundColor:
-                  index === currentScreen ? "#030213" : "#ececf0",
-              }}
-              animate={{
-                scale: index === currentScreen ? 1.3 : 1,
-                opacity: index === currentScreen ? 1 : 0.6,
-              }}
-              transition={{ duration: 0.2 }}
-            />
-          </IconButton>
-        ))}
-      </HStack>
-
-      {/* Swipe Hint */}
-      {currentScreen === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ delay: 2, duration: 0.5 }}
-          style={{
-            position: "absolute",
-            bottom: "96px",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-          }}
-        >
-          <Text
-            fontSize="xs"
-            color="#717182"
-            _dark={{ color: "oklch(0.708 0 0)" }}
-          >
-            Swipe left or tap Next to continue
-          </Text>
-        </motion.div>
-      )}
-    </Box>
+    </AppLayout>
   );
 }

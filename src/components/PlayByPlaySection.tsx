@@ -1,6 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
 import { Clock } from "lucide-react";
+import { Badge, Card } from "@chakra-ui/react";
 
 interface PlayEvent {
   id: string;
@@ -63,11 +62,11 @@ export function PlayByPlaySection({
       <h2>Live Play-by-Play</h2>
       <div className="space-y-2">
         {plays.map((play) => (
-          <Card
+          <Card.Root
             key={play.id}
             className="border-l-4 border-l-primary active:scale-[0.98] transition-transform"
           >
-            <CardContent className="p-3">
+            <Card.Body className="p-3">
               <div className="flex items-start gap-3">
                 <div className="text-xl flex-shrink-0">
                   {getEventIcon(play.type)}
@@ -89,8 +88,8 @@ export function PlayByPlaySection({
                   <p className="text-sm leading-tight">{play.description}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </Card.Body>
+          </Card.Root>
         ))}
       </div>
     </div>
