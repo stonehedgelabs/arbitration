@@ -1,13 +1,13 @@
 use async_std::sync::{Arc, Mutex};
 use base64::{engine::general_purpose, Engine as _};
 use serde_json::Value;
-use std::collections::HashMap;
+// Removed unused import
 use std::fs;
 use std::path::Path;
 
+use crate::api_paths::League;
 use crate::cache::Cache;
 use crate::error::Result;
-use crate::uses::League;
 
 pub struct DataLoader {
     cache: Arc<Mutex<Cache>>,

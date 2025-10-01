@@ -89,6 +89,7 @@ export function Arbitration() {
             onGameClick={handleGameClick}
             favoriteTeams={favoriteTeams}
             onToggleFavorite={handleToggleFavorite}
+            selectedLeague={selectedLeague}
           />
         );
       case "play-by-play":

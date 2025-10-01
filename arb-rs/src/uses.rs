@@ -4,37 +4,100 @@ use axum::{
     http::StatusCode,
     response::Json,
 };
-use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Instant;
-use strum::{Display, EnumString};
 use url::Url;
 
+use crate::api_paths::{
+    box_score_path, games_by_date_path, headshots_path, play_by_play_path, schedule_path,
+    scores_basic_path, stadiums_path, team_profile_path, teams_path, League,
+};
 use crate::cache::Cache;
 use crate::error::Result;
-use crate::schema::nfl::{headshots::Headshot, schedule::Schedule, teams::Team};
+use crate::schema::mlb::box_score::{BoxScore, BoxScoreResponse};
+use crate::schema::mlb::game_by_date::{GameByDate, GameByDateResponse};
+use crate::schema::mlb::stadiums::{Stadium, StadiumsResponse};
+// Removed unused imports
 
-#[derive(Debug, Display, EnumString, PartialEq, Clone)]
-#[strum(serialize_all = "lowercase")]
-pub enum League {
-    Mlb,
-    Nfl,
-    Nba,
-    Nhl,
-    Soccer,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CacheKey(String);
+
+impl From<String> for CacheKey {
+    fn from(value: String) -> Self {
+        CacheKey(value)
+    }
+}
+
+impl From<&str> for CacheKey {
+    fn from(value: &str) -> Self {
+        CacheKey(value.to_string())
+    }
+}
+
+impl Into<String> for CacheKey {
+    fn into(self) -> String {
+        self.0
+    }
+}
+
+impl AsRef<str> for CacheKey {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl CacheKey {
+    pub fn new(value: impl Into<String>) -> Self {
+        CacheKey(value.into())
+    }
+
+    // Helper methods for different cache key types
+    pub fn team_profile(league: &League) -> Self {
+        CacheKey::new(format!("team_profile:{}", league))
+    }
+
+    pub fn data_type(data_type: &str, league: &League) -> Self {
+        CacheKey::new(format!("{}:{}", data_type, league))
+    }
+
+    pub fn play_by_play(league: &League, game_id: &str) -> Self {
+        CacheKey::new(format!("playbyplay:{}:{}", league, game_id))
+    }
+
+    pub fn play_by_play_delta(
+        league: &League,
+        game_id: &str,
+        last_timestamp: &str,
+    ) -> Self {
+        CacheKey::new(format!(
+            "playbyplay_delta:{}:{}:{}",
+            league, game_id, last_timestamp
+        ))
+    }
+
+    pub fn scores(league: &League, date: &str) -> Self {
+        CacheKey::new(format!("scores:{}:{}", league, date))
+    }
+
+    pub fn box_score(league: &League, game_id: &str) -> Self {
+        CacheKey::new(format!("box_score:{}:{}", league, game_id))
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LeagueQuery {
+    pub league: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct TeamProfileQuery {
     pub league: String,
-    pub k: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct DataQuery {
     pub league: String,
-    pub k: String,
     #[serde(flatten)]
     pub filters: HashMap<String, String>,
 }
@@ -42,12 +105,24 @@ pub struct DataQuery {
 #[derive(Debug, Deserialize)]
 pub struct PlayByPlayQuery {
     pub league: String,
-    pub k: String,
     pub game_id: String,
     #[serde(default)]
     pub last_timestamp: Option<String>,
     #[serde(default)]
     pub delta_minutes: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ScoresQuery {
+    pub league: String,
+    pub date: Option<String>,   // YYYY-MM-DD format
+    pub days_back: Option<u32>, // Number of days to go back (default 3)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BoxScoreQuery {
+    pub league: String,
+    pub game_id: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -83,6 +158,16 @@ pub struct PlayByPlayResponse {
     pub is_delta: bool,
 }
 
+#[derive(Debug, Serialize)]
+pub struct ScoresResponse {
+    pub league: String,
+    pub date: String,
+    pub data: serde_json::Value,
+    pub games_count: usize,
+    pub live_games_count: usize,
+    pub final_games_count: usize,
+}
+
 #[derive(Clone)]
 pub struct UseCaseState {
     pub cache: Arc<Mutex<Cache>>,
@@ -99,7 +184,7 @@ impl UseCaseState {
 }
 
 pub async fn health_check(
-    State(mut use_case_state): State<UseCaseState>,
+    State(use_case_state): State<UseCaseState>,
 ) -> Result<Json<HealthResponse>> {
     let uptime = use_case_state.start_time.elapsed().as_secs();
 
@@ -120,7 +205,7 @@ pub async fn health_check(
 }
 
 pub async fn team_profile(
-    State(mut use_case_state): State<UseCaseState>,
+    State(use_case_state): State<UseCaseState>,
     Query(params): Query<TeamProfileQuery>,
 ) -> Result<Json<TeamProfileResponse>> {
     let league_str = params.league.to_lowercase();
@@ -129,23 +214,16 @@ pub async fn team_profile(
         StatusCode::BAD_REQUEST
     })?;
 
-    let decoded_key = general_purpose::STANDARD.decode(&params.k).map_err(|_| {
-        tracing::error!("Invalid base64 key: {}", params.k);
-        StatusCode::BAD_REQUEST
-    })?;
+    let api_path = team_profile_path(league.clone());
+    let api_url = api_path.to_string();
 
-    let api_url = String::from_utf8(decoded_key).map_err(|_| {
-        tracing::error!("Invalid UTF-8 in decoded key");
-        StatusCode::BAD_REQUEST
-    })?;
-
-    let cache_key = format!("team_profile:{}:{}", league, params.k);
+    let cache_key = CacheKey::team_profile(&league);
 
     let data = use_case_state
         .cache
         .lock()
         .await
-        .get_or_set_with_ttl(&cache_key, 3600, || async {
+        .get_or_set_with_ttl(cache_key, 3600, || async {
             tracing::info!(
                 "Cache miss for team profile, fetching from API: {}",
                 api_url
@@ -172,77 +250,128 @@ pub async fn team_profile(
 async fn fetch_team_data_from_api(api_url: &str, league: &League) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
-    let mock_data = match league {
-        League::Mlb => serde_json::json!({
-            "teams": [
-                {"id": 1, "name": "New York Yankees", "city": "New York"},
-                {"id": 2, "name": "Boston Red Sox", "city": "Boston"}
-            ],
-            "league": "MLB"
-        }),
-        League::Nfl => serde_json::json!({
-            "teams": [
-                {"id": 1, "name": "Kansas City Chiefs", "city": "Kansas City"},
-                {"id": 2, "name": "Buffalo Bills", "city": "Buffalo"}
-            ],
-            "league": "NFL"
-        }),
-        League::Nba => serde_json::json!({
-            "teams": [
-                {"id": 1, "name": "Los Angeles Lakers", "city": "Los Angeles"},
-                {"id": 2, "name": "Boston Celtics", "city": "Boston"}
-            ],
-            "league": "NBA"
-        }),
-        League::Nhl => serde_json::json!({
-            "teams": [
-                {"id": 1, "name": "Tampa Bay Lightning", "city": "Tampa Bay"},
-                {"id": 2, "name": "Colorado Avalanche", "city": "Denver"}
-            ],
-            "league": "NHL"
-        }),
-        League::Soccer => serde_json::json!({
-            "teams": [
-                {"id": 1, "name": "Manchester United", "city": "Manchester"},
-                {"id": 2, "name": "Real Madrid", "city": "Madrid"}
-            ],
-            "league": "SOCCER"
-        }),
-    };
+    // For MLB, make real API calls; for other leagues, use mock data for now
+    match league {
+        League::Mlb => {
+            let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
+                tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
 
-    Ok(serde_json::to_string(&mock_data)?)
+            let client = reqwest::Client::new();
+
+            tracing::info!("Making real API request for team profile: {}", api_url);
+
+            let response = client
+                .get(api_url)
+                .query(&[("key", &api_key)])
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to make HTTP request: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                tracing::error!(
+                    "API request failed with status {}: {}",
+                    status,
+                    error_text
+                );
+                return Err(StatusCode::from_u16(status.as_u16())
+                    .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                    .into());
+            }
+
+            let body = response.text().await.map_err(|e| {
+                tracing::error!("Failed to read response body: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            tracing::info!("Successfully fetched team profile data for MLB");
+            Ok(body)
+        }
+        _ => {
+            // Use mock data for other leagues for now
+            let mock_data = match league {
+                League::Nfl => serde_json::json!({
+                    "teams": [
+                        {"id": 1, "name": "Kansas City Chiefs", "city": "Kansas City"},
+                        {"id": 2, "name": "Buffalo Bills", "city": "Buffalo"}
+                    ],
+                    "league": "NFL"
+                }),
+                League::Nba => serde_json::json!({
+                    "teams": [
+                        {"id": 1, "name": "Los Angeles Lakers", "city": "Los Angeles"},
+                        {"id": 2, "name": "Boston Celtics", "city": "Boston"}
+                    ],
+                    "league": "NBA"
+                }),
+                League::Nhl => serde_json::json!({
+                    "teams": [
+                        {"id": 1, "name": "Tampa Bay Lightning", "city": "Tampa Bay"},
+                        {"id": 2, "name": "Colorado Avalanche", "city": "Denver"}
+                    ],
+                    "league": "NHL"
+                }),
+                League::Soccer => serde_json::json!({
+                    "teams": [
+                        {"id": 1, "name": "Manchester United", "city": "Manchester"},
+                        {"id": 2, "name": "Real Madrid", "city": "Madrid"}
+                    ],
+                    "league": "SOCCER"
+                }),
+                _ => serde_json::json!({}),
+            };
+
+            Ok(serde_json::to_string(&mock_data)?)
+        }
+    }
 }
 
 pub async fn teams(
-    State(mut use_case_state): State<UseCaseState>,
+    State(use_case_state): State<UseCaseState>,
     Query(params): Query<DataQuery>,
 ) -> Result<Json<DataResponse>> {
     handle_data_request(use_case_state, params, "teams").await
 }
 
 pub async fn schedule(
-    State(mut use_case_state): State<UseCaseState>,
+    State(use_case_state): State<UseCaseState>,
     Query(params): Query<DataQuery>,
 ) -> Result<Json<DataResponse>> {
     handle_data_request(use_case_state, params, "schedule").await
 }
 
 pub async fn headshots(
-    State(mut use_case_state): State<UseCaseState>,
+    State(use_case_state): State<UseCaseState>,
     Query(params): Query<DataQuery>,
 ) -> Result<Json<DataResponse>> {
     handle_data_request(use_case_state, params, "headshots").await
 }
 
 pub async fn play_by_play(
-    State(mut use_case_state): State<UseCaseState>,
+    State(use_case_state): State<UseCaseState>,
     Query(params): Query<PlayByPlayQuery>,
 ) -> Result<Json<PlayByPlayResponse>> {
     handle_play_by_play_request(use_case_state, params).await
 }
 
+pub async fn scores(
+    State(use_case_state): State<UseCaseState>,
+    Query(params): Query<ScoresQuery>,
+) -> Result<Json<ScoresResponse>> {
+    handle_scores_request(use_case_state, params).await
+}
+
 async fn handle_data_request(
-    mut use_case_state: UseCaseState,
+    use_case_state: UseCaseState,
     params: DataQuery,
     data_type: &str,
 ) -> Result<Json<DataResponse>> {
@@ -252,23 +381,23 @@ async fn handle_data_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    let decoded_key = general_purpose::STANDARD.decode(&params.k).map_err(|_| {
-        tracing::error!("Invalid base64 key: {}", params.k);
-        StatusCode::BAD_REQUEST
-    })?;
+    let api_url = match data_type {
+        "teams" => teams_path(league.clone()).to_string(),
+        "schedule" => schedule_path(league.clone()).to_string(),
+        "headshots" => headshots_path(league.clone()).to_string(),
+        _ => {
+            tracing::error!("Unsupported data type: {}", data_type);
+            return Err(StatusCode::BAD_REQUEST.into());
+        }
+    };
 
-    let api_url = String::from_utf8(decoded_key).map_err(|_| {
-        tracing::error!("Invalid UTF-8 in decoded key");
-        StatusCode::BAD_REQUEST
-    })?;
-
-    let cache_key = format!("{}:{}:{}", data_type, league, params.k);
+    let cache_key = CacheKey::data_type(data_type, &league);
 
     let data = use_case_state
         .cache
         .lock()
         .await
-        .get_or_set_with_ttl(&cache_key, 3600, || async {
+        .get_or_set_with_ttl(cache_key, 3600, || async {
             tracing::info!(
                 "Cache miss for {} data, fetching from API: {}",
                 data_type,
@@ -348,7 +477,7 @@ fn filter_data_by_params(
 }
 
 async fn handle_play_by_play_request(
-    mut use_case_state: UseCaseState,
+    use_case_state: UseCaseState,
     params: PlayByPlayQuery,
 ) -> Result<Json<PlayByPlayResponse>> {
     let league_str = params.league.to_lowercase();
@@ -357,34 +486,32 @@ async fn handle_play_by_play_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    let decoded_key = general_purpose::STANDARD.decode(&params.k).map_err(|_| {
-        tracing::error!("Invalid base64 key: {}", params.k);
-        StatusCode::BAD_REQUEST
-    })?;
+    // Validate required game_id parameter
+    if params.game_id.trim().is_empty() {
+        tracing::error!("Missing or empty game_id parameter");
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
 
-    let api_url = String::from_utf8(decoded_key).map_err(|_| {
-        tracing::error!("Invalid UTF-8 in decoded key");
-        StatusCode::BAD_REQUEST
-    })?;
+    let api_url =
+        play_by_play_path(league.clone(), Some(params.game_id.clone())).to_string();
 
     // Determine if this is a delta request or full request
     let is_delta = params.last_timestamp.is_some() || params.delta_minutes.is_some();
     let cache_key = if is_delta {
-        format!(
-            "playbyplay_delta:{}:{}:{}",
-            league,
-            params.game_id,
-            params.last_timestamp.as_deref().unwrap_or("initial")
+        CacheKey::play_by_play_delta(
+            &league,
+            &params.game_id,
+            params.last_timestamp.as_deref().unwrap_or("initial"),
         )
     } else {
-        format!("playbyplay:{}:{}", league, params.game_id)
+        CacheKey::play_by_play(&league, &params.game_id)
     };
 
     let data = use_case_state
         .cache
         .lock()
         .await
-        .get_or_set_with_ttl(&cache_key, 60, || async {
+        .get_or_set_with_ttl(cache_key, 60, || async {
             tracing::info!(
                 "Cache miss for play-by-play data, fetching from API: {} (delta: {})",
                 api_url,
@@ -425,17 +552,98 @@ async fn handle_play_by_play_request(
     }))
 }
 
+async fn handle_scores_request(
+    use_case_state: UseCaseState,
+    params: ScoresQuery,
+) -> Result<Json<ScoresResponse>> {
+    let league_str = params.league.to_lowercase();
+    let league: League = league_str.parse().map_err(|_| {
+        tracing::error!("Invalid league: {}", params.league);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    // Determine the date range - default to 3 days back if not specified
+    let days_back = params.days_back.unwrap_or(3);
+    let today = chrono::Utc::now().date_naive();
+
+    // Generate date range for the past N days
+    let mut all_games = Vec::new();
+
+    for i in 0..days_back {
+        let target_date = today - chrono::Duration::days(i.into());
+        let date_str = target_date.format("%Y-%m-%d").to_string();
+
+        // For now, we'll focus on MLB and use the ScoresBasic endpoint
+        // This will be expanded to support other leagues
+        let api_url = match league {
+            League::Mlb => {
+                scores_basic_path(league.clone(), Some(date_str.clone())).to_string()
+            }
+            _ => {
+                tracing::error!("Scores not yet supported for league: {}", league);
+                return Err(StatusCode::BAD_REQUEST.into());
+            }
+        };
+
+        let cache_key = CacheKey::scores(&league, &date_str);
+
+        let data = use_case_state
+            .cache
+            .lock()
+            .await
+            .get_or_set_with_ttl(cache_key, 300, || async {
+                tracing::info!(
+                    "Cache miss for scores data, fetching from API: {} for date: {}",
+                    api_url,
+                    date_str
+                );
+                fetch_scores_from_api(&api_url, &league, &date_str).await
+            })
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to get scores data for date {}: {}", date_str, e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+        let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
+            tracing::error!("Failed to parse JSON data for date {}: {}", date_str, e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        // Add games from this date to our collection
+        if let Some(games_array) = json_data.as_array() {
+            for game in games_array {
+                all_games.push(game.clone());
+            }
+        }
+    }
+
+    // Process all collected games to count live vs final games
+    let (games_count, live_games_count, final_games_count) =
+        process_scores_data(&serde_json::Value::Array(all_games.clone()))?;
+
+    Ok(Json(ScoresResponse {
+        league: league.to_string(),
+        date: format!("{} days back", days_back),
+        data: serde_json::Value::Array(all_games),
+        games_count,
+        live_games_count,
+        final_games_count,
+    }))
+}
+
 fn extract_play_by_play_events(
     data: serde_json::Value,
     last_timestamp: &Option<String>,
 ) -> Result<(serde_json::Value, usize, usize, Option<String>)> {
     // Try to extract plays/events from the response
+    let binding = vec![];
     let plays = data
         .get("Plays")
         .or_else(|| data.get("plays"))
         .or_else(|| data.get("events"))
         .and_then(|v| v.as_array())
-        .unwrap_or(&serde_json::Value::Array(vec![]));
+        .unwrap_or(&binding);
 
     let total_events_count = plays.len();
     let mut new_events = Vec::new();
@@ -450,7 +658,7 @@ fn extract_play_by_play_events(
                 .or_else(|| play.get("Time"))
                 .and_then(|v| v.as_str())
             {
-                if play_timestamp > last_ts {
+                if play_timestamp > last_ts.as_str() {
                     new_events.push(play.clone());
                     latest_timestamp = Some(play_timestamp.to_string());
                 }
@@ -468,7 +676,7 @@ fn extract_play_by_play_events(
                 .and_then(|v| v.as_str())
             {
                 if latest_timestamp.is_none()
-                    || play_timestamp > latest_timestamp.as_ref().unwrap()
+                    || play_timestamp > latest_timestamp.as_ref().unwrap().as_str()
                 {
                     latest_timestamp = Some(play_timestamp.to_string());
                 }
@@ -553,7 +761,7 @@ async fn fetch_play_by_play_from_api(
     league: &League,
     game_id: &str,
     is_delta: bool,
-    delta_minutes: Option<u32>,
+    _delta_minutes: Option<u32>,
 ) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
@@ -691,3 +899,529 @@ async fn fetch_play_by_play_from_api(
 
     Ok(serde_json::to_string(&mock_data)?)
 }
+
+async fn fetch_scores_from_api(
+    api_url: &str,
+    league: &League,
+    date: &str,
+) -> Result<String> {
+    let _parsed_url = Url::parse(api_url)?;
+
+    tracing::info!(
+        "Fetching scores data from API: {} for date: {}",
+        api_url,
+        date
+    );
+
+    // For MLB, make real API calls; for other leagues, use mock data for now
+    match league {
+        League::Mlb => {
+            let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
+                tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            let client = reqwest::Client::new();
+
+            tracing::info!("Making real API request for scores: {}", api_url);
+
+            let response = client
+                .get(api_url)
+                .query(&[("key", &api_key)])
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to make HTTP request: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                tracing::error!(
+                    "API request failed with status {}: {}",
+                    status,
+                    error_text
+                );
+                return Err(StatusCode::from_u16(status.as_u16())
+                    .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                    .into());
+            }
+
+            let response_text = response.text().await.map_err(|e| {
+                tracing::error!("Failed to read response body: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            tracing::info!("Successfully fetched scores data for date: {}", date);
+            Ok(response_text)
+        }
+        _ => {
+            // For other leagues, return mock data for now
+            let mock_data = serde_json::json!([
+                {
+                    "GameID": 1,
+                    "DateTime": "2025-01-15T19:10:00",
+                    "DateTimeUTC": "2025-01-16T00:10:00Z",
+                    "Status": "Final",
+                    "AwayTeam": "NYY",
+                    "HomeTeam": "BOS",
+                    "AwayTeamID": 1,
+                    "HomeTeamID": 2,
+                    "AwayTeamScore": 4,
+                    "HomeTeamScore": 2,
+                    "Inning": 9,
+                    "InningHalf": "Bottom",
+                    "IsClosed": true,
+                    "GameEndDateTime": "2025-01-15T22:15:00",
+                    "GameEndDateTimeUTC": "2025-01-16T03:15:00Z"
+                },
+                {
+                    "GameID": 2,
+                    "DateTime": "2025-01-15T20:05:00",
+                    "DateTimeUTC": "2025-01-16T01:05:00Z",
+                    "Status": "InProgress",
+                    "AwayTeam": "LAD",
+                    "HomeTeam": "SF",
+                    "AwayTeamID": 3,
+                    "HomeTeamID": 4,
+                    "AwayTeamScore": 1,
+                    "HomeTeamScore": 3,
+                    "Inning": 6,
+                    "InningHalf": "Top",
+                    "IsClosed": false,
+                    "GameEndDateTime": null,
+                    "GameEndDateTimeUTC": null
+                },
+                {
+                    "GameID": 3,
+                    "DateTime": "2025-01-15T21:10:00",
+                    "DateTimeUTC": "2025-01-16T02:10:00Z",
+                    "Status": "Scheduled",
+                    "AwayTeam": "HOU",
+                    "HomeTeam": "OAK",
+                    "AwayTeamID": 5,
+                    "HomeTeamID": 6,
+                    "AwayTeamScore": null,
+                    "HomeTeamScore": null,
+                    "Inning": null,
+                    "InningHalf": null,
+                    "IsClosed": false,
+                    "GameEndDateTime": null,
+                    "GameEndDateTimeUTC": null
+                }
+            ]);
+
+            Ok(serde_json::to_string(&mock_data)?)
+        }
+    }
+}
+
+fn process_scores_data(data: &serde_json::Value) -> Result<(usize, usize, usize)> {
+    let games = data.as_array().ok_or_else(|| {
+        tracing::error!("Expected array data for scores processing");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let mut live_games_count = 0;
+    let mut final_games_count = 0;
+
+    for game in games {
+        if let Some(status) = game.get("Status").and_then(|v| v.as_str()) {
+            match status {
+                "Final" | "Completed" => final_games_count += 1,
+                "InProgress" | "Live" => live_games_count += 1,
+                _ => {} // Scheduled, Postponed, etc.
+            }
+        }
+    }
+
+    let games_count = games.len();
+
+    Ok((games_count, live_games_count, final_games_count))
+}
+
+fn extract_game_status(data: &serde_json::Value) -> Result<(bool, Option<String>)> {
+    // Try to extract game status from various possible fields
+    let status = data
+        .get("Status")
+        .or_else(|| data.get("status"))
+        .or_else(|| data.get("GameStatus"))
+        .or_else(|| data.get("gameStatus"))
+        .and_then(|v| v.as_str());
+
+    let is_final = match status {
+        Some("Final") | Some("Completed") | Some("FINAL") | Some("COMPLETED") => true,
+        Some("InProgress") | Some("Live") | Some("IN_PROGRESS") | Some("LIVE") => false,
+        Some("Scheduled") | Some("Pre-Game") | Some("SCHEDULED") | Some("PRE_GAME") => {
+            false
+        }
+        _ => {
+            // Try to determine from other fields
+            if let Some(quarters) = data.get("Quarters") {
+                if quarters.is_array() {
+                    let quarters_array = quarters.as_array().unwrap();
+                    return Ok((
+                        quarters_array.len() >= 4,
+                        status.map(|s| s.to_string()),
+                    ));
+                }
+            }
+            false
+        }
+    };
+
+    Ok((is_final, status.map(|s| s.to_string())))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GameByDateQuery {
+    pub league: String,
+    pub date: String,
+    pub game_id: String,
+}
+
+pub async fn handle_game_by_date_request(
+    Query(params): Query<GameByDateQuery>,
+    State(use_case_state): State<UseCaseState>,
+) -> Result<Json<GameByDateResponse>> {
+    let league = params.league.parse::<League>().map_err(|_| {
+        tracing::error!("Invalid league: {}", params.league);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    if params.date.is_empty() {
+        tracing::error!("Date parameter is required");
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
+
+    if params.game_id.is_empty() {
+        tracing::error!("Game ID parameter is required");
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
+
+    let game_id = params.game_id.parse::<i64>().map_err(|_| {
+        tracing::error!("Invalid game_id: {}", params.game_id);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    let api_path = games_by_date_path(league.clone(), Some(params.date.clone()));
+    let api_url = api_path.to_string();
+
+    let cache_key = CacheKey::from(format!(
+        "game_by_date_{}_{}_{}",
+        league, params.date, params.game_id
+    ));
+
+    // Check cache first
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        if let Some(cached_data) = cache.get(&cache_key).await? {
+            tracing::info!(
+                "Returning cached game by date data for game_id: {}",
+                params.game_id
+            );
+            let response: GameByDateResponse = serde_json::from_str(&cached_data)
+                .map_err(|e| {
+                    tracing::error!("Failed to deserialize cached data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            return Ok(Json(response));
+        }
+    }
+
+    // Fetch from API
+    let raw_data = fetch_games_by_date_from_api(&api_url, &league).await?;
+
+    // Parse the JSON response
+    let games: Vec<serde_json::Value> = serde_json::from_str(&raw_data).map_err(|e| {
+        tracing::error!("Failed to parse games by date JSON: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Find the specific game by game_id
+    let target_game = games.into_iter().find(|game| {
+        game.get("GameID")
+            .and_then(|v| v.as_i64())
+            .map(|id| id == game_id)
+            .unwrap_or(false)
+    });
+
+    let game_data = if let Some(game) = target_game {
+        tracing::info!("Found game with ID {}", game_id);
+        match serde_json::from_value::<GameByDate>(game) {
+            Ok(parsed_game) => {
+                tracing::info!("Successfully parsed game data");
+                Some(parsed_game)
+            }
+            Err(e) => {
+                tracing::error!("Failed to parse game data: {}", e);
+                None
+            }
+        }
+    } else {
+        tracing::warn!("No game found with ID {}", game_id);
+        None
+    };
+
+    let response = GameByDateResponse {
+        data: game_data,
+        date: params.date,
+        game_id,
+        league: league.to_string(),
+    };
+
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        let serialized = serde_json::to_string(&response).map_err(|e| {
+            tracing::error!("Failed to serialize response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        cache.set(&cache_key, &serialized).await?;
+    }
+
+    tracing::info!(
+        "Successfully fetched and cached game by date for game_id: {}",
+        params.game_id
+    );
+    Ok(Json(response))
+}
+
+async fn fetch_games_by_date_from_api(api_url: &str, league: &League) -> Result<String> {
+    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
+        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let client = reqwest::Client::new();
+
+    tracing::info!(
+        "Making real API request to: {} for league: {}",
+        api_url,
+        league
+    );
+
+    let response = client
+        .get(api_url)
+        .query(&[("key", &api_key)])
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to make HTTP request: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        tracing::error!("API request failed with status: {}", status);
+        return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+    }
+
+    let body = response.text().await.map_err(|e| {
+        tracing::error!("Failed to read response body: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    tracing::info!("Successfully fetched games by date data from API");
+    Ok(body)
+}
+
+pub async fn handle_box_score_request(
+    Query(params): Query<BoxScoreQuery>,
+    State(use_case_state): State<UseCaseState>,
+) -> Result<Json<BoxScoreResponse>> {
+    let league = params.league.parse::<League>().map_err(|_| {
+        tracing::error!("Invalid league: {}", params.league);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    let cache_key = CacheKey::box_score(&league, &params.game_id);
+
+    // Check cache first
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        if let Some(cached_data) = cache.get(&cache_key).await? {
+            tracing::info!("Returning cached box score for game_id: {}", params.game_id);
+            let response: BoxScoreResponse =
+                serde_json::from_str(&cached_data).map_err(|e| {
+                    tracing::error!("Failed to deserialize cached data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            return Ok(Json(response));
+        }
+    }
+
+    // Fetch from API
+    let api_url = box_score_path(league.clone(), params.game_id.clone()).to_string();
+    let raw_data = fetch_box_score_from_api(&api_url, &league).await?;
+
+    // Parse the response
+    let box_score: BoxScore = serde_json::from_str(&raw_data).map_err(|e| {
+        tracing::error!("Failed to parse box score JSON: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let response = BoxScoreResponse {
+        data: box_score,
+        league: league.to_string(),
+    };
+
+    // Cache the response
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        let serialized = serde_json::to_string(&response).map_err(|e| {
+            tracing::error!("Failed to serialize response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        cache.set(&cache_key, &serialized).await?;
+    }
+
+    tracing::info!(
+        "Successfully fetched and cached box score for game_id: {}",
+        params.game_id
+    );
+    Ok(Json(response))
+}
+
+async fn fetch_box_score_from_api(api_url: &str, league: &League) -> Result<String> {
+    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
+        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let client = reqwest::Client::new();
+
+    tracing::info!(
+        "Making real API request to: {} for league: {}",
+        api_url,
+        league
+    );
+
+    let response = client
+        .get(api_url)
+        .query(&[("key", &api_key)])
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to make HTTP request: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !response.status().is_success() {
+        tracing::error!("API request failed with status: {}", response.status());
+        return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+    }
+
+    let body = response.text().await.map_err(|e| {
+        tracing::error!("Failed to read response body: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    Ok(body)
+}
+
+pub async fn handle_stadiums_request(
+    Query(params): Query<LeagueQuery>,
+    State(use_case_state): State<UseCaseState>,
+) -> Result<Json<StadiumsResponse>> {
+    let league = params.league.parse::<League>().map_err(|_| {
+        tracing::error!("Invalid league: {}", params.league);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    let api_path = stadiums_path(league.clone());
+    let api_url = api_path.to_string();
+
+    let cache_key = CacheKey::from(format!("stadiums_{}", league));
+
+    // Check cache first
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        if let Some(cached_data) = cache.get(&cache_key).await? {
+            tracing::info!("Returning cached stadiums data for league: {}", league);
+            let response: StadiumsResponse =
+                serde_json::from_str(&cached_data).map_err(|e| {
+                    tracing::error!("Failed to deserialize cached data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            return Ok(Json(response));
+        }
+    }
+
+    // Fetch from API
+    let raw_data = fetch_stadiums_from_api(&api_url, &league).await?;
+
+    // Parse the JSON response
+    let stadiums: Vec<Stadium> = serde_json::from_str(&raw_data).map_err(|e| {
+        tracing::error!("Failed to parse stadiums JSON: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let response = StadiumsResponse {
+        data: stadiums,
+        league: league.to_string(),
+    };
+
+    // Cache the response
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        let serialized = serde_json::to_string(&response).map_err(|e| {
+            tracing::error!("Failed to serialize response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        cache.set(&cache_key, &serialized).await?;
+    }
+
+    tracing::info!(
+        "Successfully fetched and cached stadiums for league: {}",
+        league
+    );
+    Ok(Json(response))
+}
+
+async fn fetch_stadiums_from_api(api_url: &str, league: &League) -> Result<String> {
+    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
+        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let client = reqwest::Client::new();
+
+    tracing::info!(
+        "Making real API request to: {} for league: {}",
+        api_url,
+        league
+    );
+
+    let response = client
+        .get(api_url)
+        .query(&[("key", &api_key)])
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to make HTTP request: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        tracing::error!("API request failed with status: {}", status);
+        return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+    }
+
+    let body = response.text().await.map_err(|e| {
+        tracing::error!("Failed to read response body: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    tracing::info!("Successfully fetched stadiums data from API");
+    Ok(body)
+}
+
+// Function aliases for server routes
+pub use handle_box_score_request as box_score;
+pub use handle_game_by_date_request as game_by_date;
+pub use handle_stadiums_request as stadiums;

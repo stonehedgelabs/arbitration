@@ -1155,7 +1155,20 @@ export function FavoritesManager({
             overflow="hidden"
           >
             {/* League Filter */}
-            <HStack gap="2" mb="4" overflowX="auto">
+            <HStack
+              gap="2"
+              mb="4"
+              overflowX="auto"
+              className="scrollbar-hide"
+              pb="2"
+              css={{
+                "&::-webkit-scrollbar": {
+                  display: "none",
+                },
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
               {leagues.map((league) => (
                 <Button
                   key={league}
@@ -1163,6 +1176,8 @@ export function FavoritesManager({
                   size="sm"
                   onClick={() => setSelectedLeague(league)}
                   flexShrink="0"
+                  minW="fit-content"
+                  whiteSpace="nowrap"
                   borderRadius="12px"
                   bg={selectedLeague === league ? "white" : "transparent"}
                   color={selectedLeague === league ? "black" : "white"}

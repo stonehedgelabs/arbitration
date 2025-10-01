@@ -7,7 +7,8 @@ use tracing::info;
 
 use crate::cache::Cache;
 use crate::uses::{
-    headshots, health_check, play_by_play, schedule, team_profile, teams, UseCaseState,
+    box_score, game_by_date, headshots, health_check, play_by_play, schedule, scores,
+    stadiums, team_profile, teams, UseCaseState,
 };
 
 pub struct Server {
@@ -29,6 +30,10 @@ impl Server {
             .route("/api/v1/schedule", get(schedule))
             .route("/api/v1/headshots", get(headshots))
             .route("/api/v1/play-by-play", get(play_by_play))
+            .route("/api/v1/scores", get(scores))
+            .route("/api/v1/box-score", get(box_score))
+            .route("/api/v1/scores-by-date", get(game_by_date))
+            .route("/api/v1/venues", get(stadiums))
             .layer(
                 ServiceBuilder::new()
                     .layer(TraceLayer::new_for_http())

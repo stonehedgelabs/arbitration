@@ -1,12 +1,13 @@
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod cache;
-mod data_loader;
-mod error;
-mod schema;
-mod server;
-mod uses;
+pub mod api_paths;
+pub mod cache;
+pub mod data_loader;
+pub mod error;
+pub mod schema;
+pub mod server;
+pub mod uses;
 
 use async_std::sync::{Arc, Mutex};
 
@@ -17,6 +18,9 @@ use server::Server;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Load environment variables from .env file
+    dotenv::dotenv().ok();
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()

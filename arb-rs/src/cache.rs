@@ -1,6 +1,9 @@
 use crate::error::Result;
 use redis::{aio::MultiplexedConnection, Client};
 
+// Forward declaration - CacheKey is defined in uses.rs
+pub use crate::uses::CacheKey;
+
 #[derive(Clone)]
 pub struct Cache {
     client: Client,
@@ -15,26 +18,26 @@ impl Cache {
         Ok(Self { client, connection })
     }
 
-    pub async fn set(&mut self, key: &str, value: &str) -> Result<()> {
+    pub async fn set(&mut self, key: impl AsRef<str>, value: &str) -> Result<()> {
         redis::cmd("SET")
-            .arg(key)
+            .arg(key.as_ref())
             .arg(value)
             .exec_async(&mut self.connection)
             .await?;
         Ok(())
     }
 
-    pub async fn get(&mut self, key: &str) -> Result<Option<String>> {
+    pub async fn get(&mut self, key: impl AsRef<str>) -> Result<Option<String>> {
         let result: Option<String> = redis::cmd("GET")
-            .arg(key)
+            .arg(key.as_ref())
             .query_async(&mut self.connection)
             .await?;
         Ok(result)
     }
 
-    pub async fn delete(&mut self, key: &str) -> Result<()> {
+    pub async fn delete(&mut self, key: impl AsRef<str>) -> Result<()> {
         redis::cmd("DEL")
-            .arg(key)
+            .arg(key.as_ref())
             .exec_async(&mut self.connection)
             .await?;
         Ok(())
@@ -42,12 +45,12 @@ impl Cache {
 
     pub async fn set_with_ttl(
         &mut self,
-        key: &str,
+        key: impl AsRef<str>,
         value: &str,
         ttl_seconds: u64,
     ) -> Result<()> {
         redis::cmd("SETEX")
-            .arg(key)
+            .arg(key.as_ref())
             .arg(ttl_seconds)
             .arg(value)
             .exec_async(&mut self.connection)
@@ -57,7 +60,7 @@ impl Cache {
 
     pub async fn get_or_set_with_ttl<F, Fut>(
         &mut self,
-        key: &str,
+        key: impl AsRef<str>,
         ttl_seconds: u64,
         fetcher: F,
     ) -> Result<String>
@@ -65,12 +68,12 @@ impl Cache {
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = Result<String>>,
     {
-        if let Some(cached) = self.get(key).await? {
+        if let Some(cached) = self.get(&key).await? {
             return Ok(cached);
         }
 
         let value = fetcher().await?;
-        self.set_with_ttl(key, &value, ttl_seconds).await?;
+        self.set_with_ttl(&key, &value, ttl_seconds).await?;
         Ok(value)
     }
 
