@@ -98,3 +98,142 @@ export const getViewportDimensions = (): { width: number; height: number } => {
     height: window.innerHeight,
   };
 };
+
+/**
+ * Play-by-play data interface
+ */
+interface PlayData {
+  HitterName: string;
+  PitcherName: string;
+  InningHalf: string;
+  InningNumber: number;
+  Outs: number;
+  Description?: string;
+  Strikeout?: boolean;
+  Walk?: boolean;
+  Hit?: boolean;
+  Sacrifice?: boolean;
+  Out?: boolean;
+  Runner1ID?: number | null;
+  Runner2ID?: number | null;
+  Runner3ID?: number | null;
+  RunsBattedIn?: number;
+}
+
+/**
+ * Generates a human-readable play-by-play label
+ * @param play - The play data object
+ * @returns {string} Formatted play description
+ */
+export const getPlayLabel = (play: PlayData): string => {
+  const batter = play.HitterName;
+  const pitcher = play.PitcherName;
+  const inning = `${play.InningHalf === "T" ? "Top" : "Bottom"} ${play.InningNumber}`;
+  const outs = play.Outs;
+  const description = play.Description || "";
+
+  // Check if description is usable (not scrambled/empty)
+  const hasRealDescription = description && description !== "Scrambled";
+
+  // Determine action
+  let action: string;
+  if (hasRealDescription) {
+    // Use the actual description as the action
+    action = description;
+  } else {
+    // Fall back to flags
+    if (play.Strikeout) {
+      action = "struck out";
+    } else if (play.Walk) {
+      action = "walked";
+    } else if (play.Hit) {
+      action = "singled";
+    } else if (play.Sacrifice) {
+      action = "sacrifice";
+    } else if (play.Out) {
+      action = "grounded out";
+    } else {
+      action = "in play";
+    }
+  }
+
+  // Build context
+  const contextParts: string[] = [];
+
+  // Add pitcher (skip if already in description)
+  if (
+    !hasRealDescription ||
+    !pitcher.split(" ").pop()?.toLowerCase().includes(action.toLowerCase())
+  ) {
+    contextParts.push(`vs ${pitcher}`);
+  }
+
+  // Add inning and outs
+  contextParts.push(`${inning}, ${outs} out${outs !== 1 ? "s" : ""}`);
+
+  // Count runners on base
+  const runners: string[] = [];
+  if (play.Runner1ID) runners.push("1st");
+  if (play.Runner2ID) runners.push("2nd");
+  if (play.Runner3ID) runners.push("3rd");
+
+  if (runners.length > 0) {
+    contextParts.push(`runners on ${runners.join(", ")}`);
+  }
+
+  // Add RBI if applicable
+  if (play.RunsBattedIn && play.RunsBattedIn > 0) {
+    contextParts.push(`${play.RunsBattedIn} RBI`);
+  }
+
+  // Combine and return
+  if (contextParts.length > 0) {
+    return `${batter} ${action}, ${contextParts.join(", ")}`;
+  } else {
+    return `${batter} ${action}`;
+  }
+};
+
+/**
+ * Gets the appropriate icon name for a play action
+ * @param play - The play data object
+ * @returns {string} Icon name for the action
+ */
+export const getPlayIcon = (play: PlayData): string => {
+  const description = play.Description || "";
+  const hasRealDescription = description && description !== "Scrambled";
+
+  // Determine action type for icon selection
+  if (hasRealDescription) {
+    const desc = description.toLowerCase();
+    if (desc.includes("strike") || desc.includes("strikeout"))
+      return "strikeout";
+    if (desc.includes("walk") || desc.includes("base on balls")) return "walk";
+    if (
+      desc.includes("hit") ||
+      desc.includes("single") ||
+      desc.includes("double") ||
+      desc.includes("triple") ||
+      desc.includes("home run")
+    )
+      return "hit";
+    if (
+      desc.includes("out") ||
+      desc.includes("ground out") ||
+      desc.includes("fly out")
+    )
+      return "out";
+    if (desc.includes("sacrifice") || desc.includes("sac fly"))
+      return "sacrifice";
+    if (desc.includes("error")) return "error";
+    return "play";
+  } else {
+    // Use flags to determine icon
+    if (play.Strikeout) return "strikeout";
+    if (play.Walk) return "walk";
+    if (play.Hit) return "hit";
+    if (play.Sacrifice) return "sacrifice";
+    if (play.Out) return "out";
+    return "play";
+  }
+};

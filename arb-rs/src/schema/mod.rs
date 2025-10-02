@@ -4,3 +4,4 @@ pub mod nba;
 pub mod nfl;
 pub mod nhl;
 pub mod soccer;
+pub mod twitterapi;

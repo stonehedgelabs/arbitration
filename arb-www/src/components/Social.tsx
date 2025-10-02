@@ -1,121 +1,91 @@
-import { useState } from "react";
-import { Heart, MessageCircle, Share, Search, X, Check } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Badge,
-  Button,
-  Card,
   Box,
   VStack,
-  HStack,
   Text,
-  Image,
   Input,
+  Button,
+  Spinner,
+  IconButton,
 } from "@chakra-ui/react";
-
-interface SocialPost {
-  id: string;
-  author: string;
-  authorAvatar: string;
-  content: string;
-  timestamp: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  platform: "twitter" | "instagram" | "official";
-  media?: string;
-  verified?: boolean;
-}
+import { Search, X, MessageCircle } from "lucide-react";
+import { Tweet } from "react-tweet";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import {
+  fetchTwitterData,
+  setTwitterSearchQuery,
+  setTwitterHasSearched,
+  clearTwitterData,
+} from "../store/slices/sportsDataSlice";
 
 interface SocialSectionProps {
-  posts: SocialPost[];
-  favoriteTeams: string[];
-  onToggleFavorite: (teamName: string) => void;
+  selectedLeague: string;
 }
 
-export function Social({ posts }: SocialSectionProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export function Social({ selectedLeague }: SocialSectionProps) {
+  const dispatch = useAppDispatch();
+  const { twitterData, twitterLoading, twitterError, twitterSearchQuery } =
+    useAppSelector((state) => state.sportsData);
 
-  // Filter posts based on search query
-  const filteredPosts = posts.filter((post) => {
-    if (!searchQuery.trim()) return true;
+  const hasInitialized = useRef(false);
+  const [isTyping, setIsTyping] = useState(false);
 
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      post.content.toLowerCase().includes(searchLower) ||
-      post.author.toLowerCase().includes(searchLower)
-    );
-  });
+  // Generate team names from today's games
+  const getTodayTeamNames = () => {
+    // For now, return empty array since we need to implement proper data fetching
+    // This will be updated when we have the proper league data structure
+    return [];
+  };
+
+  // Generate sports query from team names
+  const generateSportsQuery = (teamNames: string[]) => {
+    if (teamNames.length === 0) {
+      return "sports OR baseball OR basketball OR football OR hockey";
+    }
+    return teamNames.join(" OR ");
+  };
+
+  // Debounced search effect - waits 2 seconds after user stops typing
+  useEffect(() => {
+    const performSearch = async () => {
+      if (twitterSearchQuery.trim()) {
+        // User provided a search query
+        setIsTyping(false); // User stopped typing, search is starting
+        dispatch(setTwitterHasSearched(true));
+        dispatch(fetchTwitterData(twitterSearchQuery));
+      } else if (!hasInitialized.current) {
+        // Initial load - generate one from today's games
+        const teamNames = getTodayTeamNames();
+        const sportsQuery = generateSportsQuery(teamNames);
+        dispatch(setTwitterHasSearched(true));
+        dispatch(fetchTwitterData(sportsQuery));
+        hasInitialized.current = true;
+      }
+    };
+
+    // Only debounce if user is typing (not initial load)
+    if (twitterSearchQuery.trim() && hasInitialized.current) {
+      setIsTyping(true); // User is typing, show typing indicator
+      const timeoutId = setTimeout(performSearch, 2000); // 2 second delay
+      return () => clearTimeout(timeoutId);
+    } else {
+      // For initial load or empty query, run immediately
+      performSearch();
+    }
+  }, [twitterSearchQuery, selectedLeague, dispatch]);
+
+  // Handle search input changes
+  const handleSearchChange = (value: string) => {
+    dispatch(setTwitterSearchQuery(value));
+    if (value.trim()) {
+      dispatch(clearTwitterData());
+    }
+  };
 
   const clearSearch = () => {
-    setSearchQuery("");
-  };
-
-  const getPlatformBadge = (platform: string) => {
-    switch (platform) {
-      case "twitter":
-        return (
-          <Badge
-            variant="solid"
-            bg="blue.500"
-            color="white"
-            fontSize="xs"
-            px="2"
-            py="1"
-            borderRadius="full"
-          >
-            Twitter
-          </Badge>
-        );
-      case "instagram":
-        return (
-          <Badge
-            variant="solid"
-            bg="pink.500"
-            color="white"
-            fontSize="xs"
-            px="2"
-            py="1"
-            borderRadius="full"
-          >
-            Instagram
-          </Badge>
-        );
-      case "official":
-        return (
-          <Badge
-            variant="solid"
-            bg="green.500"
-            color="white"
-            fontSize="xs"
-            px="2"
-            py="1"
-            borderRadius="full"
-          >
-            Official
-          </Badge>
-        );
-      default:
-        return (
-          <Badge
-            variant="solid"
-            bg="gray.500"
-            color="white"
-            fontSize="xs"
-            px="2"
-            py="1"
-            borderRadius="full"
-          >
-            {platform}
-          </Badge>
-        );
-    }
-  };
-
-  const formatNumber = (num: number) => {
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + "k";
-    }
-    return num.toString();
+    dispatch(setTwitterSearchQuery(""));
+    dispatch(clearTwitterData());
+    dispatch(setTwitterHasSearched(false));
   };
 
   return (
@@ -131,259 +101,132 @@ export function Social({ posts }: SocialSectionProps) {
           <Box position="relative">
             <Input
               type="text"
-              placeholder="Search posts, teams, players..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              bg="gray.100"
-              border="none"
-              borderRadius="8px"
-              pl="10"
-              pr={searchQuery ? "10" : "4"}
+              placeholder="Search tweets, teams, players..."
+              value={twitterSearchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              pr="12"
+              bg="white"
+              borderColor="gray.300"
               _focus={{
-                bg: "white",
-                border: "1px solid #3182ce",
+                borderColor: "blue.500",
                 boxShadow: "0 0 0 1px #3182ce",
               }}
             />
-            <Box
-              position="absolute"
-              left="3"
-              top="50%"
-              transform="translateY(-50%)"
-              pointerEvents="none"
-            >
-              <Box w="4" h="4" color="gray.400">
-                <Search size={16} />
-              </Box>
-            </Box>
-            {searchQuery && (
-              <Button
-                variant="ghost"
+            {twitterSearchQuery && (
+              <IconButton
+                aria-label="Clear search"
                 size="sm"
-                onClick={clearSearch}
                 position="absolute"
-                right="1"
+                right="2"
                 top="50%"
                 transform="translateY(-50%)"
-                h="8"
-                w="8"
-                p="0"
-                zIndex="1"
+                variant="ghost"
+                onClick={clearSearch}
               >
-                <Box w="4" h="4">
-                  <X size={16} />
-                </Box>
-              </Button>
+                <X size={16} />
+              </IconButton>
             )}
           </Box>
+
+          {/* Search Button */}
+          <Button
+            onClick={() => {
+              if (twitterSearchQuery.trim()) {
+                dispatch(setTwitterHasSearched(true));
+                dispatch(fetchTwitterData(twitterSearchQuery));
+              }
+            }}
+            colorScheme="blue"
+            size="md"
+            disabled={!twitterSearchQuery.trim() || twitterLoading}
+          >
+            <Search size={16} style={{ marginRight: "8px" }} />
+            Search Tweets
+          </Button>
         </VStack>
 
-        {/* Posts */}
-        <VStack gap="4" align="stretch">
-          {posts.length === 0 ? (
-            // No content at all
-            <Card.Root
-              bg="white"
-              borderRadius="12px"
-              shadow="sm"
-              border="1px"
-              borderColor="gray.200"
+        {/* Loading State */}
+        {twitterLoading && (
+          <VStack gap="4" py="8">
+            <Spinner size="lg" color="blue.500" />
+            <Text color="gray.600">Searching for tweets...</Text>
+          </VStack>
+        )}
+
+        {/* Typing Indicator */}
+        {isTyping && !twitterLoading && (
+          <VStack gap="4" py="8">
+            <Text color="gray.500" fontSize="sm">
+              Waiting for you to finish typing...
+            </Text>
+          </VStack>
+        )}
+
+        {/* Error State */}
+        {twitterError && (
+          <VStack gap="4" py="8">
+            <MessageCircle size={48} color="#e53e3e" />
+            <Text color="red.500" textAlign="center" maxW="md">
+              {twitterError}
+            </Text>
+            <Button
+              onClick={() => {
+                if (twitterSearchQuery.trim()) {
+                  dispatch(fetchTwitterData(twitterSearchQuery));
+                } else {
+                  const teamNames = getTodayTeamNames();
+                  const sportsQuery = generateSportsQuery(teamNames);
+                  dispatch(fetchTwitterData(sportsQuery));
+                }
+              }}
+              colorScheme="red"
+              variant="outline"
             >
-              <Card.Body p="8" textAlign="center">
-                <VStack gap="4">
-                  <Box
-                    w="12"
-                    h="12"
-                    bg="gray.200"
-                    borderRadius="full"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Box w="6" h="6" color="gray.400">
-                      <MessageCircle size={24} />
-                    </Box>
-                  </Box>
-                  <VStack gap="2">
-                    <Text fontSize="lg" fontWeight="semibold" color="gray.900">
-                      No Social Content
-                    </Text>
-                    <Text fontSize="sm" color="gray.600" textAlign="center">
-                      There are no social posts available for this league yet.
-                      Check back later for updates from teams and players.
-                    </Text>
-                  </VStack>
-                </VStack>
-              </Card.Body>
-            </Card.Root>
-          ) : filteredPosts.length === 0 && searchQuery ? (
-            // Search returned no results
-            <Card.Root
-              bg="white"
-              borderRadius="12px"
-              shadow="sm"
-              border="1px"
-              borderColor="gray.200"
-            >
-              <Card.Body p="8" textAlign="center">
-                <VStack gap="4">
-                  <Box
-                    w="12"
-                    h="12"
-                    bg="gray.200"
-                    borderRadius="full"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Box w="6" h="6" color="gray.400">
-                      <Search size={24} />
-                    </Box>
-                  </Box>
-                  <VStack gap="2">
-                    <Text fontSize="lg" fontWeight="semibold" color="gray.900">
-                      No posts found
-                    </Text>
-                    <Text fontSize="sm" color="gray.600" textAlign="center">
-                      Try searching for different keywords or check your
-                      spelling.
-                    </Text>
-                  </VStack>
-                  <Button variant="outline" onClick={clearSearch} size="sm">
-                    Clear search
-                  </Button>
-                </VStack>
-              </Card.Body>
-            </Card.Root>
-          ) : (
-            // Show posts
-            filteredPosts.map((post) => (
-              <Card.Root
-                key={post.id}
-                bg="white"
-                borderRadius="12px"
-                shadow="sm"
-                border="1px"
-                borderColor="gray.200"
-                _active={{ transform: "scale(0.98)" }}
-                transition="all 0.2s"
-              >
-                <Card.Body p="4">
-                  <VStack align="stretch" gap="3">
-                    {/* Header with profile and timestamp */}
-                    <HStack gap="3" align="start">
-                      <Box
-                        w="10"
-                        h="10"
-                        borderRadius="full"
-                        bg="gray.200"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        overflow="hidden"
-                        flexShrink="0"
-                      >
-                        <Image
-                          src={post.authorAvatar || "/api/placeholder/40/40"}
-                          alt={post.author}
-                          w="full"
-                          h="full"
-                          objectFit="cover"
-                        />
-                      </Box>
-                      <VStack align="start" gap="1" flex="1">
-                        <HStack gap="2">
-                          <Text
-                            fontSize="sm"
-                            fontWeight="semibold"
-                            color="gray.900"
-                          >
-                            {post.author}
-                          </Text>
-                          {post.verified && (
-                            <Box w="4" h="4" color="blue.500">
-                              <Check size={16} />
-                            </Box>
-                          )}
-                        </HStack>
-                        <HStack gap="2" flexWrap="wrap">
-                          <Text fontSize="xs" color="gray.500">
-                            {post.timestamp}
-                          </Text>
-                          {getPlatformBadge(post.platform)}
-                        </HStack>
-                      </VStack>
-                    </HStack>
+              Try Again
+            </Button>
+          </VStack>
+        )}
 
-                    {/* Post content */}
-                    <Text fontSize="sm" color="gray.900" lineHeight="1.5">
-                      {post.content}
-                    </Text>
-
-                    {/* Media if present */}
-                    {post.media && (
-                      <Box
-                        w="full"
-                        h="48"
-                        borderRadius="8px"
-                        overflow="hidden"
-                        bg="gray.200"
-                      >
-                        <Image
-                          src={post.media}
-                          alt="Post media"
-                          w="full"
-                          h="full"
-                          objectFit="cover"
-                        />
-                      </Box>
-                    )}
-
-                    {/* Engagement metrics */}
-                    <HStack gap="6" pt="2">
-                      <HStack
-                        gap="1"
-                        cursor="pointer"
-                        _hover={{ color: "red.500" }}
-                      >
-                        <Box w="4" h="4" color="gray.500">
-                          <Heart size={16} />
-                        </Box>
-                        <Text fontSize="xs" color="gray.500">
-                          {formatNumber(post.likes)}
-                        </Text>
-                      </HStack>
-                      <HStack
-                        gap="1"
-                        cursor="pointer"
-                        _hover={{ color: "blue.500" }}
-                      >
-                        <Box w="4" h="4" color="gray.500">
-                          <MessageCircle size={16} />
-                        </Box>
-                        <Text fontSize="xs" color="gray.500">
-                          {formatNumber(post.comments)}
-                        </Text>
-                      </HStack>
-                      <HStack
-                        gap="1"
-                        cursor="pointer"
-                        _hover={{ color: "green.500" }}
-                      >
-                        <Box w="4" h="4" color="gray.500">
-                          <Share size={16} />
-                        </Box>
-                        <Text fontSize="xs" color="gray.500">
-                          {formatNumber(post.shares)}
-                        </Text>
-                      </HStack>
-                    </HStack>
-                  </VStack>
-                </Card.Body>
-              </Card.Root>
-            ))
+        {/* No Tweets Found */}
+        {!twitterLoading &&
+          !twitterError &&
+          twitterData &&
+          twitterData.tweets.length === 0 && (
+            <VStack gap="4" py="8">
+              <MessageCircle size={48} color="#a0aec0" />
+              <Text color="gray.500" textAlign="center" maxW="md">
+                No tweets found for "{twitterSearchQuery || "sports"}"
+              </Text>
+              <Text color="gray.400" fontSize="sm" textAlign="center">
+                Try searching for specific teams, players, or keywords
+              </Text>
+            </VStack>
           )}
-        </VStack>
+
+        {/* Tweets */}
+        {!twitterLoading &&
+          !twitterError &&
+          twitterData &&
+          twitterData.tweets.length > 0 && (
+            <VStack gap="4" align="stretch">
+              <Text color="gray.600" fontSize="sm">
+                Found {twitterData.tweets.length} tweets
+              </Text>
+              {twitterData.tweets.map((tweet) => (
+                <Box
+                  key={tweet.id}
+                  bg="white"
+                  borderRadius="12px"
+                  shadow="sm"
+                  border="1px"
+                  borderColor="gray.200"
+                  overflow="hidden"
+                >
+                  <Tweet id={tweet.id} />
+                </Box>
+              ))}
+            </VStack>
+          )}
       </VStack>
     </Box>
   );

@@ -45,6 +45,7 @@ interface Game {
 interface ScoresSectionProps {
   games: Game[];
   selectedLeague?: string;
+  onGameClick?: (gameId: string) => void;
 }
 
 // Date utility functions
@@ -165,7 +166,11 @@ const BasesIcon = () => {
 };
 
 // Live Games Component
-export function Live({ games, selectedLeague }: ScoresSectionProps) {
+export function Live({
+  games,
+  selectedLeague,
+  onGameClick,
+}: ScoresSectionProps) {
   const dispatch = useAppDispatch();
   const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
 
@@ -226,7 +231,7 @@ export function Live({ games, selectedLeague }: ScoresSectionProps) {
   };
 
   // Convert MLB games to the expected format
-  const convertMLBGameToGame = (rawGame: any): Game => {
+  const convertMLBGameToGame = (rawGame: any): Game | null => {
     // Map API status to our status format
     const getStatus = (
       apiStatus: string,
@@ -455,8 +460,9 @@ export function Live({ games, selectedLeague }: ScoresSectionProps) {
                 _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
                 transition="all 0.2s"
                 onClick={() => {
-                  // Handle game click - you can add navigation logic here
-                  console.log("Clicked game:", game.id);
+                  if (onGameClick) {
+                    onGameClick(game.id);
+                  }
                 }}
               >
                 <Card.Body p="4">
@@ -673,12 +679,12 @@ export function Scores({ games, selectedLeague }: ScoresSectionProps) {
   const dispatch = useAppDispatch();
   const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
 
-  // Fetch MLB scores and team profiles when MLB league is selected
+  // Fetch MLB scores and team profiles when component mounts
   useEffect(() => {
     fetchMLBScores();
     fetchMLBTeamProfiles();
     fetchMLBStadiums();
-  }, [fetchMLBScores, fetchMLBTeamProfiles, fetchMLBStadiums]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Fetch box score data for runner information
 
@@ -746,7 +752,7 @@ export function Scores({ games, selectedLeague }: ScoresSectionProps) {
   };
 
   // Convert MLB games to the expected format
-  const convertMLBGameToGame = (rawGame: any): Game => {
+  const convertMLBGameToGame = (rawGame: any): Game | null => {
     // Map API status to our status format
     const getStatus = (
       apiStatus: string,

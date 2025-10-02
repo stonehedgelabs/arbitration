@@ -32,7 +32,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   useEffect(() => {
     fetchMLBBoxScore(gameId);
     fetchMLBTeamProfiles();
-  }, [gameId, fetchMLBBoxScore, fetchMLBTeamProfiles]);
+  }, [gameId]); // Removed function dependencies to prevent loops
 
   // Show loading state while data is being fetched
   if (loading || !mlbBoxScore?.data) {

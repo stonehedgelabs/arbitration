@@ -17,7 +17,9 @@ use crate::cache::Cache;
 use crate::error::Result;
 use crate::schema::mlb::box_score::{BoxScore, BoxScoreResponse};
 use crate::schema::mlb::game_by_date::{GameByDate, GameByDateResponse};
+use crate::schema::mlb::play_by_play::PlayByPlayResponse as SchemaPlayByPlayResponse;
 use crate::schema::mlb::stadiums::{Stadium, StadiumsResponse};
+use crate::schema::twitterapi::tweet::{TwitterSearchResponse, TwitterTweet};
 // Removed unused imports
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -110,6 +112,8 @@ pub struct PlayByPlayQuery {
     pub last_timestamp: Option<String>,
     #[serde(default)]
     pub delta_minutes: Option<u32>,
+    #[serde(default)]
+    pub t: Option<i64>, // Unix timestamp as integer
 }
 
 #[derive(Debug, Deserialize)]
@@ -356,7 +360,7 @@ pub async fn headshots(
     handle_data_request(use_case_state, params, "headshots").await
 }
 
-pub async fn play_by_play(
+pub async fn play_by_play_handler(
     State(use_case_state): State<UseCaseState>,
     Query(params): Query<PlayByPlayQuery>,
 ) -> Result<Json<PlayByPlayResponse>> {
@@ -495,6 +499,12 @@ async fn handle_play_by_play_request(
     let api_url =
         play_by_play_path(league.clone(), Some(params.game_id.clone())).to_string();
 
+    tracing::info!(
+        "Constructed play-by-play API URL: {} for game_id: {}",
+        api_url,
+        params.game_id
+    );
+
     // Determine if this is a delta request or full request
     let is_delta = params.last_timestamp.is_some() || params.delta_minutes.is_some();
     let cache_key = if is_delta {
@@ -539,7 +549,7 @@ async fn handle_play_by_play_request(
 
     // Extract events and calculate counts
     let (events, new_events_count, total_events_count, last_timestamp) =
-        extract_play_by_play_events(json_data, &params.last_timestamp)?;
+        extract_play_by_play_events(json_data, &params.last_timestamp, params.t)?;
 
     Ok(Json(PlayByPlayResponse {
         league: league.to_string(),
@@ -635,6 +645,7 @@ async fn handle_scores_request(
 fn extract_play_by_play_events(
     data: serde_json::Value,
     last_timestamp: &Option<String>,
+    filter_timestamp: Option<i64>,
 ) -> Result<(serde_json::Value, usize, usize, Option<String>)> {
     // Try to extract plays/events from the response
     let binding = vec![];
@@ -682,6 +693,30 @@ fn extract_play_by_play_events(
                 }
             }
         }
+    }
+
+    // Apply timestamp filtering if provided
+    if let Some(filter_ts) = filter_timestamp {
+        new_events.retain(|play| {
+            if let Some(play_timestamp) = play
+                .get("Updated")
+                .or_else(|| play.get("updated"))
+                .or_else(|| play.get("timestamp"))
+                .and_then(|v| v.as_str())
+            {
+                // Parse the timestamp and convert to Unix timestamp
+                if let Ok(parsed_time) =
+                    chrono::DateTime::parse_from_rfc3339(play_timestamp)
+                {
+                    let play_unix_ts = parsed_time.timestamp();
+                    play_unix_ts >= filter_ts
+                } else {
+                    true // Keep the event if we can't parse the timestamp
+                }
+            } else {
+                true // Keep the event if no timestamp is found
+            }
+        });
     }
 
     let new_events_count = new_events.len();
@@ -772,132 +807,63 @@ async fn fetch_play_by_play_from_api(
         game_id
     );
 
-    // Mock play-by-play data with timestamps for delta testing
-    let mock_data = match league {
-        League::Nfl => {
-            let base_plays = vec![
-                serde_json::json!({
-                    "PlayID": 1,
-                    "Timestamp": "2025-09-04T20:20:00Z",
-                    "Quarter": 1,
-                    "TimeRemaining": "15:00",
-                    "Down": 1,
-                    "YardLine": 25,
-                    "Description": "Kickoff returned to 25 yard line",
-                    "AwayTeam": "DAL",
-                    "HomeTeam": "PHI"
-                }),
-                serde_json::json!({
-                    "PlayID": 2,
-                    "Timestamp": "2025-09-04T20:21:30Z",
-                    "Quarter": 1,
-                    "TimeRemaining": "14:30",
-                    "Down": 1,
-                    "YardLine": 25,
-                    "Description": "Pass complete for 8 yards",
-                    "AwayTeam": "DAL",
-                    "HomeTeam": "PHI"
-                }),
-                serde_json::json!({
-                    "PlayID": 3,
-                    "Timestamp": "2025-09-04T20:22:45Z",
-                    "Quarter": 1,
-                    "TimeRemaining": "13:15",
-                    "Down": 2,
-                    "YardLine": 33,
-                    "Description": "Run for 3 yards",
-                    "AwayTeam": "DAL",
-                    "HomeTeam": "PHI"
-                }),
-            ];
+    // Get API key from environment
+    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
+        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
-            if is_delta {
-                // For delta requests, simulate newer events
-                let delta_plays = vec![
-                    serde_json::json!({
-                        "PlayID": 4,
-                        "Timestamp": "2025-09-04T20:25:00Z",
-                        "Quarter": 1,
-                        "TimeRemaining": "10:00",
-                        "Down": 3,
-                        "YardLine": 36,
-                        "Description": "Pass incomplete",
-                        "AwayTeam": "DAL",
-                        "HomeTeam": "PHI"
-                    }),
-                    serde_json::json!({
-                        "PlayID": 5,
-                        "Timestamp": "2025-09-04T20:25:30Z",
-                        "Quarter": 1,
-                        "TimeRemaining": "09:30",
-                        "Down": 4,
-                        "YardLine": 36,
-                        "Description": "Punt for 45 yards",
-                        "AwayTeam": "DAL",
-                        "HomeTeam": "PHI"
-                    }),
-                ];
-                serde_json::json!({
-                    "GameID": game_id,
-                    "Plays": delta_plays
-                })
-            } else {
-                serde_json::json!({
-                    "GameID": game_id,
-                    "Plays": base_plays
-                })
-            }
-        }
-        League::Mlb => {
-            let base_plays = vec![
-                serde_json::json!({
-                    "PlayID": 1,
-                    "Timestamp": "2025-04-01T19:10:00Z",
-                    "Inning": 1,
-                    "Half": "Top",
-                    "Description": "Strikeout swinging",
-                    "AwayTeam": "NYY",
-                    "HomeTeam": "BOS"
-                }),
-                serde_json::json!({
-                    "PlayID": 2,
-                    "Timestamp": "2025-04-01T19:12:30Z",
-                    "Inning": 1,
-                    "Half": "Top",
-                    "Description": "Single to center field",
-                    "AwayTeam": "NYY",
-                    "HomeTeam": "BOS"
-                }),
-            ];
+    let client = reqwest::Client::new();
 
-            if is_delta {
-                let delta_plays = vec![serde_json::json!({
-                    "PlayID": 3,
-                    "Timestamp": "2025-04-01T19:15:00Z",
-                    "Inning": 1,
-                    "Half": "Top",
-                    "Description": "Home run to left field!",
-                    "AwayTeam": "NYY",
-                    "HomeTeam": "BOS"
-                })];
-                serde_json::json!({
-                    "GameID": game_id,
-                    "Plays": delta_plays
-                })
-            } else {
-                serde_json::json!({
-                    "GameID": game_id,
-                    "Plays": base_plays
-                })
-            }
-        }
-        _ => serde_json::json!({
-            "GameID": game_id,
-            "Plays": []
-        }),
+    tracing::info!(
+        "Making real API request to: {} for league: {} game_id: {}",
+        api_url,
+        league,
+        game_id
+    );
+
+    let response = client
+        .get(api_url)
+        .query(&[("key", &api_key)])
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to make HTTP request: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        tracing::error!("API request failed with status: {}", status);
+        return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+    }
+
+    let body = response.text().await.map_err(|e| {
+        tracing::error!("Failed to read response body: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Log the first 200 characters of the response to debug
+    let preview = if body.len() > 200 {
+        format!("{}...", &body[..200])
+    } else {
+        body.clone()
     };
 
-    Ok(serde_json::to_string(&mock_data)?)
+    tracing::info!(
+        "Successfully fetched play-by-play data from API. Response preview: {}",
+        preview
+    );
+
+    // Check if the response looks like HTML (error page)
+    if body.trim_start().starts_with("<!DOCTYPE")
+        || body.trim_start().starts_with("<html")
+    {
+        tracing::error!("API returned HTML instead of JSON. Full response: {}", body);
+        return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+    }
+
+    Ok(body)
 }
 
 async fn fetch_scores_from_api(
@@ -1421,7 +1387,135 @@ async fn fetch_stadiums_from_api(api_url: &str, league: &League) -> Result<Strin
     Ok(body)
 }
 
+// Twitter search functionality
+#[derive(Debug, Deserialize)]
+pub struct TwitterSearchQuery {
+    pub query: String,
+}
+
+pub async fn handle_twitter_search_request(
+    State(state): State<UseCaseState>,
+    Query(params): Query<TwitterSearchQuery>,
+) -> Result<Json<TwitterSearchResponse>> {
+    tracing::info!("Twitter search request for query: {}", params.query);
+
+    // Check cache first
+    let cache_key = format!("twitter_search:{}", params.query);
+    if let Ok(Some(cached_data)) = state.cache.lock().await.get(&cache_key).await {
+        if let Ok(twitter_response) =
+            serde_json::from_str::<TwitterSearchResponse>(&cached_data)
+        {
+            tracing::info!("Returning cached Twitter search result");
+            return Ok(Json(twitter_response));
+        }
+    }
+
+    let api_key = std::env::var("TWITTERAPIIO_API_KEY").map_err(|_| {
+        tracing::error!("TWITTERAPIIO_API_KEY environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let url = format!(
+        "https://api.twitterapi.io/twitter/tweet/advanced_search?query={}",
+        urlencoding::encode(&params.query)
+    );
+
+    tracing::info!("Making request to Twitter API: {}", url);
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| {
+            tracing::error!("Failed to create HTTP client: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Add a small delay to help prevent rate limiting
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+    let response = client
+        .get(&url)
+        .header("X-API-Key", &api_key)
+        .header("Content-Type", "application/json")
+        .header("User-Agent", "arbitration-app/1.0")
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to send request to Twitter API: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_body = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Failed to read error body".to_string());
+        tracing::error!(
+            "Twitter API returned error status: {} - Body: {}",
+            status,
+            error_body
+        );
+
+        // Handle specific error cases
+        match status {
+            StatusCode::TOO_MANY_REQUESTS => {
+                tracing::warn!("Twitter API rate limit exceeded");
+                return Err(StatusCode::TOO_MANY_REQUESTS.into());
+            }
+            StatusCode::UNAUTHORIZED => {
+                tracing::error!("Twitter API authentication failed - check API key");
+                return Err(StatusCode::UNAUTHORIZED.into());
+            }
+            StatusCode::BAD_REQUEST => {
+                tracing::error!(
+                    "Twitter API bad request - check query format: {}",
+                    error_body
+                );
+                return Err(StatusCode::BAD_REQUEST.into());
+            }
+            _ => {
+                tracing::error!("Twitter API unknown error: {} - {}", status, error_body);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+            }
+        }
+    }
+
+    let body = response.text().await.map_err(|e| {
+        tracing::error!("Failed to read response body: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Log the raw response for debugging
+    tracing::info!("Twitter API raw response: {}", body);
+
+    let twitter_response: TwitterSearchResponse =
+        serde_json::from_str(&body).map_err(|e| {
+            tracing::error!("Failed to parse Twitter API response: {}", e);
+            tracing::error!("Response body: {}", body);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    tracing::info!(
+        "Successfully fetched {} tweets from Twitter API",
+        twitter_response.tweets.len()
+    );
+
+    // Cache the result for 5 minutes
+    if let Ok(json_data) = serde_json::to_string(&twitter_response) {
+        let _ = state
+            .cache
+            .lock()
+            .await
+            .set_with_ttl(&cache_key, &json_data, 300)
+            .await;
+    }
+
+    Ok(Json(twitter_response))
+}
+
 // Function aliases for server routes
 pub use handle_box_score_request as box_score;
 pub use handle_game_by_date_request as game_by_date;
 pub use handle_stadiums_request as stadiums;
+pub use handle_twitter_search_request as twitter_search;

@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { motion } from "motion/react";
-import { Box, Text, HStack } from "@chakra-ui/react";
+import { Box, Text, HStack, VStack, Button } from "@chakra-ui/react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { setSelectedLeague } from "../store/slices/sportsDataSlice";
 import { Bet } from "./Bet.tsx";
-import { BoxScore } from "./BoxScore.tsx";
 import { FavoritesManager } from "./FavoritesManager.tsx";
 import { ForYouSection } from "./ForYouSection.tsx";
 import { LeagueSelector } from "./LeagueSelector.tsx";
-import { LiveGames } from "./LiveGames.tsx";
-import { LivePlayByPlay } from "./LivePlayByPlay.tsx";
 import { BottomNav } from "./BottomNav.tsx";
 import { Scores, Live } from "./Scores.tsx";
+import { PlayByPlayMLB } from "./PlayByPlayMLB.tsx";
 import { Social } from "./Social.tsx";
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import {
@@ -24,15 +24,38 @@ export function Arbitration() {
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
   );
-  const activeTab = useAppSelector((state) => state.sportsData.activeTab);
   const leagueData = useAppSelector((state) => state.sportsData.leagueData);
   const forYouFeed = useAppSelector((state) => state.sportsData.forYouFeed);
-  const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
   const favoriteTeams = useAppSelector((state) => state.favorites.teams);
-  const [currentView, setCurrentView] = useState<
-    "main" | "boxscore" | "live-playbyplay"
-  >("main");
-  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  // Router-based navigation
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { league, gameId } = useParams<{ league?: string; gameId?: string }>();
+
+  // Determine current view and league from URL
+  const currentView = gameId ? "playbyplay" : "main";
+  const currentLeague = league || selectedLeague;
+
+  // Update Redux state when URL league changes
+  useEffect(() => {
+    if (league && league !== selectedLeague) {
+      console.log("Updating selectedLeague from", selectedLeague, "to", league);
+      dispatch(setSelectedLeague(league));
+    }
+  }, [league, selectedLeague, dispatch]);
+
+  // Determine active tab from URL
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path === "/fyp") return "for-you";
+    if (path.startsWith("/scores")) return "scores";
+    if (path.startsWith("/live")) return "play-by-play";
+    if (path.startsWith("/social")) return "social";
+    if (path === "/bet") return "bet";
+    return "for-you"; // default
+  };
+
+  const activeTab = getActiveTab();
 
   // Load favorites from Redux on mount
   useEffect(() => {
@@ -51,25 +74,16 @@ export function Arbitration() {
     }
   };
 
-  // Get current league data
+  // Get current league data based on URL league
   const currentLeagueData =
-    leagueData[selectedLeague as keyof typeof leagueData];
+    leagueData[currentLeague as keyof typeof leagueData];
 
-  const handleGameClick = (_gameId: string) => {
-    // Use the first available box score for the current league
-    const leagueBoxScoreKey = `${selectedLeague}-1`;
-    setSelectedGameId(leagueBoxScoreKey);
-    setCurrentView("boxscore");
+  const handlePlayByPlayClick = (gameId: string) => {
+    navigate(`/scores/${currentLeague}/${gameId}`);
   };
 
-  const handleLiveGameClick = (gameId: string) => {
-    setSelectedGameId(gameId);
-    setCurrentView("live-playbyplay");
-  };
-
-  const handleBackToMain = () => {
-    setCurrentView("main");
-    setSelectedGameId(null);
+  const handleBackFromPlayByPlay = () => {
+    navigate(`/scores/${currentLeague}`);
   };
 
   const renderContent = () => {
@@ -86,27 +100,20 @@ export function Arbitration() {
         return (
           <Scores
             games={currentLeagueData?.games as any}
-            onGameClick={handleGameClick}
-            favoriteTeams={favoriteTeams}
-            onToggleFavorite={handleToggleFavorite}
-            selectedLeague={selectedLeague}
+            onGameClick={handlePlayByPlayClick}
+            selectedLeague={currentLeague}
           />
         );
       case "play-by-play":
         return (
           <Live
             games={currentLeagueData?.games as any}
-            selectedLeague={selectedLeague}
+            selectedLeague={currentLeague}
+            onGameClick={handlePlayByPlayClick}
           />
         );
       case "social":
-        return (
-          <Social
-            posts={currentLeagueData?.social as any}
-            favoriteTeams={favoriteTeams}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        );
+        return <Social selectedLeague={currentLeague} />;
       case "bet":
         return <Bet bettingLines={currentLeagueData?.betting as any} />;
       default:
@@ -120,12 +127,8 @@ export function Arbitration() {
     }
   };
 
-  // Show box score view if selected
-  if (
-    currentView === "boxscore" &&
-    selectedGameId &&
-    boxScoreData[selectedGameId as keyof typeof boxScoreData]
-  ) {
+  // Show play-by-play view if selected
+  if (currentView === "playbyplay" && gameId) {
     return (
       <motion.div
         initial={{ x: "100%" }}
@@ -134,39 +137,30 @@ export function Arbitration() {
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
       >
         <Box minH="100vh" bg="gray.50">
-          <BoxScore
-            game={boxScoreData[selectedGameId as keyof typeof boxScoreData]}
-            sport={selectedLeague}
-            onBack={handleBackToMain}
-          />
+          {currentLeague === "mlb" ? (
+            <PlayByPlayMLB gameId={gameId} onBack={handleBackFromPlayByPlay} />
+          ) : (
+            <Box
+              minH="100vh"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <VStack gap="4">
+                <Text color="red.500" fontSize="lg" fontWeight="semibold">
+                  Unsupported League
+                </Text>
+                <Text color="gray.600" textAlign="center">
+                  Play-by-play for {selectedLeague?.toUpperCase()} is not yet
+                  supported.
+                </Text>
+                <Button onClick={handleBackFromPlayByPlay}>Go Back</Button>
+              </VStack>
+            </Box>
+          )}
         </Box>
       </motion.div>
     );
-  }
-
-  // Show live play-by-play view if selected
-  if (currentView === "live-playbyplay" && selectedGameId) {
-    const selectedGame = currentLeagueData?.games.find(
-      (game: any) => game.id === selectedGameId,
-    );
-    if (selectedGame) {
-      return (
-        <motion.div
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        >
-          <Box minH="100vh" bg="gray.50">
-            <LivePlayByPlay
-              game={selectedGame}
-              plays={currentLeagueData.plays}
-              onBack={handleBackToMain}
-            />
-          </Box>
-        </motion.div>
-      );
-    }
   }
 
   return (

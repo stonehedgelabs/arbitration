@@ -1,15 +1,47 @@
 import { User, Trophy, Play, Users, DollarSign } from "lucide-react";
 import { Box, HStack, VStack, Text } from "@chakra-ui/react";
-import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
-import { setActiveTab } from "../store/slices/sportsDataSlice.ts";
+import { useAppSelector } from "../store/hooks.ts";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export function BottomNav() {
-  const dispatch = useAppDispatch();
-  const activeTab = useAppSelector((state) => state.sportsData.activeTab);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const selectedLeague = useAppSelector(
+    (state) => state.sportsData.selectedLeague,
+  );
 
   const handleTabChange = (tabId: string) => {
-    dispatch(setActiveTab(tabId));
+    switch (tabId) {
+      case "for-you":
+        navigate("/fyp");
+        break;
+      case "scores":
+        navigate(`/scores/${selectedLeague}`);
+        break;
+      case "play-by-play":
+        navigate(`/live/${selectedLeague}`);
+        break;
+      case "social":
+        navigate(`/social/${selectedLeague}`);
+        break;
+      case "bet":
+        navigate("/bet");
+        break;
+    }
   };
+
+  // Determine active tab from current location
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path === "/fyp") return "for-you";
+    if (path.startsWith("/scores")) return "scores";
+    if (path.startsWith("/live")) return "play-by-play";
+    if (path.startsWith("/social")) return "social";
+    if (path === "/bet") return "bet";
+    return "for-you"; // default
+  };
+
+  const activeTab = getActiveTab();
   const tabs = [
     { id: "for-you", label: "For You", icon: User },
     { id: "scores", label: "Scores", icon: Trophy },

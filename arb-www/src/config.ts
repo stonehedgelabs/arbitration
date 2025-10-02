@@ -3,6 +3,13 @@
  */
 
 /**
+ * Environment Variables
+ */
+export const ENV = {
+  TWITTERAPIIO_API_KEY: import.meta.env.VITE_TWITTERAPIIO_API_KEY,
+} as const;
+
+/**
  * API Configuration
  */
 export const API_CONFIG = {
@@ -42,6 +49,23 @@ export const SPORTS_CONFIG = {
 export const CACHE_CONFIG = {
   ttl: 5 * 60 * 1000, // 5 minutes in milliseconds
   maxRetries: 3,
+} as const;
+
+/**
+ * Play-by-Play Configuration
+ */
+export const PLAY_BY_PLAY_CONFIG = {
+  // Refresh interval in milliseconds
+  refreshInterval: 60000, // 1 minute
+  
+  // Maximum number of events to display
+  maxEventsDisplay: 100,
+  
+  // Whether to auto-scroll to newest events
+  autoScrollToTop: true,
+  
+  // Supported leagues for play-by-play
+  supportedLeagues: ['mlb'] as const,
 } as const;
 
 /**
