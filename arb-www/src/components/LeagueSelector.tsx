@@ -21,18 +21,18 @@ export function LeagueSelector() {
   };
   const getLeagueColors = (isSelected: boolean) => {
     if (isSelected) {
-      // Active state - dark background with light text
+      // Active state - red background with white text
       return {
-        bg: "gray.600",
-        border: "gray.600",
+        bg: "red.500",
+        border: "red.500",
         text: "white",
       };
     } else {
-      // Default state - white background with dark outline and text
+      // Default state - red outline with red text
       return {
         bg: "white",
-        border: "gray.600",
-        text: "gray.600",
+        border: "red.500",
+        text: "red.500",
       };
     }
   };
@@ -61,7 +61,7 @@ export function LeagueSelector() {
               color={colors.text}
               borderWidth="1px"
               _hover={{
-                bg: isSelected ? colors.bg : "gray.50",
+                bg: isSelected ? colors.bg : "red.50",
                 transform: "scale(1.02)",
               }}
               _active={{

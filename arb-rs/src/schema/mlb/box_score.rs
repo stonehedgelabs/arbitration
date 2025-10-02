@@ -35,7 +35,7 @@ pub struct Game {
     #[serde(rename = "SeasonType")]
     pub season_type: i32,
     #[serde(rename = "Status")]
-    pub status: String,
+    pub status: Option<String>,
     #[serde(rename = "Day")]
     pub day: String,
     #[serde(rename = "DateTime")]
@@ -55,21 +55,21 @@ pub struct Game {
     #[serde(rename = "Channel")]
     pub channel: Option<String>,
     #[serde(rename = "Inning")]
-    pub inning: i32,
+    pub inning: Option<i32>,
     #[serde(rename = "InningHalf")]
-    pub inning_half: String,
+    pub inning_half: Option<String>,
     #[serde(rename = "AwayTeamRuns")]
-    pub away_team_runs: i32,
+    pub away_team_runs: Option<i32>,
     #[serde(rename = "HomeTeamRuns")]
-    pub home_team_runs: i32,
+    pub home_team_runs: Option<i32>,
     #[serde(rename = "AwayTeamHits")]
-    pub away_team_hits: i32,
+    pub away_team_hits: Option<i32>,
     #[serde(rename = "HomeTeamHits")]
-    pub home_team_hits: i32,
+    pub home_team_hits: Option<i32>,
     #[serde(rename = "AwayTeamErrors")]
-    pub away_team_errors: i32,
+    pub away_team_errors: Option<i32>,
     #[serde(rename = "HomeTeamErrors")]
-    pub home_team_errors: i32,
+    pub home_team_errors: Option<i32>,
     #[serde(rename = "WinningPitcherID")]
     pub winning_pitcher_id: Option<i64>,
     #[serde(rename = "LosingPitcherID")]
@@ -83,11 +83,11 @@ pub struct Game {
     #[serde(rename = "HomeTeamProbablePitcherID")]
     pub home_team_probable_pitcher_id: Option<i64>,
     #[serde(rename = "Outs")]
-    pub outs: i32,
+    pub outs: Option<i32>,
     #[serde(rename = "Balls")]
-    pub balls: i32,
+    pub balls: Option<i32>,
     #[serde(rename = "Strikes")]
-    pub strikes: i32,
+    pub strikes: Option<i32>,
     #[serde(rename = "CurrentPitcherID")]
     pub current_pitcher_id: Option<i64>,
     #[serde(rename = "CurrentHitterID")]
@@ -123,11 +123,11 @@ pub struct Game {
     #[serde(rename = "RescheduledFromGameID")]
     pub rescheduled_from_game_id: Option<i64>,
     #[serde(rename = "RunnerOnFirst")]
-    pub runner_on_first: bool,
+    pub runner_on_first: Option<bool>,
     #[serde(rename = "RunnerOnSecond")]
-    pub runner_on_second: bool,
+    pub runner_on_second: Option<bool>,
     #[serde(rename = "RunnerOnThird")]
-    pub runner_on_third: bool,
+    pub runner_on_third: Option<bool>,
     #[serde(rename = "AwayTeamStartingPitcher")]
     pub away_team_starting_pitcher: Option<String>,
     #[serde(rename = "HomeTeamStartingPitcher")]
@@ -161,9 +161,9 @@ pub struct Game {
     #[serde(rename = "LastPlay")]
     pub last_play: Option<String>,
     #[serde(rename = "IsClosed")]
-    pub is_closed: bool,
+    pub is_closed: Option<bool>,
     #[serde(rename = "Updated")]
-    pub updated: String,
+    pub updated: Option<String>,
     #[serde(rename = "GameEndDateTime")]
     pub game_end_date_time: Option<String>,
     #[serde(rename = "HomeRotationNumber")]
@@ -171,7 +171,7 @@ pub struct Game {
     #[serde(rename = "AwayRotationNumber")]
     pub away_rotation_number: Option<i32>,
     #[serde(rename = "NeutralVenue")]
-    pub neutral_venue: bool,
+    pub neutral_venue: Option<bool>,
     #[serde(rename = "InningDescription")]
     pub inning_description: Option<String>,
     #[serde(rename = "OverPayout")]
@@ -179,11 +179,11 @@ pub struct Game {
     #[serde(rename = "UnderPayout")]
     pub under_payout: Option<i32>,
     #[serde(rename = "DateTimeUTC")]
-    pub date_time_utc: String,
+    pub date_time_utc: Option<String>,
     #[serde(rename = "HomeTeamOpener")]
-    pub home_team_opener: bool,
+    pub home_team_opener: Option<bool>,
     #[serde(rename = "AwayTeamOpener")]
-    pub away_team_opener: bool,
+    pub away_team_opener: Option<bool>,
     #[serde(rename = "SuspensionResumeDay")]
     pub suspension_resume_day: Option<String>,
     #[serde(rename = "SuspensionResumeDateTime")]
@@ -205,9 +205,9 @@ pub struct TeamGame {
     #[serde(rename = "Season")]
     pub season: i32,
     #[serde(rename = "Name")]
-    pub name: String,
+    pub name: Option<String>,
     #[serde(rename = "Team")]
-    pub team: String,
+    pub team: Option<String>,
     #[serde(rename = "GlobalTeamID")]
     pub global_team_id: i64,
     #[serde(rename = "GameID")]
@@ -223,7 +223,7 @@ pub struct TeamGame {
     #[serde(rename = "HomeOrAway")]
     pub home_or_away: String,
     #[serde(rename = "IsGameOver")]
-    pub is_game_over: bool,
+    pub is_game_over: Option<bool>,
     #[serde(rename = "GlobalGameID")]
     pub global_game_id: i64,
     #[serde(rename = "GlobalOpponentID")]
@@ -231,209 +231,209 @@ pub struct TeamGame {
     #[serde(rename = "Updated")]
     pub updated: String,
     #[serde(rename = "Games")]
-    pub games: f64,
+    pub games: Option<f64>,
     #[serde(rename = "FantasyPoints")]
-    pub fantasy_points: f64,
+    pub fantasy_points: Option<f64>,
     #[serde(rename = "AtBats")]
-    pub at_bats: f64,
+    pub at_bats: Option<f64>,
     #[serde(rename = "Runs")]
-    pub runs: f64,
+    pub runs: Option<f64>,
     #[serde(rename = "Hits")]
-    pub hits: f64,
+    pub hits: Option<f64>,
     #[serde(rename = "Singles")]
-    pub singles: f64,
+    pub singles: Option<f64>,
     #[serde(rename = "Doubles")]
-    pub doubles: f64,
+    pub doubles: Option<f64>,
     #[serde(rename = "Triples")]
-    pub triples: f64,
+    pub triples: Option<f64>,
     #[serde(rename = "HomeRuns")]
-    pub home_runs: f64,
+    pub home_runs: Option<f64>,
     #[serde(rename = "RunsBattedIn")]
-    pub runs_batted_in: f64,
+    pub runs_batted_in: Option<f64>,
     #[serde(rename = "BattingAverage")]
-    pub batting_average: f64,
+    pub batting_average: Option<f64>,
     #[serde(rename = "Outs")]
-    pub outs: f64,
+    pub outs: Option<f64>,
     #[serde(rename = "Strikeouts")]
-    pub strikeouts: f64,
+    pub strikeouts: Option<f64>,
     #[serde(rename = "Walks")]
-    pub walks: f64,
+    pub walks: Option<f64>,
     #[serde(rename = "HitByPitch")]
-    pub hit_by_pitch: f64,
+    pub hit_by_pitch: Option<f64>,
     #[serde(rename = "Sacrifices")]
-    pub sacrifices: f64,
+    pub sacrifices: Option<f64>,
     #[serde(rename = "SacrificeFlies")]
-    pub sacrifice_flies: f64,
+    pub sacrifice_flies: Option<f64>,
     #[serde(rename = "GroundIntoDoublePlay")]
-    pub ground_into_double_play: f64,
+    pub ground_into_double_play: Option<f64>,
     #[serde(rename = "StolenBases")]
-    pub stolen_bases: f64,
+    pub stolen_bases: Option<f64>,
     #[serde(rename = "CaughtStealing")]
-    pub caught_stealing: f64,
+    pub caught_stealing: Option<f64>,
     #[serde(rename = "PitchesSeen")]
-    pub pitches_seen: f64,
+    pub pitches_seen: Option<f64>,
     #[serde(rename = "OnBasePercentage")]
-    pub on_base_percentage: f64,
+    pub on_base_percentage: Option<f64>,
     #[serde(rename = "SluggingPercentage")]
-    pub slugging_percentage: f64,
+    pub slugging_percentage: Option<f64>,
     #[serde(rename = "OnBasePlusSlugging")]
-    pub on_base_plus_slugging: f64,
+    pub on_base_plus_slugging: Option<f64>,
     #[serde(rename = "Errors")]
-    pub errors: f64,
+    pub errors: Option<f64>,
     #[serde(rename = "Wins")]
-    pub wins: f64,
+    pub wins: Option<f64>,
     #[serde(rename = "Losses")]
-    pub losses: f64,
+    pub losses: Option<f64>,
     #[serde(rename = "Saves")]
-    pub saves: f64,
+    pub saves: Option<f64>,
     #[serde(rename = "InningsPitchedDecimal")]
-    pub innings_pitched_decimal: f64,
+    pub innings_pitched_decimal: Option<f64>,
     #[serde(rename = "TotalOutsPitched")]
-    pub total_outs_pitched: f64,
+    pub total_outs_pitched: Option<f64>,
     #[serde(rename = "InningsPitchedFull")]
-    pub innings_pitched_full: f64,
+    pub innings_pitched_full: Option<f64>,
     #[serde(rename = "InningsPitchedOuts")]
-    pub innings_pitched_outs: f64,
+    pub innings_pitched_outs: Option<f64>,
     #[serde(rename = "EarnedRunAverage")]
-    pub earned_run_average: f64,
+    pub earned_run_average: Option<f64>,
     #[serde(rename = "PitchingHits")]
-    pub pitching_hits: f64,
+    pub pitching_hits: Option<f64>,
     #[serde(rename = "PitchingRuns")]
-    pub pitching_runs: f64,
+    pub pitching_runs: Option<f64>,
     #[serde(rename = "PitchingEarnedRuns")]
-    pub pitching_earned_runs: f64,
+    pub pitching_earned_runs: Option<f64>,
     #[serde(rename = "PitchingWalks")]
-    pub pitching_walks: f64,
+    pub pitching_walks: Option<f64>,
     #[serde(rename = "PitchingStrikeouts")]
-    pub pitching_strikeouts: f64,
+    pub pitching_strikeouts: Option<f64>,
     #[serde(rename = "PitchingHomeRuns")]
-    pub pitching_home_runs: f64,
+    pub pitching_home_runs: Option<f64>,
     #[serde(rename = "PitchesThrown")]
-    pub pitches_thrown: f64,
+    pub pitches_thrown: Option<f64>,
     #[serde(rename = "PitchesThrownStrikes")]
-    pub pitches_thrown_strikes: f64,
+    pub pitches_thrown_strikes: Option<f64>,
     #[serde(rename = "WalksHitsPerInningsPitched")]
-    pub walks_hits_per_innings_pitched: f64,
+    pub walks_hits_per_innings_pitched: Option<f64>,
     #[serde(rename = "PitchingBattingAverageAgainst")]
-    pub pitching_batting_average_against: f64,
+    pub pitching_batting_average_against: Option<f64>,
     #[serde(rename = "GrandSlams")]
-    pub grand_slams: f64,
+    pub grand_slams: Option<f64>,
     #[serde(rename = "FantasyPointsFanDuel")]
-    pub fantasy_points_fan_duel: f64,
+    pub fantasy_points_fan_duel: Option<f64>,
     #[serde(rename = "FantasyPointsDraftKings")]
-    pub fantasy_points_draft_kings: f64,
+    pub fantasy_points_draft_kings: Option<f64>,
     #[serde(rename = "FantasyPointsYahoo")]
-    pub fantasy_points_yahoo: f64,
+    pub fantasy_points_yahoo: Option<f64>,
     #[serde(rename = "PlateAppearances")]
-    pub plate_appearances: f64,
+    pub plate_appearances: Option<f64>,
     #[serde(rename = "TotalBases")]
-    pub total_bases: f64,
+    pub total_bases: Option<f64>,
     #[serde(rename = "FlyOuts")]
-    pub fly_outs: f64,
+    pub fly_outs: Option<f64>,
     #[serde(rename = "GroundOuts")]
-    pub ground_outs: f64,
+    pub ground_outs: Option<f64>,
     #[serde(rename = "LineOuts")]
-    pub line_outs: f64,
+    pub line_outs: Option<f64>,
     #[serde(rename = "PopOuts")]
-    pub pop_outs: f64,
+    pub pop_outs: Option<f64>,
     #[serde(rename = "IntentionalWalks")]
-    pub intentional_walks: f64,
+    pub intentional_walks: Option<f64>,
     #[serde(rename = "ReachedOnError")]
-    pub reached_on_error: f64,
+    pub reached_on_error: Option<f64>,
     #[serde(rename = "BallsInPlay")]
-    pub balls_in_play: f64,
+    pub balls_in_play: Option<f64>,
     #[serde(rename = "BattingAverageOnBallsInPlay")]
-    pub batting_average_on_balls_in_play: f64,
+    pub batting_average_on_balls_in_play: Option<f64>,
     #[serde(rename = "WeightedOnBasePercentage")]
-    pub weighted_on_base_percentage: f64,
+    pub weighted_on_base_percentage: Option<f64>,
     #[serde(rename = "PitchingSingles")]
-    pub pitching_singles: f64,
+    pub pitching_singles: Option<f64>,
     #[serde(rename = "PitchingDoubles")]
-    pub pitching_doubles: f64,
+    pub pitching_doubles: Option<f64>,
     #[serde(rename = "PitchingTriples")]
-    pub pitching_triples: f64,
+    pub pitching_triples: Option<f64>,
     #[serde(rename = "PitchingGrandSlams")]
-    pub pitching_grand_slams: f64,
+    pub pitching_grand_slams: Option<f64>,
     #[serde(rename = "PitchingHitByPitch")]
-    pub pitching_hit_by_pitch: f64,
+    pub pitching_hit_by_pitch: Option<f64>,
     #[serde(rename = "PitchingSacrifices")]
-    pub pitching_sacrifices: f64,
+    pub pitching_sacrifices: Option<f64>,
     #[serde(rename = "PitchingSacrificeFlies")]
-    pub pitching_sacrifice_flies: f64,
+    pub pitching_sacrifice_flies: Option<f64>,
     #[serde(rename = "PitchingGroundIntoDoublePlay")]
-    pub pitching_ground_into_double_play: f64,
+    pub pitching_ground_into_double_play: Option<f64>,
     #[serde(rename = "PitchingCompleteGames")]
-    pub pitching_complete_games: f64,
+    pub pitching_complete_games: Option<f64>,
     #[serde(rename = "PitchingShutOuts")]
-    pub pitching_shut_outs: f64,
+    pub pitching_shut_outs: Option<f64>,
     #[serde(rename = "PitchingNoHitters")]
-    pub pitching_no_hitters: f64,
+    pub pitching_no_hitters: Option<f64>,
     #[serde(rename = "PitchingPerfectGames")]
-    pub pitching_perfect_games: f64,
+    pub pitching_perfect_games: Option<f64>,
     #[serde(rename = "PitchingPlateAppearances")]
-    pub pitching_plate_appearances: f64,
+    pub pitching_plate_appearances: Option<f64>,
     #[serde(rename = "PitchingTotalBases")]
-    pub pitching_total_bases: f64,
+    pub pitching_total_bases: Option<f64>,
     #[serde(rename = "PitchingFlyOuts")]
-    pub pitching_fly_outs: f64,
+    pub pitching_fly_outs: Option<f64>,
     #[serde(rename = "PitchingGroundOuts")]
-    pub pitching_ground_outs: f64,
+    pub pitching_ground_outs: Option<f64>,
     #[serde(rename = "PitchingLineOuts")]
-    pub pitching_line_outs: f64,
+    pub pitching_line_outs: Option<f64>,
     #[serde(rename = "PitchingPopOuts")]
-    pub pitching_pop_outs: f64,
+    pub pitching_pop_outs: Option<f64>,
     #[serde(rename = "PitchingIntentionalWalks")]
-    pub pitching_intentional_walks: f64,
+    pub pitching_intentional_walks: Option<f64>,
     #[serde(rename = "PitchingReachedOnError")]
-    pub pitching_reached_on_error: f64,
+    pub pitching_reached_on_error: Option<f64>,
     #[serde(rename = "PitchingCatchersInterference")]
-    pub pitching_catchers_interference: f64,
+    pub pitching_catchers_interference: Option<f64>,
     #[serde(rename = "PitchingBallsInPlay")]
-    pub pitching_balls_in_play: f64,
+    pub pitching_balls_in_play: Option<f64>,
     #[serde(rename = "PitchingOnBasePercentage")]
-    pub pitching_on_base_percentage: f64,
+    pub pitching_on_base_percentage: Option<f64>,
     #[serde(rename = "PitchingSluggingPercentage")]
-    pub pitching_slugging_percentage: f64,
+    pub pitching_slugging_percentage: Option<f64>,
     #[serde(rename = "PitchingOnBasePlusSlugging")]
-    pub pitching_on_base_plus_slugging: f64,
+    pub pitching_on_base_plus_slugging: Option<f64>,
     #[serde(rename = "PitchingStrikeoutsPerNineInnings")]
-    pub pitching_strikeouts_per_nine_innings: f64,
+    pub pitching_strikeouts_per_nine_innings: Option<f64>,
     #[serde(rename = "PitchingWalksPerNineInnings")]
-    pub pitching_walks_per_nine_innings: f64,
+    pub pitching_walks_per_nine_innings: Option<f64>,
     #[serde(rename = "PitchingBattingAverageOnBallsInPlay")]
-    pub pitching_batting_average_on_balls_in_play: f64,
+    pub pitching_batting_average_on_balls_in_play: Option<f64>,
     #[serde(rename = "PitchingWeightedOnBasePercentage")]
-    pub pitching_weighted_on_base_percentage: f64,
+    pub pitching_weighted_on_base_percentage: Option<f64>,
     #[serde(rename = "DoublePlays")]
-    pub double_plays: f64,
+    pub double_plays: Option<f64>,
     #[serde(rename = "PitchingDoublePlays")]
-    pub pitching_double_plays: f64,
+    pub pitching_double_plays: Option<f64>,
     #[serde(rename = "BattingOrderConfirmed")]
     pub batting_order_confirmed: Option<bool>,
     #[serde(rename = "IsolatedPower")]
-    pub isolated_power: f64,
+    pub isolated_power: Option<f64>,
     #[serde(rename = "FieldingIndependentPitching")]
-    pub fielding_independent_pitching: f64,
+    pub fielding_independent_pitching: Option<f64>,
     #[serde(rename = "PitchingQualityStarts")]
-    pub pitching_quality_starts: f64,
+    pub pitching_quality_starts: Option<f64>,
     #[serde(rename = "PitchingInningStarted")]
     pub pitching_inning_started: Option<i32>,
     #[serde(rename = "LeftOnBase")]
-    pub left_on_base: f64,
+    pub left_on_base: Option<f64>,
     #[serde(rename = "PitchingHolds")]
-    pub pitching_holds: f64,
+    pub pitching_holds: Option<f64>,
     #[serde(rename = "PitchingBlownSaves")]
-    pub pitching_blown_saves: f64,
+    pub pitching_blown_saves: Option<f64>,
     #[serde(rename = "SubstituteBattingOrder")]
     pub substitute_batting_order: Option<i32>,
     #[serde(rename = "SubstituteBattingOrderSequence")]
     pub substitute_batting_order_sequence: Option<i32>,
     #[serde(rename = "FantasyPointsFantasyDraft")]
-    pub fantasy_points_fantasy_draft: f64,
+    pub fantasy_points_fantasy_draft: Option<f64>,
     #[serde(rename = "FantasyPointsBatting")]
-    pub fantasy_points_batting: f64,
+    pub fantasy_points_batting: Option<f64>,
     #[serde(rename = "FantasyPointsPitching")]
-    pub fantasy_points_pitching: f64,
+    pub fantasy_points_pitching: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -449,13 +449,13 @@ pub struct PlayerGame {
     #[serde(rename = "Season")]
     pub season: i32,
     #[serde(rename = "Name")]
-    pub name: String,
+    pub name: Option<String>,
     #[serde(rename = "Team")]
-    pub team: String,
+    pub team: Option<String>,
     #[serde(rename = "Position")]
-    pub position: String,
+    pub position: Option<String>,
     #[serde(rename = "PositionCategory")]
-    pub position_category: String,
+    pub position_category: Option<String>,
     #[serde(rename = "Started")]
     pub started: i32,
     #[serde(rename = "BattingOrder")]
@@ -505,7 +505,7 @@ pub struct PlayerGame {
     #[serde(rename = "HomeOrAway")]
     pub home_or_away: String,
     #[serde(rename = "IsGameOver")]
-    pub is_game_over: bool,
+    pub is_game_over: Option<bool>,
     #[serde(rename = "GlobalGameID")]
     pub global_game_id: i64,
     #[serde(rename = "GlobalOpponentID")]
@@ -513,209 +513,209 @@ pub struct PlayerGame {
     #[serde(rename = "Updated")]
     pub updated: String,
     #[serde(rename = "Games")]
-    pub games: f64,
+    pub games: Option<f64>,
     #[serde(rename = "FantasyPoints")]
-    pub fantasy_points: f64,
+    pub fantasy_points: Option<f64>,
     #[serde(rename = "AtBats")]
-    pub at_bats: f64,
+    pub at_bats: Option<f64>,
     #[serde(rename = "Runs")]
-    pub runs: f64,
+    pub runs: Option<f64>,
     #[serde(rename = "Hits")]
-    pub hits: f64,
+    pub hits: Option<f64>,
     #[serde(rename = "Singles")]
-    pub singles: f64,
+    pub singles: Option<f64>,
     #[serde(rename = "Doubles")]
-    pub doubles: f64,
+    pub doubles: Option<f64>,
     #[serde(rename = "Triples")]
-    pub triples: f64,
+    pub triples: Option<f64>,
     #[serde(rename = "HomeRuns")]
-    pub home_runs: f64,
+    pub home_runs: Option<f64>,
     #[serde(rename = "RunsBattedIn")]
-    pub runs_batted_in: f64,
+    pub runs_batted_in: Option<f64>,
     #[serde(rename = "BattingAverage")]
-    pub batting_average: f64,
+    pub batting_average: Option<f64>,
     #[serde(rename = "Outs")]
-    pub outs: f64,
+    pub outs: Option<f64>,
     #[serde(rename = "Strikeouts")]
-    pub strikeouts: f64,
+    pub strikeouts: Option<f64>,
     #[serde(rename = "Walks")]
-    pub walks: f64,
+    pub walks: Option<f64>,
     #[serde(rename = "HitByPitch")]
-    pub hit_by_pitch: f64,
+    pub hit_by_pitch: Option<f64>,
     #[serde(rename = "Sacrifices")]
-    pub sacrifices: f64,
+    pub sacrifices: Option<f64>,
     #[serde(rename = "SacrificeFlies")]
-    pub sacrifice_flies: f64,
+    pub sacrifice_flies: Option<f64>,
     #[serde(rename = "GroundIntoDoublePlay")]
-    pub ground_into_double_play: f64,
+    pub ground_into_double_play: Option<f64>,
     #[serde(rename = "StolenBases")]
-    pub stolen_bases: f64,
+    pub stolen_bases: Option<f64>,
     #[serde(rename = "CaughtStealing")]
-    pub caught_stealing: f64,
+    pub caught_stealing: Option<f64>,
     #[serde(rename = "PitchesSeen")]
-    pub pitches_seen: f64,
+    pub pitches_seen: Option<f64>,
     #[serde(rename = "OnBasePercentage")]
-    pub on_base_percentage: f64,
+    pub on_base_percentage: Option<f64>,
     #[serde(rename = "SluggingPercentage")]
-    pub slugging_percentage: f64,
+    pub slugging_percentage: Option<f64>,
     #[serde(rename = "OnBasePlusSlugging")]
-    pub on_base_plus_slugging: f64,
+    pub on_base_plus_slugging: Option<f64>,
     #[serde(rename = "Errors")]
-    pub errors: f64,
+    pub errors: Option<f64>,
     #[serde(rename = "Wins")]
-    pub wins: f64,
+    pub wins: Option<f64>,
     #[serde(rename = "Losses")]
-    pub losses: f64,
+    pub losses: Option<f64>,
     #[serde(rename = "Saves")]
-    pub saves: f64,
+    pub saves: Option<f64>,
     #[serde(rename = "InningsPitchedDecimal")]
-    pub innings_pitched_decimal: f64,
+    pub innings_pitched_decimal: Option<f64>,
     #[serde(rename = "TotalOutsPitched")]
-    pub total_outs_pitched: f64,
+    pub total_outs_pitched: Option<f64>,
     #[serde(rename = "InningsPitchedFull")]
-    pub innings_pitched_full: f64,
+    pub innings_pitched_full: Option<f64>,
     #[serde(rename = "InningsPitchedOuts")]
-    pub innings_pitched_outs: f64,
+    pub innings_pitched_outs: Option<f64>,
     #[serde(rename = "EarnedRunAverage")]
-    pub earned_run_average: f64,
+    pub earned_run_average: Option<f64>,
     #[serde(rename = "PitchingHits")]
-    pub pitching_hits: f64,
+    pub pitching_hits: Option<f64>,
     #[serde(rename = "PitchingRuns")]
-    pub pitching_runs: f64,
+    pub pitching_runs: Option<f64>,
     #[serde(rename = "PitchingEarnedRuns")]
-    pub pitching_earned_runs: f64,
+    pub pitching_earned_runs: Option<f64>,
     #[serde(rename = "PitchingWalks")]
-    pub pitching_walks: f64,
+    pub pitching_walks: Option<f64>,
     #[serde(rename = "PitchingStrikeouts")]
-    pub pitching_strikeouts: f64,
+    pub pitching_strikeouts: Option<f64>,
     #[serde(rename = "PitchingHomeRuns")]
-    pub pitching_home_runs: f64,
+    pub pitching_home_runs: Option<f64>,
     #[serde(rename = "PitchesThrown")]
-    pub pitches_thrown: f64,
+    pub pitches_thrown: Option<f64>,
     #[serde(rename = "PitchesThrownStrikes")]
-    pub pitches_thrown_strikes: f64,
+    pub pitches_thrown_strikes: Option<f64>,
     #[serde(rename = "WalksHitsPerInningsPitched")]
-    pub walks_hits_per_innings_pitched: f64,
+    pub walks_hits_per_innings_pitched: Option<f64>,
     #[serde(rename = "PitchingBattingAverageAgainst")]
-    pub pitching_batting_average_against: f64,
+    pub pitching_batting_average_against: Option<f64>,
     #[serde(rename = "GrandSlams")]
-    pub grand_slams: f64,
+    pub grand_slams: Option<f64>,
     #[serde(rename = "FantasyPointsFanDuel")]
-    pub fantasy_points_fan_duel: f64,
+    pub fantasy_points_fan_duel: Option<f64>,
     #[serde(rename = "FantasyPointsDraftKings")]
-    pub fantasy_points_draft_kings: f64,
+    pub fantasy_points_draft_kings: Option<f64>,
     #[serde(rename = "FantasyPointsYahoo")]
-    pub fantasy_points_yahoo: f64,
+    pub fantasy_points_yahoo: Option<f64>,
     #[serde(rename = "PlateAppearances")]
-    pub plate_appearances: f64,
+    pub plate_appearances: Option<f64>,
     #[serde(rename = "TotalBases")]
-    pub total_bases: f64,
+    pub total_bases: Option<f64>,
     #[serde(rename = "FlyOuts")]
-    pub fly_outs: f64,
+    pub fly_outs: Option<f64>,
     #[serde(rename = "GroundOuts")]
-    pub ground_outs: f64,
+    pub ground_outs: Option<f64>,
     #[serde(rename = "LineOuts")]
-    pub line_outs: f64,
+    pub line_outs: Option<f64>,
     #[serde(rename = "PopOuts")]
-    pub pop_outs: f64,
+    pub pop_outs: Option<f64>,
     #[serde(rename = "IntentionalWalks")]
-    pub intentional_walks: f64,
+    pub intentional_walks: Option<f64>,
     #[serde(rename = "ReachedOnError")]
-    pub reached_on_error: f64,
+    pub reached_on_error: Option<f64>,
     #[serde(rename = "BallsInPlay")]
-    pub balls_in_play: f64,
+    pub balls_in_play: Option<f64>,
     #[serde(rename = "BattingAverageOnBallsInPlay")]
-    pub batting_average_on_balls_in_play: f64,
+    pub batting_average_on_balls_in_play: Option<f64>,
     #[serde(rename = "WeightedOnBasePercentage")]
-    pub weighted_on_base_percentage: f64,
+    pub weighted_on_base_percentage: Option<f64>,
     #[serde(rename = "PitchingSingles")]
-    pub pitching_singles: f64,
+    pub pitching_singles: Option<f64>,
     #[serde(rename = "PitchingDoubles")]
-    pub pitching_doubles: f64,
+    pub pitching_doubles: Option<f64>,
     #[serde(rename = "PitchingTriples")]
-    pub pitching_triples: f64,
+    pub pitching_triples: Option<f64>,
     #[serde(rename = "PitchingGrandSlams")]
-    pub pitching_grand_slams: f64,
+    pub pitching_grand_slams: Option<f64>,
     #[serde(rename = "PitchingHitByPitch")]
-    pub pitching_hit_by_pitch: f64,
+    pub pitching_hit_by_pitch: Option<f64>,
     #[serde(rename = "PitchingSacrifices")]
-    pub pitching_sacrifices: f64,
+    pub pitching_sacrifices: Option<f64>,
     #[serde(rename = "PitchingSacrificeFlies")]
-    pub pitching_sacrifice_flies: f64,
+    pub pitching_sacrifice_flies: Option<f64>,
     #[serde(rename = "PitchingGroundIntoDoublePlay")]
-    pub pitching_ground_into_double_play: f64,
+    pub pitching_ground_into_double_play: Option<f64>,
     #[serde(rename = "PitchingCompleteGames")]
-    pub pitching_complete_games: f64,
+    pub pitching_complete_games: Option<f64>,
     #[serde(rename = "PitchingShutOuts")]
-    pub pitching_shut_outs: f64,
+    pub pitching_shut_outs: Option<f64>,
     #[serde(rename = "PitchingNoHitters")]
-    pub pitching_no_hitters: f64,
+    pub pitching_no_hitters: Option<f64>,
     #[serde(rename = "PitchingPerfectGames")]
-    pub pitching_perfect_games: f64,
+    pub pitching_perfect_games: Option<f64>,
     #[serde(rename = "PitchingPlateAppearances")]
-    pub pitching_plate_appearances: f64,
+    pub pitching_plate_appearances: Option<f64>,
     #[serde(rename = "PitchingTotalBases")]
-    pub pitching_total_bases: f64,
+    pub pitching_total_bases: Option<f64>,
     #[serde(rename = "PitchingFlyOuts")]
-    pub pitching_fly_outs: f64,
+    pub pitching_fly_outs: Option<f64>,
     #[serde(rename = "PitchingGroundOuts")]
-    pub pitching_ground_outs: f64,
+    pub pitching_ground_outs: Option<f64>,
     #[serde(rename = "PitchingLineOuts")]
-    pub pitching_line_outs: f64,
+    pub pitching_line_outs: Option<f64>,
     #[serde(rename = "PitchingPopOuts")]
-    pub pitching_pop_outs: f64,
+    pub pitching_pop_outs: Option<f64>,
     #[serde(rename = "PitchingIntentionalWalks")]
-    pub pitching_intentional_walks: f64,
+    pub pitching_intentional_walks: Option<f64>,
     #[serde(rename = "PitchingReachedOnError")]
-    pub pitching_reached_on_error: f64,
+    pub pitching_reached_on_error: Option<f64>,
     #[serde(rename = "PitchingCatchersInterference")]
-    pub pitching_catchers_interference: f64,
+    pub pitching_catchers_interference: Option<f64>,
     #[serde(rename = "PitchingBallsInPlay")]
-    pub pitching_balls_in_play: f64,
+    pub pitching_balls_in_play: Option<f64>,
     #[serde(rename = "PitchingOnBasePercentage")]
-    pub pitching_on_base_percentage: f64,
+    pub pitching_on_base_percentage: Option<f64>,
     #[serde(rename = "PitchingSluggingPercentage")]
-    pub pitching_slugging_percentage: f64,
+    pub pitching_slugging_percentage: Option<f64>,
     #[serde(rename = "PitchingOnBasePlusSlugging")]
-    pub pitching_on_base_plus_slugging: f64,
+    pub pitching_on_base_plus_slugging: Option<f64>,
     #[serde(rename = "PitchingStrikeoutsPerNineInnings")]
-    pub pitching_strikeouts_per_nine_innings: f64,
+    pub pitching_strikeouts_per_nine_innings: Option<f64>,
     #[serde(rename = "PitchingWalksPerNineInnings")]
-    pub pitching_walks_per_nine_innings: f64,
+    pub pitching_walks_per_nine_innings: Option<f64>,
     #[serde(rename = "PitchingBattingAverageOnBallsInPlay")]
-    pub pitching_batting_average_on_balls_in_play: f64,
+    pub pitching_batting_average_on_balls_in_play: Option<f64>,
     #[serde(rename = "PitchingWeightedOnBasePercentage")]
-    pub pitching_weighted_on_base_percentage: f64,
+    pub pitching_weighted_on_base_percentage: Option<f64>,
     #[serde(rename = "DoublePlays")]
-    pub double_plays: f64,
+    pub double_plays: Option<f64>,
     #[serde(rename = "PitchingDoublePlays")]
-    pub pitching_double_plays: f64,
+    pub pitching_double_plays: Option<f64>,
     #[serde(rename = "BattingOrderConfirmed")]
     pub batting_order_confirmed: Option<bool>,
     #[serde(rename = "IsolatedPower")]
-    pub isolated_power: f64,
+    pub isolated_power: Option<f64>,
     #[serde(rename = "FieldingIndependentPitching")]
-    pub fielding_independent_pitching: f64,
+    pub fielding_independent_pitching: Option<f64>,
     #[serde(rename = "PitchingQualityStarts")]
-    pub pitching_quality_starts: f64,
+    pub pitching_quality_starts: Option<f64>,
     #[serde(rename = "PitchingInningStarted")]
     pub pitching_inning_started: Option<i32>,
     #[serde(rename = "LeftOnBase")]
-    pub left_on_base: f64,
+    pub left_on_base: Option<f64>,
     #[serde(rename = "PitchingHolds")]
-    pub pitching_holds: f64,
+    pub pitching_holds: Option<f64>,
     #[serde(rename = "PitchingBlownSaves")]
-    pub pitching_blown_saves: f64,
+    pub pitching_blown_saves: Option<f64>,
     #[serde(rename = "SubstituteBattingOrder")]
     pub substitute_batting_order: Option<i32>,
     #[serde(rename = "SubstituteBattingOrderSequence")]
     pub substitute_batting_order_sequence: Option<i32>,
     #[serde(rename = "FantasyPointsFantasyDraft")]
-    pub fantasy_points_fantasy_draft: f64,
+    pub fantasy_points_fantasy_draft: Option<f64>,
     #[serde(rename = "FantasyPointsBatting")]
-    pub fantasy_points_batting: f64,
+    pub fantasy_points_batting: Option<f64>,
     #[serde(rename = "FantasyPointsPitching")]
-    pub fantasy_points_pitching: f64,
+    pub fantasy_points_pitching: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

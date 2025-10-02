@@ -35,9 +35,8 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let cache = Arc::new(Mutex::new(Cache::new(&redis_url).await?));
 
-    info!("Pre-loading team data from JSON files...");
-    let data_loader = DataLoader::new(cache.clone());
-    data_loader.preload_teams_only().await?;
+    info!("Starting server with real-time API data fetching...");
+    // Data will be fetched from API as needed, no pre-loading from test files
 
     let server = Server::new(cache);
     server

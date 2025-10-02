@@ -9,7 +9,7 @@ import { LeagueSelector } from "./LeagueSelector.tsx";
 import { LiveGames } from "./LiveGames.tsx";
 import { LivePlayByPlay } from "./LivePlayByPlay.tsx";
 import { BottomNav } from "./BottomNav.tsx";
-import { Scores } from "./Scores.tsx";
+import { Scores, Live } from "./Scores.tsx";
 import { Social } from "./Social.tsx";
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import {
@@ -94,9 +94,9 @@ export function Arbitration() {
         );
       case "play-by-play":
         return (
-          <LiveGames
+          <Live
             games={currentLeagueData?.games as any}
-            onGameClick={handleLiveGameClick}
+            selectedLeague={selectedLeague}
           />
         );
       case "social":

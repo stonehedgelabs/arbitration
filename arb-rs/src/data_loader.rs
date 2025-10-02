@@ -104,14 +104,8 @@ impl DataLoader {
 
 impl DataLoader {
     pub async fn preload_teams_only(&self) -> Result<()> {
-        tracing::info!("Pre-loading team data only...");
-
-        self.preload_league_teams(League::Nfl, "2025").await?;
-        self.preload_league_teams(League::Mlb, "2026").await?;
-        self.preload_league_teams(League::Nba, "2026").await?;
-        self.preload_league_teams(League::Nhl, "2026").await?;
-
-        tracing::info!("Team data pre-loading completed");
+        tracing::info!("Skipping data pre-loading - will fetch from API as needed");
+        // No pre-loading - data will be fetched from API when needed
         Ok(())
     }
 
