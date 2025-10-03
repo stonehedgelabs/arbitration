@@ -1,32 +1,45 @@
+// React imports
 import { useEffect, useState, useRef } from "react";
+
+// Third-party library imports
 import {
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Spinner,
-  Card,
   Badge,
+  Box,
   Button,
+  Card,
+  HStack,
   IconButton,
   Image,
+  Spinner,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
 import {
-  ArrowLeft,
-  RefreshCw,
-  Zap,
-  TrendingUp,
-  Target,
-  X,
   AlertTriangle,
+  ArrowLeft,
   Circle,
+  RefreshCw,
+  Target,
+  TrendingUp,
+  X,
+  Zap,
 } from "lucide-react";
+
+// Internal imports - config
+import { buildApiUrl, League } from "../config";
+
+// Internal imports - schema
 import { Play } from "../schema/mlb/playbyplay";
-import { buildApiUrl } from "../config";
-import { getPlayLabel, getPlayIcon, formatRelativeTime } from "../utils";
+
+// Internal imports - services
+import useArb from "../services/Arb";
+
+// Internal imports - store
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { fetchBoxScore } from "../store/slices/sportsDataSlice";
-import useArb from "../services/Arb";
+
+// Internal imports - utils
+import { formatRelativeTime, getPlayIcon, getPlayLabel } from "../utils";
 
 // Interface for the actual API response structure
 interface ActualPlayByPlayResponse {
@@ -84,7 +97,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
 
     // Always fetch team profiles if needed (they might be lost on refresh)
     if (
-      currentLeague === "mlb" &&
+      currentLeague === League.MLB &&
       (!mlbTeamProfiles || mlbTeamProfiles.data.length === 0)
     ) {
       console.log("Fetching MLB team profiles...");
@@ -109,7 +122,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   // Ensure team profiles are always available (for refresh scenarios)
   useEffect(() => {
     if (
-      currentLeague === "mlb" &&
+      currentLeague === League.MLB &&
       (!mlbTeamProfiles || mlbTeamProfiles.data.length === 0)
     ) {
       console.log("Team profiles missing, fetching...");
@@ -224,10 +237,10 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     console.log("PlayByPlay timestamp formatting:", {
       original: timestamp,
       currentTime: currentTime.toISOString(),
-      result: formatRelativeTime(timestamp, currentTime),
+      result: formatRelativeTime(timestamp),
     });
 
-    return formatRelativeTime(timestamp, currentTime);
+    return formatRelativeTime(timestamp);
   };
 
   // Fetch play-by-play data
@@ -236,7 +249,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       setLoading(true);
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
       const params: Record<string, string> = {
-        league: "mlb",
+        league: League.MLB,
         game_id: actualGameId,
         interval: "1min",
         t: now.toString(), // Send as string to our backend, but it will be converted to int

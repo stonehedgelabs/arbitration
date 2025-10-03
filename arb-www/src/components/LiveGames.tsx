@@ -1,12 +1,16 @@
+// Third-party library imports
 import {
   Badge,
-  Card,
   Box,
-  VStack,
+  Card,
   HStack,
-  Text,
   Image,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
+
+// Internal imports - config
+import { GameStatus } from "../config";
 
 interface Team {
   name: string;
@@ -18,7 +22,7 @@ interface LiveGame {
   id: string;
   homeTeam: Team;
   awayTeam: Team;
-  status: "live";
+  status: GameStatus.LIVE;
   time: string;
   quarter?: string;
 }
@@ -29,7 +33,7 @@ interface LiveGamesSectionProps {
 }
 
 export function LiveGames({ games, onGameClick }: LiveGamesSectionProps) {
-  const liveGames = games.filter((game) => game.status === "live");
+  const liveGames = games.filter((game) => game.status === GameStatus.LIVE);
 
   return (
     <Box minH="100vh" bg="gray.50">

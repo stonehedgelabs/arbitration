@@ -1,8 +1,14 @@
+// Third-party library imports
+import { Box, Button, Text, VStack } from "@chakra-ui/react";
+
+// Internal imports - config
+import { League } from "../config";
+
+// Internal imports - components
 import { BoxScoreDetailMLB } from "./BoxScoreDetailMLB";
-import { BoxScoreDetailNFL } from "./BoxScoreDetailNFL";
 import { BoxScoreDetailNBA } from "./BoxScoreDetailNBA";
+import { BoxScoreDetailNFL } from "./BoxScoreDetailNFL";
 import { BoxScoreDetailNHL } from "./BoxScoreDetailNHL";
-import { Box, VStack, Text, Button } from "@chakra-ui/react";
 
 interface BoxScoreDetailProps {
   gameId: string;
@@ -12,11 +18,11 @@ interface BoxScoreDetailProps {
 
 export function BoxScoreDetail({
   gameId,
-  sport = "mlb",
+  sport = League.MLB,
   onBack,
 }: BoxScoreDetailProps) {
   // Route to sport-specific components
-  if (sport === "mlb") {
+  if (sport === League.MLB) {
     return <BoxScoreDetailMLB gameId={gameId} onBack={onBack} />;
   }
 

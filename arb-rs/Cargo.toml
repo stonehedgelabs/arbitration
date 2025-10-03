@@ -33,6 +33,7 @@ anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 dotenv = "0.15"
 urlencoding = "2.1"
+toml = "0.8"
 
 [dev-dependencies]
 tokio-test = "0.4"

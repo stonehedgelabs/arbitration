@@ -1,25 +1,48 @@
-import { Wifi } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+// React imports
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+// Third-party library imports
 import {
   Badge,
-  Card,
   Box,
-  VStack,
+  Card,
   HStack,
-  Text,
   Image,
   Spinner,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
-import useArb from "../services/Arb";
+import { Wifi } from "lucide-react";
+
+// Internal imports - config
+import {
+  isPostseasonDate,
+  League,
+  GameStatus,
+  mapApiStatusToGameStatus,
+} from "../config";
+
+// Internal imports - components
 import { BoxScoreDetail } from "./BoxScoreDetail";
+import { DatePicker } from "./DatePicker";
+
+// Internal imports - schema
+import { MLBScheduleGame } from "../schema";
+
+// Internal imports - services
+import useArb from "../services/Arb";
+
+// Internal imports - store
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { setSelectedDate } from "../store/slices/sportsDataSlice";
+
+// Internal imports - utils
 import {
   convertUtcToLocalDate,
   getCurrentLocalDate,
   formatDateForSlider,
 } from "../utils";
-import { useNavigate } from "react-router-dom";
 
 interface Team {
   name: string;
@@ -31,7 +54,7 @@ interface Game {
   id: string;
   homeTeam: Team;
   awayTeam: Team;
-  status: "live" | "final" | "upcoming" | "cancelled";
+  status: GameStatus;
   time: string;
   date: string; // Add date field for GameByDate API
   quarter?: string;
@@ -46,59 +69,79 @@ interface Game {
   temperature?: number;
   stadiumId?: number;
   division?: string;
+  // Postseason flag
+  isPostseason?: boolean;
+  // Odds information
+  odds?: {
+    homeMoneyLine?: number;
+    awayMoneyLine?: number;
+    homePointSpread?: number;
+    awayPointSpread?: number;
+    overUnder?: number;
+    sportsbook?: string;
+  };
 }
-
-// Date utility functions using centralized utils
-const getDateRange = () => {
-  const today = new Date();
-  const todayString = getCurrentLocalDate();
-  console.log(
-    "Date range calculation - today:",
-    today.toISOString(),
-    "local date:",
-    todayString,
-  );
-  const dates = [];
-
-  // 7 days before today
-  for (let i = 7; i > 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    dates.push({
-      date: dateString,
-      display: formatDateForSlider(date),
-      isToday: false,
-    });
-  }
-
-  // Today (centered)
-  dates.push({
-    date: todayString,
-    display: "Today",
-    isToday: true,
-  });
-
-  // 7 days after today
-  for (let i = 1; i <= 7; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() + i);
-    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    dates.push({
-      date: dateString,
-      display: formatDateForSlider(date),
-      isToday: false,
-    });
-  }
-
-  return dates;
-};
 
 // Helper function to safely parse dates
 const isValidDate = (dateString: string): boolean => {
   if (!dateString || dateString.trim() === "") return false;
   const date = new Date(dateString);
   return !isNaN(date.getTime());
+};
+
+// Helper function to get display name for a date
+const getDateDisplayName = (dateString: string): string => {
+  if (!dateString) return "This Date";
+
+  const todayString = getCurrentLocalDate();
+  if (dateString === todayString) {
+    return "Today";
+  }
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return "This Date";
+  }
+
+  return formatDateForSlider(date);
+};
+
+// Helper function to titleize text
+const titleize = (text: string): string => {
+  return text
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+// Helper function to get odds data for a specific game
+const getGameOdds = (
+  gameId: string,
+  oddsData: any,
+): Game["odds"] | undefined => {
+  if (!oddsData?.data) return undefined;
+
+  const gameOdds = oddsData.data.find(
+    (odds: any) => odds.GameId?.toString() === gameId,
+  );
+  if (!gameOdds) return undefined;
+
+  // Get the first available odds (prefer pregame odds)
+  const pregameOdds = gameOdds.PregameOdds?.[0];
+  const liveOdds = gameOdds.LiveOdds?.[0];
+  const odds = pregameOdds || liveOdds;
+
+  if (!odds) return undefined;
+
+  return {
+    homeMoneyLine: odds.HomeMoneyLine,
+    awayMoneyLine: odds.AwayMoneyLine,
+    homePointSpread: odds.HomePointSpread,
+    awayPointSpread: odds.AwayPointSpread,
+    overUnder: odds.OverUnder,
+    sportsbook: odds.Sportsbook,
+  };
 };
 
 // Bases Icon Component
@@ -150,32 +193,84 @@ const BasesIcon = () => {
   );
 };
 
+// Team Odds Display Component
+const TeamOddsDisplay = ({
+  odds,
+  isAway = false,
+}: {
+  odds: Game["odds"];
+  isAway?: boolean;
+}) => {
+  if (!odds) return null;
+
+  const moneyLine = isAway ? odds.awayMoneyLine : odds.homeMoneyLine;
+  const pointSpread = isAway ? odds.awayPointSpread : odds.homePointSpread;
+
+  return (
+    <VStack gap="1" align="stretch" fontSize="xs">
+      {/* Money Line */}
+      {moneyLine !== null && moneyLine !== undefined && (
+        <HStack justify="space-between" align="center">
+          <Text color="gray.600" fontWeight="medium">
+            ML:
+          </Text>
+          <Text color="gray.800" fontWeight="semibold">
+            {moneyLine > 0 ? `+${moneyLine}` : moneyLine}
+          </Text>
+        </HStack>
+      )}
+
+      {/* Point Spread */}
+      {pointSpread !== null && pointSpread !== undefined && (
+        <HStack justify="space-between" align="center">
+          <Text color="gray.600" fontWeight="medium">
+            Spread:
+          </Text>
+          <Text color="gray.800" fontWeight="semibold">
+            {pointSpread > 0 ? `+${pointSpread}` : pointSpread}
+          </Text>
+        </HStack>
+      )}
+    </VStack>
+  );
+};
+
+// Game-level odds display (Total and Sportsbook)
+const GameOddsDisplay = ({ odds }: { odds: Game["odds"] }) => {
+  if (!odds) return null;
+
+  return (
+    <HStack justify="space-between" align="center" fontSize="xs">
+      {/* Over/Under */}
+      {odds.overUnder !== null && (
+        <Text color="gray.600" fontWeight="medium">
+          Total:{" "}
+          <Text as="span" color="gray.800" fontWeight="semibold">
+            O/U {odds.overUnder}
+          </Text>
+        </Text>
+      )}
+
+      {/* Sportsbook */}
+      {odds.sportsbook && (
+        <Text color="gray.500" fontSize="2xs">
+          via {odds.sportsbook}
+        </Text>
+      )}
+    </HStack>
+  );
+};
+
 // Convert MLB games to the expected format
 const convertMLBGameToGame = (
   rawGame: any,
   mlbTeamProfiles?: any,
   mlbStadiums?: any,
+  oddsData?: any,
 ): Game | null => {
   // Map API status to our status format
-  const getStatus = (
-    apiStatus: string,
-  ): "live" | "final" | "upcoming" | "cancelled" => {
-    switch (apiStatus) {
-      case "Final":
-      case "Completed":
-        return "final";
-      case "InProgress":
-      case "In Progress":
-      case "Live":
-        return "live";
-      case "NotNecessary":
-      case "Cancelled":
-      case "Postponed":
-      case "Suspended":
-        return "cancelled";
-      default:
-        return "upcoming";
-    }
+  const getStatus = (apiStatus: string): GameStatus => {
+    return mapApiStatusToGameStatus(apiStatus);
   };
 
   // Helper functions to get team profiles and stadiums
@@ -197,7 +292,7 @@ const convertMLBGameToGame = (
   const gameStatus = getStatus(rawGame.Status);
 
   // Filter out cancelled games (NotNecessary, Cancelled, Postponed, etc.)
-  if (gameStatus === "cancelled") {
+  if (gameStatus === GameStatus.CANCELLED) {
     return null; // This will be filtered out
   }
 
@@ -206,7 +301,7 @@ const convertMLBGameToGame = (
   const now = new Date();
   const isPastGame = gameTime < now;
 
-  if (isPastGame && gameStatus === "upcoming") {
+  if (isPastGame && gameStatus === GameStatus.UPCOMING) {
     return null; // This will be filtered out
   }
 
@@ -251,6 +346,118 @@ const convertMLBGameToGame = (
     temperature: rawGame.Temperature || rawGame.TempF,
     stadiumId: rawGame.StadiumID, // Store stadium ID for potential future lookup
     division: homeTeamProfile?.Division, // Store division for display
+    // Odds information
+    odds: getGameOdds(gameId, oddsData),
+  };
+
+  return convertedGame;
+};
+
+// Convert schedule game to Game format
+const convertScheduleGameToGame = (
+  scheduleGame: MLBScheduleGame,
+  mlbTeamProfiles?: any,
+  mlbStadiums?: any,
+  oddsData?: any,
+): Game | null => {
+  // Map API status to our status format
+  const getStatus = (apiStatus?: string): GameStatus => {
+    if (!apiStatus) return GameStatus.UPCOMING;
+    return mapApiStatusToGameStatus(apiStatus);
+  };
+
+  // Helper functions to get team profiles and stadiums
+  const getTeamProfile = (teamName: string) => {
+    if (!mlbTeamProfiles?.data) return null;
+    return mlbTeamProfiles.data.find(
+      (team: any) => team.Name === teamName || team.Key === teamName,
+    );
+  };
+
+  const getStadium = (stadiumId?: number) => {
+    if (!mlbStadiums?.data || !stadiumId) return null;
+    return mlbStadiums.data.find(
+      (stadium: any) => stadium.StadiumID === stadiumId,
+    );
+  };
+
+  // Check if this is a game that should be filtered out
+  const gameStatus = getStatus(scheduleGame.Status);
+
+  // Filter out cancelled games (NotNecessary, Cancelled, Postponed, etc.)
+  if (gameStatus === GameStatus.CANCELLED) {
+    return null; // This will be filtered out
+  }
+
+  // Also filter out games that are marked as "upcoming" but the game time is in the past
+  if (scheduleGame.DateTime) {
+    const gameTime = new Date(scheduleGame.DateTime);
+    const now = new Date();
+    const isPastGame = gameTime < now;
+
+    if (isPastGame && gameStatus === GameStatus.UPCOMING) {
+      return null; // This will be filtered out
+    }
+  }
+
+  // Get team profiles for better names and logos
+  const homeTeamProfile = getTeamProfile(scheduleGame.HomeTeam || "");
+  const awayTeamProfile = getTeamProfile(scheduleGame.AwayTeam || "");
+  const stadium = getStadium(scheduleGame.StadiumID);
+  const gameId = scheduleGame.GameID?.toString() || "";
+
+  const convertedDate = scheduleGame.DateTime
+    ? convertUtcToLocalDate(scheduleGame.DateTime)
+    : new Date().toISOString().split("T")[0];
+
+  // Debug logging for 10/4 games
+  if (convertedDate === "2025-10-04") {
+    console.log("Converting 10/4 schedule game:", {
+      originalDateTime: scheduleGame.DateTime,
+      convertedDate,
+      homeTeam: scheduleGame.HomeTeam,
+      awayTeam: scheduleGame.AwayTeam,
+      gameId: gameId,
+    });
+  }
+
+  const convertedGame = {
+    id: gameId,
+    homeTeam: {
+      name: homeTeamProfile
+        ? `${homeTeamProfile.City} ${homeTeamProfile.Name}`
+        : scheduleGame.HomeTeam || "",
+      score: scheduleGame.HomeTeamRuns || 0,
+      logo: homeTeamProfile?.WikipediaLogoUrl,
+    },
+    awayTeam: {
+      name: awayTeamProfile
+        ? `${awayTeamProfile.City} ${awayTeamProfile.Name}`
+        : scheduleGame.AwayTeam || "",
+      score: scheduleGame.AwayTeamRuns || 0,
+      logo: awayTeamProfile?.WikipediaLogoUrl,
+    },
+    time: scheduleGame.DateTime || new Date().toISOString(),
+    date: convertedDate,
+    status: getStatus(scheduleGame.Status),
+    quarter: scheduleGame.Inning
+      ? `${scheduleGame.InningHalf === "B" ? "Bot" : "Top"} ${scheduleGame.Inning}`
+      : undefined,
+    // Location/Venue information
+    stadium: stadium?.Name,
+    city: stadium?.City,
+    state: stadium?.State,
+    country: stadium?.Country,
+    capacity: stadium?.Capacity,
+    surface: stadium?.Surface,
+    weather: scheduleGame.ForecastDescription,
+    temperature: scheduleGame.ForecastTempHigh,
+    stadiumId: scheduleGame.StadiumID, // Store stadium ID for potential future lookup
+    division: homeTeamProfile?.Division, // Store division for display
+    // Postseason flag - determine based on the game date using config
+    isPostseason: isPostseasonDate(League.MLB, convertedDate),
+    // Odds information
+    odds: getGameOdds(gameId, oddsData),
   };
 
   return convertedGame;
@@ -272,11 +479,12 @@ export function Live() {
     mlbScores,
     mlbTeamProfiles,
     mlbStadiums,
+    mlbOddsByDate,
   } = useArb();
 
   // Fetch data on mount
   useEffect(() => {
-    if (selectedLeague === "mlb") {
+    if (selectedLeague === League.MLB) {
       fetchMLBScores();
       fetchMLBTeamProfiles();
       fetchMLBStadiums();
@@ -290,10 +498,39 @@ export function Live() {
       const utcDate = new Date(dateTime);
 
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+
       const dayName = days[utcDate.getDay()];
-      const month = utcDate.getMonth() + 1;
+      const monthName = months[utcDate.getMonth()];
       const day = utcDate.getDate();
-      const year = utcDate.getFullYear();
+
+      // Add ordinal suffix to day
+      const getOrdinalSuffix = (day: number) => {
+        if (day >= 11 && day <= 13) return "th";
+        switch (day % 10) {
+          case 1:
+            return "st";
+          case 2:
+            return "nd";
+          case 3:
+            return "rd";
+          default:
+            return "th";
+        }
+      };
 
       // Format time in user's local timezone
       const time = utcDate.toLocaleTimeString("en-US", {
@@ -302,7 +539,7 @@ export function Live() {
         hour12: true,
       });
 
-      return `${dayName} ${month}/${day}/${year} at ${time}`;
+      return `${dayName}. ${monthName} ${day}${getOrdinalSuffix(day)} at ${time}`;
     } catch {
       return "TBD";
     }
@@ -310,40 +547,21 @@ export function Live() {
 
   // Get all games - use the same logic as Scores component
   const allGames =
-    selectedLeague === "mlb" && mlbScores
+    selectedLeague === League.MLB && mlbScores
       ? mlbScores.data
           .map((game) =>
-            convertMLBGameToGame(game, mlbTeamProfiles, mlbStadiums),
+            convertMLBGameToGame(
+              game,
+              mlbTeamProfiles,
+              mlbStadiums,
+              mlbOddsByDate,
+            ),
           )
           .filter((game): game is Game => game !== null)
       : [];
 
-  // Debug logging
-  console.log("Live component debug:", {
-    selectedLeague,
-    allGames: allGames.length,
-    allGameStatuses: allGames.map((g) => ({
-      id: g.id,
-      status: g.status,
-      teams: `${g.awayTeam.name} @ ${g.homeTeam.name}`,
-    })),
-    rawGames: allGames, // Show the full game objects
-  });
-
   // Filter only live games
-  const liveGames = allGames.filter((game) => game.status === "live");
-
-  // Debug live games specifically
-  console.log("Live games found:", {
-    totalLiveGames: liveGames.length,
-    liveGames: liveGames.map((g) => ({
-      id: g.id,
-      status: g.status,
-      teams: `${g.awayTeam.name} @ ${g.homeTeam.name}`,
-      time: g.time,
-      quarter: g.quarter,
-    })),
-  });
+  const liveGames = allGames.filter((game) => game.status === GameStatus.LIVE);
 
   // Sort live games by start time (most recent first)
   const sortedLiveGames = [...liveGames].sort((a, b) => {
@@ -353,9 +571,9 @@ export function Live() {
   });
 
   // Get status badge
-  const getStatusBadge = (status: string, quarter?: string) => {
+  const getStatusBadge = (status: GameStatus, quarter?: string) => {
     switch (status) {
-      case "live":
+      case GameStatus.LIVE:
         return (
           <Badge
             colorScheme="red"
@@ -369,10 +587,10 @@ export function Live() {
             gap="1"
           >
             <Wifi size={12} />
-            Live
+            {titleize("Live")}
           </Badge>
         );
-      case "final":
+      case GameStatus.FINAL:
         return (
           <Badge
             colorScheme="gray"
@@ -382,10 +600,10 @@ export function Live() {
             py="1"
             borderRadius="full"
           >
-            Final
+            {titleize("Final")}
           </Badge>
         );
-      case "upcoming":
+      case GameStatus.UPCOMING:
         return (
           <Badge
             colorScheme="blue"
@@ -395,7 +613,7 @@ export function Live() {
             py="1"
             borderRadius="full"
           >
-            {quarter || "TBD"}
+            {quarter ? titleize(quarter) : titleize("TBD")}
           </Badge>
         );
       default:
@@ -404,7 +622,7 @@ export function Live() {
   };
 
   // Show loading state while fetching data
-  if (selectedLeague === "mlb" && !mlbScores) {
+  if (selectedLeague === League.MLB && !mlbScores) {
     return (
       <Box
         minH="200px"
@@ -460,7 +678,7 @@ export function Live() {
                   <VStack align="stretch" gap="3">
                     {/* Time and Status Header */}
                     <HStack justify="space-between" align="center">
-                      <Text fontSize="sm" color="gray.500">
+                      <Text fontSize="xxs" color="gray.500">
                         {formatTime(game.time)}
                       </Text>
                       <HStack gap="2" align="center">
@@ -523,9 +741,8 @@ export function Live() {
                         </VStack>
 
                         {/* Bases Icon for MLB Live Games */}
-                        {selectedLeague === "mlb" && game.status === "live" && (
-                          <BasesIcon />
-                        )}
+                        {selectedLeague === League.MLB &&
+                          game.status === GameStatus.LIVE && <BasesIcon />}
                       </HStack>
                     )}
 
@@ -655,16 +872,22 @@ export function Scores() {
     mlbScores,
     mlbTeamProfiles,
     mlbStadiums,
-    loading: mlbLoading,
-    error: mlbError,
+    mlbSchedule,
+    currentGames,
+    mlbOddsByDate,
+    mlbScoresLoading,
+    mlbScoresError: mlbError,
     fetchMLBScores,
     fetchMLBTeamProfiles,
     fetchMLBStadiums,
+    fetchMLBSchedule,
+    fetchCurrentGames,
+    fetchMLBOddsByDate,
   } = useArb();
 
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedGameDate, setSelectedGameDate] = useState<string | null>(null);
-  const dateSelectorRef = useRef<HTMLDivElement>(null);
+  const [isFetchingDateData, setIsFetchingDateData] = useState(false);
 
   // Redux state
   const dispatch = useAppDispatch();
@@ -672,7 +895,7 @@ export function Scores() {
 
   // Fetch MLB scores and team profiles when component mounts or league changes
   useEffect(() => {
-    if (selectedLeague === "mlb") {
+    if (selectedLeague === League.MLB) {
       fetchMLBScores();
       fetchMLBTeamProfiles();
       fetchMLBStadiums();
@@ -682,7 +905,7 @@ export function Scores() {
   // Initialize selected date to today only on first load (when selectedDate is empty)
   useEffect(() => {
     if (
-      selectedLeague === "mlb" &&
+      selectedLeague === League.MLB &&
       mlbScores?.data &&
       mlbScores.data.length > 0 &&
       !selectedDate
@@ -700,7 +923,6 @@ export function Scores() {
 
       if (gamesToday) {
         // If there are games today, set to today
-        console.log("Initializing selected date to today:", todayString);
         dispatch(setSelectedDate(todayString));
       } else {
         // If no games today, find the most recent game date
@@ -718,10 +940,6 @@ export function Scores() {
         if (gameDates.length > 0) {
           const mostRecentGameDate = gameDates[0];
           if (mostRecentGameDate) {
-            console.log(
-              "No games today, initializing selected date to most recent game date:",
-              mostRecentGameDate,
-            );
             dispatch(setSelectedDate(mostRecentGameDate));
           }
         }
@@ -729,33 +947,54 @@ export function Scores() {
     }
   }, [selectedLeague, mlbScores, selectedDate, dispatch]);
 
-  // Fetch box score data for runner information
-
-  // Center "Today" in the date selector on mount and when league changes
+  // Fetch schedule data only for postseason dates
   useEffect(() => {
-    const centerToday = () => {
-      if (dateSelectorRef.current) {
-        const todayElement = dateSelectorRef.current.querySelector(
-          '[data-date="today"]',
-        );
-        if (todayElement) {
-          todayElement.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "center",
-          });
-        }
-      }
-    };
+    if (selectedLeague === League.MLB && selectedDate) {
+      // Check if this is a postseason date using config
+      const isPostseason = isPostseasonDate(League.MLB, selectedDate);
 
-    // For MLB, wait a bit for data to load and DOM to update
-    if (selectedLeague === "mlb") {
-      const timeoutId = setTimeout(centerToday, 100);
-      return () => clearTimeout(timeoutId);
-    } else {
-      centerToday();
+      if (isPostseason) {
+        console.log("Fetching schedule for postseason date:", selectedDate);
+        setIsFetchingDateData(true);
+        fetchMLBSchedule(selectedDate).finally(() => {
+          setIsFetchingDateData(false);
+        });
+      }
     }
-  }, [selectedLeague, mlbScores]);
+  }, [selectedLeague, selectedDate, fetchMLBSchedule]);
+
+  // Fetch odds data for the selected date
+  useEffect(() => {
+    if (selectedLeague === League.MLB && selectedDate) {
+      console.log("Fetching odds for date:", selectedDate);
+      fetchMLBOddsByDate(selectedDate);
+    }
+  }, [selectedLeague, selectedDate, fetchMLBOddsByDate]);
+
+  // Fetch current_games data for the date picker range (7 days back + 7 days forward)
+  useEffect(() => {
+    if (selectedLeague === League.MLB) {
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 7); // 7 days back
+
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 7); // 7 days forward
+
+      const startDateStr = startDate.toISOString().split("T")[0];
+      const endDateStr = endDate.toISOString().split("T")[0];
+
+      console.log(
+        "Fetching current_games for date range:",
+        startDateStr,
+        "to",
+        endDateStr,
+      );
+      fetchCurrentGames(startDateStr, endDateStr);
+    }
+  }, [selectedLeague, fetchCurrentGames]);
+
+  // Fetch box score data for runner information
 
   // Format time from DateTime (convert UTC to local time)
   const formatTime = (dateTime: string) => {
@@ -764,10 +1003,39 @@ export function Scores() {
       const utcDate = new Date(dateTime);
 
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+
       const dayName = days[utcDate.getDay()];
-      const month = utcDate.getMonth() + 1;
+      const monthName = months[utcDate.getMonth()];
       const day = utcDate.getDate();
-      const year = utcDate.getFullYear();
+
+      // Add ordinal suffix to day
+      const getOrdinalSuffix = (day: number) => {
+        if (day >= 11 && day <= 13) return "th";
+        switch (day % 10) {
+          case 1:
+            return "st";
+          case 2:
+            return "nd";
+          case 3:
+            return "rd";
+          default:
+            return "th";
+        }
+      };
 
       // Format time in user's local timezone
       const time = utcDate.toLocaleTimeString("en-US", {
@@ -776,7 +1044,7 @@ export function Scores() {
         hour12: true,
       });
 
-      return `${dayName} ${month}/${day}/${year} at ${time}`;
+      return `${dayName}. ${monthName} ${day}${getOrdinalSuffix(day)} at ${time}`;
     } catch {
       return "TBD";
     }
@@ -805,47 +1073,141 @@ export function Scores() {
     );
   }
 
-  // Get all games
-  const allGames =
-    selectedLeague === "mlb" && mlbScores
-      ? mlbScores.data
-          .map((game) =>
-            convertMLBGameToGame(game, mlbTeamProfiles, mlbStadiums),
-          )
-          .filter((game): game is Game => game !== null)
-      : [];
+  // Get all games intelligently combining scores and current_games data
+  const allGames = (() => {
+    if (selectedLeague !== League.MLB) return [];
+
+    const games: Game[] = [];
+    const now = new Date();
+
+    // Add games from scores data (past and current games with actual scores)
+    if (mlbScores?.data) {
+      const scoreGames = mlbScores.data
+        .map((game) =>
+          convertMLBGameToGame(
+            game,
+            mlbTeamProfiles,
+            mlbStadiums,
+            mlbOddsByDate,
+          ),
+        )
+        .filter((game): game is Game => game !== null);
+      games.push(...scoreGames);
+      console.log("Added", scoreGames.length, "games from scores data");
+    }
+
+    // Add games from current_games data (future games and any missing past games)
+    if (currentGames?.data) {
+      const currentGamesList = currentGames.data
+        .map((game) =>
+          convertScheduleGameToGame(
+            game,
+            mlbTeamProfiles,
+            mlbStadiums,
+            mlbOddsByDate,
+          ),
+        )
+        .filter((game): game is Game => game !== null);
+
+      // Only add games that are in the future or not already covered by scores data
+      const existingGameIds = new Set(games.map((g) => g.id));
+      const futureGames = currentGamesList.filter((game) => {
+        const gameTime = new Date(game.time);
+        const isFuture = gameTime > now;
+        const isNotAlreadyCovered = !existingGameIds.has(game.id);
+        return isFuture || isNotAlreadyCovered;
+      });
+
+      games.push(...futureGames);
+      console.log("Added", futureGames.length, "games from current_games data");
+    }
+
+    // Add games from schedule data (only for postseason dates)
+    if (
+      mlbSchedule?.data &&
+      selectedDate &&
+      isPostseasonDate(League.MLB, selectedDate)
+    ) {
+      console.log(
+        "Schedule data loaded for postseason:",
+        mlbSchedule.data.length,
+        "games",
+      );
+      const scheduleGames = mlbSchedule.data
+        .map((game) =>
+          convertScheduleGameToGame(
+            game,
+            mlbTeamProfiles,
+            mlbStadiums,
+            mlbOddsByDate,
+          ),
+        )
+        .filter((game): game is Game => game !== null);
+
+      // Only add postseason games not already covered
+      const existingGameIds = new Set(games.map((g) => g.id));
+      const newPostseasonGames = scheduleGames.filter(
+        (game) => !existingGameIds.has(game.id),
+      );
+      games.push(...newPostseasonGames);
+      console.log(
+        "Added",
+        newPostseasonGames.length,
+        "postseason games from schedule data",
+      );
+    }
+
+    console.log("Total games loaded before deduplication:", games.length);
+
+    // Deduplicate games by ID, keeping the most recent/complete version
+    const gameMap = new Map<string, Game>();
+    games.forEach((game) => {
+      const existingGame = gameMap.get(game.id);
+      if (!existingGame) {
+        gameMap.set(game.id, game);
+      } else {
+        // If game already exists, prefer the one with more complete data
+        // (e.g., from scores data over current_games data for live/completed games)
+        if (
+          game.status === GameStatus.LIVE ||
+          game.status === GameStatus.FINAL
+        ) {
+          gameMap.set(game.id, game);
+        }
+      }
+    });
+
+    const deduplicatedGames = Array.from(gameMap.values());
+    console.log("Total games after deduplication:", deduplicatedGames.length);
+    return deduplicatedGames;
+  })();
 
   // Filter games by selected date
   const filteredGames = allGames.filter((game) => {
     // Use the pre-converted game.date field instead of converting game.time
     const matches = game.date === selectedDate;
 
-    // Log only matches for debugging
-    if (matches) {
-      console.log("Game matches selected date:", {
-        gameId: game.id,
+    // Debug logging for 10/4
+    if (selectedDate === "2025-10-04") {
+      console.log("Game date check:", {
         gameDate: game.date,
         selectedDate,
-        teams: `${game.awayTeam.name} @ ${game.homeTeam.name}`,
+        matches,
+        gameId: game.id,
+        homeTeam: game.homeTeam.name,
+        awayTeam: game.awayTeam.name,
+        isPostseason: game.isPostseason,
       });
     }
 
     return matches;
   });
 
-  // Debug logging
-  console.log("Scores component debug:", {
-    selectedLeague,
-    allGames: allGames.length,
-    selectedDate,
-    filteredGames: filteredGames.length,
-  });
-
   // Sort games: LIVE games first, then by start time in ascending order
   const sortedGames = [...filteredGames].sort((a, b) => {
     // Live games first
-    if (a.status === "live" && b.status !== "live") return -1;
-    if (b.status === "live" && a.status !== "live") return 1;
+    if (a.status === GameStatus.LIVE && b.status !== GameStatus.LIVE) return -1;
+    if (b.status === GameStatus.LIVE && a.status !== GameStatus.LIVE) return 1;
 
     // Then sort by time (with error handling)
     const isValidA = isValidDate(a.time);
@@ -865,9 +1227,9 @@ export function Scores() {
       return 0;
     }
   });
-  const getStatusBadge = (status: string, quarter?: string) => {
+  const getStatusBadge = (status: GameStatus, quarter?: string) => {
     switch (status) {
-      case "live":
+      case GameStatus.LIVE:
         return (
           <Badge
             variant="solid"
@@ -878,10 +1240,10 @@ export function Scores() {
             py="1"
             borderRadius="full"
           >
-            {quarter || "LIVE"}
+            {quarter ? titleize(quarter) : titleize("Live")}
           </Badge>
         );
-      case "final":
+      case GameStatus.FINAL:
         return (
           <Badge
             variant="solid"
@@ -892,10 +1254,10 @@ export function Scores() {
             py="1"
             borderRadius="full"
           >
-            FINAL
+            {titleize("Final")}
           </Badge>
         );
-      case "upcoming":
+      case GameStatus.UPCOMING:
         return (
           <Badge
             variant="solid"
@@ -906,7 +1268,7 @@ export function Scores() {
             py="1"
             borderRadius="full"
           >
-            UPCOMING
+            {titleize("Upcoming")}
           </Badge>
         );
       default:
@@ -914,8 +1276,8 @@ export function Scores() {
     }
   };
 
-  // Show loading state for MLB
-  if (selectedLeague === "mlb" && mlbLoading) {
+  // Show loading state for MLB only on initial load (not when changing dates)
+  if (selectedLeague === League.MLB && mlbScoresLoading && !selectedDate) {
     return (
       <Box
         minH="100vh"
@@ -933,7 +1295,7 @@ export function Scores() {
   }
 
   // Show error state for MLB
-  if (selectedLeague === "mlb" && mlbError) {
+  if (selectedLeague === League.MLB && mlbError) {
     return (
       <Box
         minH="100vh"
@@ -957,328 +1319,370 @@ export function Scores() {
   return (
     <Box minH="100vh" bg="gray.50">
       <VStack gap="4" align="stretch" p="4" pb="20">
-        {/* Header */}
-        <Text fontSize="2xl" fontWeight="bold" color="gray.900">
-          Scores
-        </Text>
-
         {/* Date Selector */}
-        <Box>
-          <Box
-            ref={dateSelectorRef}
-            display="flex"
-            gap="2"
-            overflowX="auto"
-            pb="2"
-            css={{
-              "&::-webkit-scrollbar": {
-                height: "4px",
-              },
-              "&::-webkit-scrollbar-track": {
-                background: "#f1f1f1",
-                borderRadius: "2px",
-              },
-              "&::-webkit-scrollbar-thumb": {
-                background: "#c1c1c1",
-                borderRadius: "2px",
-              },
-              "&::-webkit-scrollbar-thumb:hover": {
-                background: "#a8a8a8",
-              },
-            }}
-          >
-            {getDateRange().map((dateInfo) => (
-              <Box
-                key={dateInfo.date}
-                data-date={dateInfo.isToday ? "today" : undefined}
-                onClick={() => {
-                  console.log("Date clicked:", dateInfo.date);
-                  dispatch(setSelectedDate(dateInfo.date));
-                }}
-                cursor="pointer"
-                px="2"
-                py="1"
-                borderRadius="md"
-                bg={selectedDate === dateInfo.date ? "red.50" : "transparent"}
-                borderBottom={
-                  selectedDate === dateInfo.date
-                    ? "2px solid"
-                    : "2px solid transparent"
-                }
-                borderBottomColor={
-                  selectedDate === dateInfo.date ? "red.500" : "transparent"
-                }
-                _hover={{
-                  bg: selectedDate === dateInfo.date ? "red.50" : "gray.50",
-                }}
-                minW="fit-content"
-                whiteSpace="nowrap"
-              >
-                <Text
-                  fontSize="xs"
-                  fontWeight={
-                    selectedDate === dateInfo.date ? "semibold" : "normal"
-                  }
-                  color={
-                    selectedDate === dateInfo.date ? "red.600" : "gray.600"
-                  }
-                >
-                  {dateInfo.display}
-                </Text>
-              </Box>
-            ))}
-          </Box>
-        </Box>
+        <DatePicker selectedLeague={selectedLeague} />
 
         {/* Games List */}
         <VStack gap="4" align="stretch">
           {sortedGames.length === 0 ? (
-            <Card.Root
-              bg="white"
-              borderRadius="12px"
-              shadow="sm"
-              border="1px"
-              borderColor="gray.200"
-            >
-              <Card.Body p="8" textAlign="center">
-                <VStack gap="4">
-                  <Box
-                    w="12"
-                    h="12"
-                    bg="gray.200"
-                    borderRadius="full"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Text fontSize="2xl" color="gray.400">
-                      😭
-                    </Text>
-                  </Box>
-                  <VStack gap="2">
-                    <Text fontSize="lg" fontWeight="semibold" color="gray.900">
-                      No Games on{" "}
-                      {getDateRange().find((d) => d.date === selectedDate)
-                        ?.display || "This Date"}
-                    </Text>
-                    <Text fontSize="sm" color="gray.600" textAlign="center">
-                      There are no games scheduled for this date. Try selecting
-                      a different date.
-                    </Text>
+            // Show loading state if we're fetching data, otherwise show no games
+            isFetchingDateData || mlbScoresLoading ? (
+              <Card.Root
+                bg="white"
+                borderRadius="12px"
+                shadow="sm"
+                border="1px"
+                borderColor="gray.200"
+              >
+                <Card.Body p="8" textAlign="center">
+                  <VStack gap="4">
+                    <Spinner size="lg" color="red.500" />
+                    <Text color="gray.600">Loading games for this date...</Text>
                   </VStack>
-                </VStack>
-              </Card.Body>
-            </Card.Root>
+                </Card.Body>
+              </Card.Root>
+            ) : (
+              <Card.Root
+                bg="white"
+                borderRadius="12px"
+                shadow="sm"
+                border="1px"
+                borderColor="gray.200"
+              >
+                <Card.Body p="8" textAlign="center">
+                  <VStack gap="4">
+                    <Box
+                      w="12"
+                      h="12"
+                      bg="gray.200"
+                      borderRadius="full"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Text fontSize="2xl" color="gray.400">
+                        😭
+                      </Text>
+                    </Box>
+                    <VStack gap="2">
+                      <Text
+                        fontSize="lg"
+                        fontWeight="semibold"
+                        color="gray.900"
+                      >
+                        No Games on {getDateDisplayName(selectedDate)}
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" textAlign="center">
+                        There are no games scheduled for this date. Try
+                        selecting a different date.
+                      </Text>
+                    </VStack>
+                  </VStack>
+                </Card.Body>
+              </Card.Root>
+            )
           ) : (
             <VStack gap="3" align="stretch">
               {/* <HStack gap="2" align="center">
                 <Calendar size={20} color="gray" />
                 <Text fontSize="lg" fontWeight="bold" color="gray.500">
-                  Games on {getDateRange().find(d => d.date === selectedDate)?.display || 'Selected Date'}
+                  Games on {getDateDisplayName(selectedDate)}
                   </Text>
               </HStack> */}
-              {sortedGames.map((game) => (
-                <Card.Root
-                  key={game.id}
-                  bg="white"
-                  borderRadius="12px"
-                  shadow="sm"
-                  border="1px"
-                  borderColor="gray.200"
-                  _active={{ transform: "scale(0.98)" }}
-                  transition="all 0.2s"
-                  cursor="pointer"
-                  onClick={() => handleGameClick(game.id, game.date)}
-                >
-                  <Card.Body p="4">
-                    <VStack align="stretch" gap="3">
-                      {/* Time and Status Header */}
-                      <HStack justify="space-between" align="center">
-                        <Text fontSize="sm" color="gray.500">
-                          {formatTime(game.time)}
-                        </Text>
-                        <HStack gap="2" align="center">
-                          {getStatusBadge(game.status, game.quarter)}
-                          {game.status === "live" && (
-                            <Badge
-                              variant="solid"
-                              bg="red.500"
-                              color="white"
-                              fontSize="xs"
-                              px="2"
-                              py="1"
+              {sortedGames.map((game) => {
+                return (
+                  <Card.Root
+                    key={game.id}
+                    bg="white"
+                    borderRadius="12px"
+                    shadow="sm"
+                    border="1px"
+                    borderColor="gray.200"
+                    _active={{ transform: "scale(0.98)" }}
+                    transition="all 0.2s"
+                    cursor="pointer"
+                    onClick={() => handleGameClick(game.id, game.date)}
+                  >
+                    <Card.Body p="4">
+                      <VStack align="stretch" gap="3">
+                        {/* Time and Status Header */}
+                        <HStack justify="space-between" align="center">
+                          <Text fontSize="sm" color="gray.500">
+                            {formatTime(game.time)}
+                          </Text>
+                          <HStack gap="2" align="center">
+                            {getStatusBadge(game.status, game.quarter)}
+                            {game.isPostseason && (
+                              <Badge
+                                variant="solid"
+                                bg="purple.500"
+                                color="white"
+                                fontSize="xs"
+                                px="2"
+                                py="1"
+                                borderRadius="full"
+                              >
+                                Postseason
+                              </Badge>
+                            )}
+                            {game.status === GameStatus.LIVE && (
+                              <Badge
+                                variant="solid"
+                                bg="red.500"
+                                color="white"
+                                fontSize="xs"
+                                px="2"
+                                py="1"
+                                borderRadius="full"
+                                display="flex"
+                                alignItems="center"
+                                gap="1"
+                              >
+                                <Wifi size={12} />
+                                Live
+                              </Badge>
+                            )}
+                          </HStack>
+                        </HStack>
+
+                        {/* Location Information */}
+                        {(game.stadium || game.city) && (
+                          <HStack
+                            justify="space-between"
+                            align="center"
+                            gap="3"
+                          >
+                            <HStack gap="2" align="center" flexWrap="wrap">
+                              {game.stadium && (
+                                <Badge
+                                  variant="outline"
+                                  colorScheme="gray"
+                                  fontSize="xs"
+                                  px="2"
+                                  py="1"
+                                  borderRadius="full"
+                                >
+                                  {game.stadium}
+                                </Badge>
+                              )}
+                              {game.city && game.state && (
+                                <Badge
+                                  variant="outline"
+                                  colorScheme="blue"
+                                  fontSize="xs"
+                                  px="2"
+                                  py="1"
+                                  borderRadius="full"
+                                >
+                                  {game.city}, {game.state}
+                                </Badge>
+                              )}
+                              {game.capacity && (
+                                <Badge
+                                  variant="outline"
+                                  colorScheme="green"
+                                  fontSize="xs"
+                                  px="2"
+                                  py="1"
+                                  borderRadius="full"
+                                >
+                                  {game.capacity.toLocaleString()} seats
+                                </Badge>
+                              )}
+                              {game.surface && (
+                                <Badge
+                                  variant="outline"
+                                  colorScheme="purple"
+                                  fontSize="xs"
+                                  px="2"
+                                  py="1"
+                                  borderRadius="full"
+                                >
+                                  {game.surface}
+                                </Badge>
+                              )}
+                              {game.division && (
+                                <Badge
+                                  variant="outline"
+                                  colorScheme="orange"
+                                  fontSize="xs"
+                                  px="2"
+                                  py="1"
+                                  borderRadius="full"
+                                >
+                                  {game.division} Division
+                                </Badge>
+                              )}
+                            </HStack>
+
+                            {/* Bases Icon for MLB Live Games */}
+                            {selectedLeague === League.MLB &&
+                              game.status === GameStatus.LIVE && <BasesIcon />}
+                          </HStack>
+                        )}
+
+                        {/* Away Team */}
+                        <HStack justify="space-between" align="center" gap="2">
+                          <HStack gap="3" align="center" flex="1" minW="0">
+                            <Box
+                              w="8"
+                              h="8"
+                              bg="gray.300"
                               borderRadius="full"
                               display="flex"
                               alignItems="center"
-                              gap="1"
+                              justifyContent="center"
+                              overflow="hidden"
+                              flexShrink="0"
                             >
-                              <Wifi size={12} />
-                              Live
-                            </Badge>
-                          )}
-                        </HStack>
-                      </HStack>
-
-                      {/* Location Information */}
-                      {(game.stadium || game.city) && (
-                        <HStack
-                          justify="space-between"
-                          align="flex-start"
-                          gap="3"
-                        >
-                          <VStack gap="1" align="stretch" flex="1">
-                            {game.stadium && (
-                              <Text
-                                fontSize="xs"
-                                fontWeight="medium"
-                                color="gray.700"
+                              {game.awayTeam.logo ? (
+                                <Image
+                                  src={game.awayTeam.logo}
+                                  alt={game.awayTeam.name}
+                                  w="full"
+                                  h="full"
+                                  objectFit="cover"
+                                />
+                              ) : (
+                                <Box
+                                  w="full"
+                                  h="full"
+                                  bg="gray.300"
+                                  borderRadius="full"
+                                />
+                              )}
+                            </Box>
+                            <Text
+                              fontSize="sm"
+                              color="gray.900"
+                              fontWeight="medium"
+                              overflow="hidden"
+                              textOverflow="ellipsis"
+                              whiteSpace="nowrap"
+                              flex="1"
+                              minW="0"
+                            >
+                              {game.awayTeam.name}
+                            </Text>
+                          </HStack>
+                          <HStack gap="2" align="center" flexShrink="0">
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color="gray.900"
+                              minW="8"
+                              textAlign="right"
+                            >
+                              {game.awayTeam.score}
+                            </Text>
+                            {game.odds && (
+                              <Box
+                                p="2"
+                                bg="gray.50"
+                                borderRadius="6px"
+                                border="1px solid"
+                                borderColor="gray.200"
+                                w="24"
+                                flexShrink="0"
                               >
-                                {game.stadium}
-                              </Text>
+                                <TeamOddsDisplay
+                                  odds={game.odds}
+                                  isAway={true}
+                                />
+                              </Box>
                             )}
-                            <HStack
-                              gap="2"
-                              align="center"
-                              fontSize="xs"
-                              color="gray.600"
+                          </HStack>
+                        </HStack>
+
+                        {/* Home Team */}
+                        <HStack justify="space-between" align="center" gap="2">
+                          <HStack gap="3" align="center" flex="1" minW="0">
+                            <Box
+                              w="8"
+                              h="8"
+                              bg="gray.300"
+                              borderRadius="full"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              overflow="hidden"
+                              flexShrink="0"
                             >
-                              {game.city && (
-                                <Text fontWeight="medium">{game.city}</Text>
+                              {game.homeTeam.logo ? (
+                                <Image
+                                  src={game.homeTeam.logo}
+                                  alt={game.homeTeam.name}
+                                  w="full"
+                                  h="full"
+                                  objectFit="cover"
+                                />
+                              ) : (
+                                <Box
+                                  w="full"
+                                  h="full"
+                                  bg="gray.300"
+                                  borderRadius="full"
+                                />
                               )}
-                              {game.state && (
-                                <Text color="gray.500">{game.state}</Text>
-                              )}
-                              {game.capacity && (
-                                <Text color="gray.500">
-                                  {game.capacity.toLocaleString()} seats
-                                </Text>
-                              )}
-                              {game.surface && (
-                                <Text color="gray.500">{game.surface}</Text>
-                              )}
-                            </HStack>
-                            {game.division && (
-                              <Text fontSize="xs" color="gray.500">
-                                {game.division} Division
-                              </Text>
-                            )}
-                          </VStack>
-
-                          {/* Bases Icon for MLB Live Games */}
-                          {selectedLeague === "mlb" &&
-                            game.status === "live" && <BasesIcon />}
-                        </HStack>
-                      )}
-
-                      {/* Away Team */}
-                      <HStack justify="space-between" align="center">
-                        <HStack gap="3" align="center" flex="1">
-                          <Box
-                            w="8"
-                            h="8"
-                            bg="gray.300"
-                            borderRadius="full"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            overflow="hidden"
-                            flexShrink="0"
-                          >
-                            {game.awayTeam.logo ? (
-                              <Image
-                                src={game.awayTeam.logo}
-                                alt={game.awayTeam.name}
-                                w="full"
-                                h="full"
-                                objectFit="cover"
-                              />
-                            ) : (
+                            </Box>
+                            <Text
+                              fontSize="sm"
+                              color="gray.900"
+                              fontWeight="medium"
+                              overflow="hidden"
+                              textOverflow="ellipsis"
+                              whiteSpace="nowrap"
+                              flex="1"
+                              minW="0"
+                            >
+                              {game.homeTeam.name}
+                            </Text>
+                          </HStack>
+                          <HStack gap="2" align="center" flexShrink="0">
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color="gray.900"
+                              minW="8"
+                              textAlign="right"
+                            >
+                              {game.homeTeam.score}
+                            </Text>
+                            {game.odds && (
                               <Box
-                                w="full"
-                                h="full"
-                                bg="gray.300"
-                                borderRadius="full"
-                              />
+                                p="2"
+                                bg="gray.50"
+                                borderRadius="6px"
+                                border="1px solid"
+                                borderColor="gray.200"
+                                w="24"
+                                flexShrink="0"
+                              >
+                                <TeamOddsDisplay
+                                  odds={game.odds}
+                                  isAway={false}
+                                />
+                              </Box>
                             )}
-                          </Box>
-                          <Text
-                            fontSize="sm"
-                            color="gray.900"
-                            fontWeight="medium"
-                            overflow="hidden"
-                            textOverflow="ellipsis"
-                            whiteSpace="nowrap"
-                          >
-                            {game.awayTeam.name}
-                          </Text>
+                          </HStack>
                         </HStack>
-                        <Text
-                          fontSize="lg"
-                          fontWeight="bold"
-                          color="gray.900"
-                          minW="8"
-                          textAlign="right"
-                        >
-                          {game.awayTeam.score}
-                        </Text>
-                      </HStack>
 
-                      {/* Home Team */}
-                      <HStack justify="space-between" align="center">
-                        <HStack gap="3" align="center" flex="1">
+                        {/* Game-level odds (Total and Sportsbook) */}
+                        {game.odds && (
                           <Box
-                            w="8"
-                            h="8"
-                            bg="gray.300"
-                            borderRadius="full"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            overflow="hidden"
-                            flexShrink="0"
+                            mt="2"
+                            pt="2"
+                            borderTop="1px solid"
+                            borderColor="gray.200"
                           >
-                            {game.homeTeam.logo ? (
-                              <Image
-                                src={game.homeTeam.logo}
-                                alt={game.homeTeam.name}
-                                w="full"
-                                h="full"
-                                objectFit="cover"
-                              />
-                            ) : (
-                              <Box
-                                w="full"
-                                h="full"
-                                bg="gray.300"
-                                borderRadius="full"
-                              />
-                            )}
+                            <GameOddsDisplay odds={game.odds} />
                           </Box>
-                          <Text
-                            fontSize="sm"
-                            color="gray.900"
-                            fontWeight="medium"
-                            overflow="hidden"
-                            textOverflow="ellipsis"
-                            whiteSpace="nowrap"
-                          >
-                            {game.homeTeam.name}
-                          </Text>
-                        </HStack>
-                        <Text
-                          fontSize="lg"
-                          fontWeight="bold"
-                          color="gray.900"
-                          minW="8"
-                          textAlign="right"
-                        >
-                          {game.homeTeam.score}
-                        </Text>
-                      </HStack>
-                    </VStack>
-                  </Card.Body>
-                </Card.Root>
-              ))}
+                        )}
+                      </VStack>
+                    </Card.Body>
+                  </Card.Root>
+                );
+              })}
             </VStack>
           )}
         </VStack>

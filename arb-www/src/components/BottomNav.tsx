@@ -12,9 +12,9 @@ export function BottomNav() {
 
   const handleTabChange = (tabId: string) => {
     switch (tabId) {
-      case "for-you":
-        navigate("/fyp");
-        break;
+      // case "for-you":
+      //   navigate("/fyp");
+      //   break;
       case "scores":
         navigate(`/scores/${selectedLeague}`);
         break;
@@ -24,30 +24,30 @@ export function BottomNav() {
       case "social":
         navigate(`/social/${selectedLeague}`);
         break;
-      case "bet":
-        navigate("/bet");
-        break;
+      // case "bet":
+      //   navigate("/bet");
+      //   break;
     }
   };
 
   // Determine active tab from current location
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path === "/fyp") return "for-you";
+    // if (path === "/fyp") return "for-you"; // Commented out - For You tab is hidden
     if (path.startsWith("/scores")) return "scores";
     if (path.startsWith("/live")) return "play-by-play";
     if (path.startsWith("/social")) return "social";
-    if (path === "/bet") return "bet";
-    return "for-you"; // default
+    // if (path === "/bet") return "bet"; // Commented out - Bet tab is hidden
+    return "scores"; // default to scores since for-you is hidden
   };
 
   const activeTab = getActiveTab();
   const tabs = [
-    { id: "for-you", label: "For You", icon: User },
+    // { id: "for-you", label: "For You", icon: User },
     { id: "scores", label: "Scores", icon: Trophy },
     { id: "play-by-play", label: "Live", icon: Play },
     { id: "social", label: "Social", icon: Users },
-    { id: "bet", label: "Bet", icon: DollarSign },
+    // { id: "bet", label: "Bet", icon: DollarSign },
   ];
 
   return (

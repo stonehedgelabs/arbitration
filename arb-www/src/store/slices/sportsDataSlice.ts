@@ -1,7 +1,9 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { mockData, leagues, forYouFeed, boxScoreData, League } from '../../services/MockData.ts';
+import { mockData, leagues, forYouFeed, boxScoreData, MockLeague } from '../../services/MockData.ts';
 import { buildApiUrl } from '../../config';
 import { TwitterSearchResponse } from '../../schema/twitterapi';
+import { MLBOddsByDateResponse } from '../../schema/mlb/odds';
+import { MLBScoresResponse, MLBTeamProfilesResponse, StadiumsResponse, MLBScheduleResponse } from '../../schema/mlb';
 import { getCurrentLocalDate } from '../../utils';
 
 // Async thunk for fetching box score data
@@ -85,8 +87,121 @@ export const loadMoreTwitterData = createAsyncThunk(
   }
 );
 
+// Async thunk for fetching odds by date
+export const fetchOddsByDate = createAsyncThunk(
+  'sportsData/fetchOddsByDate',
+  async ({ league, date }: { league: string; date: string }) => {
+    const apiUrl = buildApiUrl('/api/v1/odds-by-date', { league, date });
+    console.log('Fetching odds by date from:', apiUrl);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch odds by date');
+    }
+    const data = await response.json();
+    console.log('Odds by date data received:', data);
+    return data;
+  }
+);
+
+// Async thunk for fetching MLB scores
+export const fetchMLBScores = createAsyncThunk(
+  'sportsData/fetchMLBScores',
+  async ({ date }: { date?: string } = {}) => {
+    const params: Record<string, string> = { league: 'mlb' };
+    if (date) {
+      params.date = date;
+    }
+    const apiUrl = buildApiUrl('/api/v1/scores', params);
+    console.log('Fetching MLB scores from:', apiUrl);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch MLB scores');
+    }
+    const data = await response.json();
+    console.log('MLB scores data received:', data);
+    return data;
+  }
+);
+
+// Async thunk for fetching MLB team profiles
+export const fetchMLBTeamProfiles = createAsyncThunk(
+  'sportsData/fetchMLBTeamProfiles',
+  async () => {
+    const apiUrl = buildApiUrl('/api/team-profile', { league: 'mlb' });
+    console.log('Fetching MLB team profiles from:', apiUrl);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch MLB team profiles');
+    }
+    const data = await response.json();
+    console.log('MLB team profiles data received:', data);
+    return data;
+  }
+);
+
+// Async thunk for fetching MLB stadiums
+export const fetchMLBStadiums = createAsyncThunk(
+  'sportsData/fetchMLBStadiums',
+  async () => {
+    const apiUrl = buildApiUrl('/api/v1/venues', { league: 'mlb' });
+    console.log('Fetching MLB stadiums from:', apiUrl);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch MLB stadiums');
+    }
+    const data = await response.json();
+    console.log('MLB stadiums data received:', data);
+    return data;
+  }
+);
+
+// Async thunk for fetching MLB schedule
+export const fetchMLBSchedule = createAsyncThunk(
+  'sportsData/fetchMLBSchedule',
+  async ({ date, isPostseason = false }: { date?: string; isPostseason?: boolean } = {}) => {
+    const params: Record<string, string> = { league: 'mlb' };
+    if (isPostseason) {
+      params.post = 'true';
+    }
+    // Add date as a filter parameter if provided
+    if (date) {
+      params.date = date;
+    }
+    const apiUrl = buildApiUrl('/api/v1/schedule', params);
+    console.log('Fetching MLB schedule from:', apiUrl);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch MLB schedule');
+    }
+    const data = await response.json();
+    console.log('MLB schedule data received:', data);
+    return data;
+  }
+);
+
+// Async thunk for fetching current games
+export const fetchCurrentGames = createAsyncThunk(
+  'sportsData/fetchCurrentGames',
+  async ({ start, end }: { start: string; end: string }) => {
+    const params: Record<string, string> = { 
+      league: 'mlb',
+      start,
+      end
+    };
+    const apiUrl = buildApiUrl('/api/v1/current_games', params);
+    console.log('Fetching current games from:', apiUrl);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch current games');
+    }
+    const data = await response.json();
+    console.log('Current games data received:', data);
+    return data;
+  }
+);
+
 interface SportsDataState {
-  leagues: League[];
+  leagues: MockLeague[];
   selectedLeague: string;
   activeTab: string;
   selectedDate: string; // ISO date string (YYYY-MM-DD)
@@ -100,6 +215,26 @@ interface SportsDataState {
   twitterSearchQuery: string;
   twitterHasSearched: boolean;
   twitterLoadingMore: boolean;
+  // Odds state
+  oddsByDate: MLBOddsByDateResponse | null;
+  oddsLoading: boolean;
+  oddsError: string | null;
+  // MLB data state
+  mlbScores: MLBScoresResponse | null;
+  mlbScoresLoading: boolean;
+  mlbScoresError: string | null;
+  mlbTeamProfiles: MLBTeamProfilesResponse | null;
+  mlbTeamProfilesLoading: boolean;
+  mlbTeamProfilesError: string | null;
+  mlbStadiums: StadiumsResponse | null;
+  mlbStadiumsLoading: boolean;
+  mlbStadiumsError: string | null;
+  mlbSchedule: MLBScheduleResponse | null;
+  mlbScheduleLoading: boolean;
+  mlbScheduleError: string | null;
+  currentGames: MLBScheduleResponse | null;
+  currentGamesLoading: boolean;
+  currentGamesError: string | null;
 }
 
 const initialState: SportsDataState = {
@@ -117,6 +252,26 @@ const initialState: SportsDataState = {
   twitterSearchQuery: '',
   twitterHasSearched: false,
   twitterLoadingMore: false,
+  // Odds state
+  oddsByDate: null,
+  oddsLoading: false,
+  oddsError: null,
+  // MLB data state
+  mlbScores: null,
+  mlbScoresLoading: false,
+  mlbScoresError: null,
+  mlbTeamProfiles: null,
+  mlbTeamProfilesLoading: false,
+  mlbTeamProfilesError: null,
+  mlbStadiums: null,
+  mlbStadiumsLoading: false,
+  mlbStadiumsError: null,
+  mlbSchedule: null,
+  mlbScheduleLoading: false,
+  mlbScheduleError: null,
+  currentGames: null,
+  currentGamesLoading: false,
+  currentGamesError: null,
 };
 
 const sportsDataSlice = createSlice({
@@ -142,6 +297,20 @@ const sportsDataSlice = createSlice({
     clearTwitterData: (state) => {
       state.twitterData = null;
       state.twitterError = null;
+    },
+    clearOddsData: (state) => {
+      state.oddsByDate = null;
+      state.oddsError = null;
+    },
+    clearMLBData: (state) => {
+      state.mlbScores = null;
+      state.mlbScoresError = null;
+      state.mlbTeamProfiles = null;
+      state.mlbTeamProfilesError = null;
+      state.mlbStadiums = null;
+      state.mlbStadiumsError = null;
+      state.mlbSchedule = null;
+      state.mlbScheduleError = null;
     },
     // In the future, you can add actions to fetch real data
     // loadLeagueData: (state, action) => { ... }
@@ -199,6 +368,84 @@ const sportsDataSlice = createSlice({
       .addCase(loadMoreTwitterData.rejected, (state, action) => {
         state.twitterLoadingMore = false;
         state.twitterError = action.error.message || 'Failed to load more Twitter data';
+      })
+      .addCase(fetchOddsByDate.pending, (state) => {
+        state.oddsLoading = true;
+        state.oddsError = null;
+      })
+      .addCase(fetchOddsByDate.fulfilled, (state, action) => {
+        state.oddsLoading = false;
+        state.oddsByDate = action.payload;
+        state.oddsError = null;
+      })
+      .addCase(fetchOddsByDate.rejected, (state, action) => {
+        state.oddsLoading = false;
+        state.oddsError = action.error.message || 'Failed to fetch odds data';
+      })
+      .addCase(fetchMLBScores.pending, (state) => {
+        state.mlbScoresLoading = true;
+        state.mlbScoresError = null;
+      })
+      .addCase(fetchMLBScores.fulfilled, (state, action) => {
+        state.mlbScoresLoading = false;
+        state.mlbScores = action.payload;
+        state.mlbScoresError = null;
+      })
+      .addCase(fetchMLBScores.rejected, (state, action) => {
+        state.mlbScoresLoading = false;
+        state.mlbScoresError = action.error.message || 'Failed to fetch MLB scores';
+      })
+      .addCase(fetchMLBTeamProfiles.pending, (state) => {
+        state.mlbTeamProfilesLoading = true;
+        state.mlbTeamProfilesError = null;
+      })
+      .addCase(fetchMLBTeamProfiles.fulfilled, (state, action) => {
+        state.mlbTeamProfilesLoading = false;
+        state.mlbTeamProfiles = action.payload;
+        state.mlbTeamProfilesError = null;
+      })
+      .addCase(fetchMLBTeamProfiles.rejected, (state, action) => {
+        state.mlbTeamProfilesLoading = false;
+        state.mlbTeamProfilesError = action.error.message || 'Failed to fetch MLB team profiles';
+      })
+      .addCase(fetchMLBStadiums.pending, (state) => {
+        state.mlbStadiumsLoading = true;
+        state.mlbStadiumsError = null;
+      })
+      .addCase(fetchMLBStadiums.fulfilled, (state, action) => {
+        state.mlbStadiumsLoading = false;
+        state.mlbStadiums = action.payload;
+        state.mlbStadiumsError = null;
+      })
+      .addCase(fetchMLBStadiums.rejected, (state, action) => {
+        state.mlbStadiumsLoading = false;
+        state.mlbStadiumsError = action.error.message || 'Failed to fetch MLB stadiums';
+      })
+      .addCase(fetchMLBSchedule.pending, (state) => {
+        state.mlbScheduleLoading = true;
+        state.mlbScheduleError = null;
+      })
+      .addCase(fetchMLBSchedule.fulfilled, (state, action) => {
+        state.mlbScheduleLoading = false;
+        state.mlbSchedule = action.payload;
+        state.mlbScheduleError = null;
+      })
+      .addCase(fetchMLBSchedule.rejected, (state, action) => {
+        state.mlbScheduleLoading = false;
+        state.mlbScheduleError = action.error.message || 'Failed to fetch MLB schedule';
+      })
+      .addCase(fetchCurrentGames.pending, (state) => {
+        state.currentGamesLoading = true;
+        state.currentGamesError = null;
+      })
+      .addCase(fetchCurrentGames.fulfilled, (state, action) => {
+        state.currentGamesLoading = false;
+        state.currentGames = action.payload;
+        state.currentGamesError = null;
+      })
+      .addCase(fetchCurrentGames.rejected, (state, action) => {
+        state.currentGamesLoading = false;
+        state.currentGamesError = action.error.message || 'Failed to fetch current games';
       });
   },
 });
@@ -209,6 +456,8 @@ export const {
   setSelectedDate,
   setTwitterSearchQuery,
   setTwitterHasSearched,
-  clearTwitterData
+  clearTwitterData,
+  clearOddsData,
+  clearMLBData
 } = sportsDataSlice.actions;
 export default sportsDataSlice.reducer;

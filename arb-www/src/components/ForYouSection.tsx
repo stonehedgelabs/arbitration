@@ -1,22 +1,26 @@
+// Third-party library imports
 import {
+  Badge,
+  Box,
+  Card,
+  HStack,
+  Image,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import {
+  Check,
   Eye,
   Heart,
   MessageCircle,
-  Share,
   Play,
-  Trophy,
+  Share,
   Star,
-  Check,
+  Trophy,
 } from "lucide-react";
-import {
-  Badge,
-  Card,
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Image,
-} from "@chakra-ui/react";
+
+// Internal imports - config
+import { GameStatus } from "../config";
 
 interface ForYouItem {
   id: string;
@@ -396,7 +400,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
                   {game.homeTeam.score}
                 </Text>
               </HStack>
-              {game.status === "live" && (
+              {game.status === GameStatus.LIVE && (
                 <HStack gap="2" pt="2">
                   <Box
                     w="2"

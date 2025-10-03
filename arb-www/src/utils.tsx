@@ -16,6 +16,16 @@ export const convertUtcToLocalDate = (utcDateTime: string): string => {
 };
 
 /**
+ * Extracts date from an EST datetime string and returns it in YYYY-MM-DD format
+ * @param estDateTime - EST datetime string (e.g., "2025-10-01T21:08:00")
+ * @returns {string} Date in YYYY-MM-DD format
+ */
+export const extractDateFromEst = (estDateTime: string): string => {
+  // For EST times, we just extract the date part without timezone conversion
+  return estDateTime.split("T")[0];
+};
+
+/**
  * Gets the current local date in YYYY-MM-DD format
  * @returns {string} Current local date in YYYY-MM-DD format
  */
@@ -73,6 +83,26 @@ export const formatRelativeTime = (timestamp: string): string => {
   } catch (error) {
     console.error("Error formatting relative time:", timestamp, error);
     return "Just now";
+  }
+};
+
+/**
+ * Check if a date string is in the future
+ * @param dateString - Date string in YYYY-MM-DD format
+ * @returns {boolean} True if the date is in the future
+ */
+export const isFutureDate = (dateString: string): boolean => {
+  try {
+    const today = new Date();
+    const targetDate = new Date(dateString);
+
+    // Reset time to start of day for accurate comparison
+    today.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+
+    return targetDate > today;
+  } catch (error) {
+    return false;
   }
 };
 

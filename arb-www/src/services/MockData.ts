@@ -1,14 +1,14 @@
 // Mock data service for sports app
 // This service provides mock data for leagues, games, plays, videos, social content, and betting info
 
-export interface League {
+export interface MockLeague {
   id: string;
   name: string;
   abbreviation: string;
   color: string;
 }
 
-export const leagues: League[] = [
+export const leagues: MockLeague[] = [
   { id: 'nfl', name: 'National Football League', abbreviation: 'NFL', color: '#013369' },
   { id: 'nba', name: 'National Basketball Association', abbreviation: 'NBA', color: '#C8102E' },
   { id: 'mlb', name: 'Major League Baseball', abbreviation: 'MLB', color: '#002D72' },
@@ -1167,11 +1167,11 @@ export const boxScoreData: Record<string, any> = {
 };
 
 // Service functions
-export function getLeagues(): League[] {
+export function getLeagues(): MockLeague[] {
   return leagues;
 }
 
-export function getLeagueById(id: string): League | undefined {
+export function getLeagueById(id: string): MockLeague | undefined {
   return leagues.find(league => league.id === id);
 }
 

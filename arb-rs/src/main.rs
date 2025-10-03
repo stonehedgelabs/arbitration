@@ -1,17 +1,23 @@
+// Standard library imports
+use async_std::sync::{Arc, Mutex};
+
+// Third-party library imports
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+// Module declarations
 pub mod api_paths;
 pub mod cache;
+pub mod config;
 pub mod data_loader;
 pub mod error;
 pub mod schema;
 pub mod server;
 pub mod uses;
 
-use async_std::sync::{Arc, Mutex};
-
+// Internal imports
 use cache::Cache;
+use config::ArbConfig;
 use data_loader::DataLoader;
 use error::Result;
 use server::Server;
@@ -31,14 +37,16 @@ async fn main() -> Result<()> {
 
     info!("Starting arbitration proxy server...");
 
-    let redis_url = std::env::var("REDIS_URL")
-        .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-    let cache = Arc::new(Mutex::new(Cache::new(&redis_url).await?));
+    // Load configuration
+    let config = ArbConfig::from_env();
+
+    let cache = Arc::new(Mutex::new(Cache::new(config.cache.clone()).await?));
 
     info!("Starting server with real-time API data fetching...");
+    info!("Server config: {:?}", config);
     // Data will be fetched from API as needed, no pre-loading from test files
 
-    let server = Server::new(cache);
+    let server = Server::new(cache, config);
     server
         .run()
         .await

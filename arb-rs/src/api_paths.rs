@@ -1,3 +1,4 @@
+use crate::config::ArbConfig;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 
@@ -28,6 +29,12 @@ pub struct TeamsPath {
 #[derive(Debug, Clone)]
 pub struct SchedulePath {
     league: League,
+}
+
+#[derive(Debug, Clone)]
+pub struct PostseasonSchedulePath {
+    league: League,
+    config: ArbConfig,
 }
 
 #[derive(Debug, Clone)]
@@ -102,6 +109,12 @@ pub struct StadiumsPath {
     league: League,
 }
 
+#[derive(Debug, Clone)]
+pub struct OddsByDatePath {
+    league: League,
+    date: Option<String>,
+}
+
 // Implement Display trait for all path types
 impl std::fmt::Display for TeamProfilePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -148,7 +161,15 @@ impl std::fmt::Display for TeamsPath {
 impl std::fmt::Display for SchedulePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.league {
-            League::Mlb | League::Nba | League::Nhl => {
+            League::Mlb => {
+                write!(
+                    f,
+                    "{}/{}/scores/json/Games/2025",
+                    BASE_URL,
+                    self.league.to_string().to_lowercase()
+                )
+            }
+            League::Nba | League::Nhl => {
                 write!(
                     f,
                     "{}/{}/scores/json/Games",
@@ -169,6 +190,35 @@ impl std::fmt::Display for SchedulePath {
                     f,
                     "{}/{}/scores/json/Games",
                     BASE_URL,
+                    self.league.to_string().to_lowercase()
+                )
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for PostseasonSchedulePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.league {
+            League::Mlb => {
+                let season_id = self
+                    .config
+                    .get_season_identifier("mlb", "2025-10-01")
+                    .unwrap_or_else(|| "2026POST".to_string());
+                write!(
+                    f,
+                    "{}/{}/scores/json/Games/{}",
+                    self.config.api.sportsdata_base_url,
+                    self.league.to_string().to_lowercase(),
+                    season_id
+                )
+            }
+            _ => {
+                // For other leagues, fall back to regular schedule
+                write!(
+                    f,
+                    "{}/{}/scores/json/Games",
+                    self.config.api.sportsdata_base_url,
                     self.league.to_string().to_lowercase()
                 )
             }
@@ -438,6 +488,30 @@ impl std::fmt::Display for StadiumsPath {
     }
 }
 
+impl std::fmt::Display for OddsByDatePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.date {
+            Some(ref date) => {
+                write!(
+                    f,
+                    "{}/{}/odds/json/GameOddsByDate/{}",
+                    BASE_URL,
+                    self.league.to_string().to_lowercase(),
+                    date
+                )
+            }
+            None => {
+                write!(
+                    f,
+                    "{}/{}/odds/json/GameOddsByDate",
+                    BASE_URL,
+                    self.league.to_string().to_lowercase()
+                )
+            }
+        }
+    }
+}
+
 // Helper functions to create path instances
 pub fn team_profile_path(league: League) -> TeamProfilePath {
     TeamProfilePath { league }
@@ -449,6 +523,13 @@ pub fn teams_path(league: League) -> TeamsPath {
 
 pub fn schedule_path(league: League) -> SchedulePath {
     SchedulePath { league }
+}
+
+pub fn postseason_schedule_path(
+    league: League,
+    config: ArbConfig,
+) -> PostseasonSchedulePath {
+    PostseasonSchedulePath { league, config }
 }
 
 pub fn headshots_path(league: League) -> HeadshotsPath {
@@ -519,4 +600,8 @@ pub fn play_by_play_delta_path(
 
 pub fn stadiums_path(league: League) -> StadiumsPath {
     StadiumsPath { league }
+}
+
+pub fn odds_by_date_path(league: League, date: Option<String>) -> OddsByDatePath {
+    OddsByDatePath { league, date }
 }

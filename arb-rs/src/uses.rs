@@ -1,3 +1,8 @@
+// Standard library imports
+use std::collections::HashMap;
+use std::time::Instant;
+
+// Third-party library imports
 use async_std::sync::{Arc, Mutex};
 use axum::{
     extract::{Query, State},
@@ -5,22 +10,28 @@ use axum::{
     response::Json,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::time::Instant;
 use url::Url;
 
+// Internal imports - api_paths
 use crate::api_paths::{
-    box_score_path, games_by_date_path, headshots_path, play_by_play_path, schedule_path,
+    box_score_path, games_by_date_path, headshots_path, odds_by_date_path,
+    play_by_play_path, postseason_schedule_path, schedule_path, scores_basic_final_path,
     scores_basic_path, stadiums_path, team_profile_path, teams_path, League,
 };
+
+// Internal imports - other modules
 use crate::cache::Cache;
+use crate::config::ArbConfig;
 use crate::error::Result;
+
+// Internal imports - schema
 use crate::schema::mlb::box_score::{BoxScore, BoxScoreResponse};
 use crate::schema::mlb::game_by_date::{GameByDate, GameByDateResponse};
+use crate::schema::mlb::odds::{GameOdds, OddsByDateResponse};
 use crate::schema::mlb::play_by_play::PlayByPlayResponse as SchemaPlayByPlayResponse;
+use crate::schema::mlb::schedule::{MLBScheduleGame, MLBScheduleResponse};
 use crate::schema::mlb::stadiums::{Stadium, StadiumsResponse};
 use crate::schema::twitterapi::tweet::{TwitterSearchResponse, TwitterTweet};
-// Removed unused imports
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CacheKey(String);
@@ -85,6 +96,10 @@ impl CacheKey {
     pub fn box_score(league: &League, game_id: &str) -> Self {
         CacheKey::new(format!("box_score:{}:{}", league, game_id))
     }
+
+    pub fn odds_by_date(league: &League, date: &str) -> Self {
+        CacheKey::new(format!("odds_by_date:{}:{}", league, date))
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -100,6 +115,8 @@ pub struct TeamProfileQuery {
 #[derive(Debug, Deserialize)]
 pub struct DataQuery {
     pub league: String,
+    #[serde(default)]
+    pub post: Option<bool>,
     #[serde(flatten)]
     pub filters: HashMap<String, String>,
 }
@@ -127,6 +144,19 @@ pub struct ScoresQuery {
 pub struct BoxScoreQuery {
     pub league: String,
     pub game_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OddsByDateQuery {
+    pub league: String,
+    pub date: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CurrentGamesQuery {
+    pub league: String,
+    pub start: String, // YYYY-MM-DD format
+    pub end: String,   // YYYY-MM-DD format
 }
 
 #[derive(Debug, Serialize)]
@@ -176,13 +206,15 @@ pub struct ScoresResponse {
 pub struct UseCaseState {
     pub cache: Arc<Mutex<Cache>>,
     pub start_time: Instant,
+    pub config: ArbConfig,
 }
 
 impl UseCaseState {
-    pub fn new(cache: Arc<Mutex<Cache>>) -> Self {
+    pub fn new(cache: Arc<Mutex<Cache>>, config: ArbConfig) -> Self {
         Self {
             cache,
             start_time: Instant::now(),
+            config,
         }
     }
 }
@@ -349,8 +381,15 @@ pub async fn teams(
 pub async fn schedule(
     State(use_case_state): State<UseCaseState>,
     Query(params): Query<DataQuery>,
-) -> Result<Json<DataResponse>> {
-    handle_data_request(use_case_state, params, "schedule").await
+) -> Result<Json<MLBScheduleResponse>> {
+    handle_schedule_request(use_case_state, params).await
+}
+
+pub async fn current_games(
+    State(use_case_state): State<UseCaseState>,
+    Query(params): Query<CurrentGamesQuery>,
+) -> Result<Json<MLBScheduleResponse>> {
+    handle_current_games_request(use_case_state, params).await
 }
 
 pub async fn headshots(
@@ -372,6 +411,234 @@ pub async fn scores(
     Query(params): Query<ScoresQuery>,
 ) -> Result<Json<ScoresResponse>> {
     handle_scores_request(use_case_state, params).await
+}
+
+async fn handle_schedule_request(
+    use_case_state: UseCaseState,
+    params: DataQuery,
+) -> Result<Json<MLBScheduleResponse>> {
+    let league_str = params.league.to_lowercase();
+    let league: League = league_str.parse().map_err(|_| {
+        tracing::error!("Invalid league: {}", params.league);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    // Only support MLB for now
+    if league != League::Mlb {
+        tracing::error!("Schedule not yet supported for league: {}", league);
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
+
+    // Check if a date filter is provided - if so, use GamesByDate endpoint for efficiency
+    let date_filter = params.filters.get("date").cloned();
+
+    let (api_url, cache_key) = if let Some(ref date) = date_filter {
+        // Use GamesByDate endpoint for specific date - much more efficient
+        let api_url = games_by_date_path(league.clone(), Some(date.clone())).to_string();
+        let cache_key = CacheKey::new(format!("games_by_date_{}_{}", league, date));
+        (api_url, cache_key)
+    } else if params.post.unwrap_or(false) {
+        // Use postseason schedule if post=true parameter is provided
+        let api_url =
+            postseason_schedule_path(league.clone(), use_case_state.config.clone())
+                .to_string();
+        let cache_key = CacheKey::data_type("postseason_schedule", &league);
+        (api_url, cache_key)
+    } else {
+        // Fall back to full schedule (less efficient)
+        let api_url = schedule_path(league.clone()).to_string();
+        let cache_key = CacheKey::data_type("schedule", &league);
+        (api_url, cache_key)
+    };
+
+    let data = use_case_state
+        .cache
+        .lock()
+        .await
+        .get_or_set_with_ttl(cache_key, 3600, || async {
+            tracing::info!(
+                "Cache miss for schedule data, fetching from API: {}",
+                api_url
+            );
+            // Use appropriate fetch function based on endpoint
+            if date_filter.is_some() {
+                tracing::info!(
+                    "Using GamesByDate endpoint for date: {}",
+                    date_filter.as_ref().unwrap()
+                );
+                fetch_games_by_date_from_api(&api_url, &league).await
+            } else {
+                tracing::info!("Using full schedule endpoint");
+                fetch_schedule_from_api(&api_url, &league, params.post.unwrap_or(false))
+                    .await
+            }
+        })
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get schedule data: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let schedule_games: Vec<MLBScheduleGame> =
+        serde_json::from_str(&data).map_err(|e| {
+            tracing::error!("Failed to parse schedule JSON data: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let total_count = schedule_games.len();
+
+    let (filtered_games, filtered_count) = if params.filters.is_empty() {
+        (schedule_games, total_count)
+    } else {
+        // Apply filters if any
+        let filtered_games = schedule_games
+            .into_iter()
+            .filter(|game| {
+                params.filters.iter().all(|(key, value)| {
+                    match key.as_str() {
+                        "status" => game
+                            .status
+                            .as_ref()
+                            .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
+                            .unwrap_or(false),
+                        "away_team" => game
+                            .away_team
+                            .as_ref()
+                            .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
+                            .unwrap_or(false),
+                        "home_team" => game
+                            .home_team
+                            .as_ref()
+                            .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
+                            .unwrap_or(false),
+                        "date" => {
+                            if let Some(day_str) = game.day.as_ref() {
+                                // The day field is in format "2025-03-18T00:00:00", so we need to check if it starts with the date
+                                day_str.starts_with(&format!("{}T", value))
+                            } else {
+                                false
+                            }
+                        }
+                        _ => true,
+                    }
+                })
+            })
+            .collect::<Vec<_>>();
+        let filtered_count = filtered_games.len();
+        (filtered_games, filtered_count)
+    };
+
+    Ok(Json(MLBScheduleResponse {
+        league: league.to_string(),
+        data_type: "schedule".to_string(),
+        data: filtered_games,
+        filtered_count,
+        total_count,
+    }))
+}
+
+async fn handle_current_games_request(
+    use_case_state: UseCaseState,
+    params: CurrentGamesQuery,
+) -> Result<Json<MLBScheduleResponse>> {
+    let league_str = params.league.to_lowercase();
+    let league: League = league_str.parse().map_err(|_| {
+        tracing::error!("Invalid league: {}", params.league);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    // Only support MLB for now
+    if league != League::Mlb {
+        tracing::error!("Current games not yet supported for league: {}", league);
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
+
+    // Parse start and end dates
+    let start_date = chrono::NaiveDate::parse_from_str(&params.start, "%Y-%m-%d")
+        .map_err(|_| {
+            tracing::error!("Invalid start date format: {}", params.start);
+            StatusCode::BAD_REQUEST
+        })?;
+
+    let end_date =
+        chrono::NaiveDate::parse_from_str(&params.end, "%Y-%m-%d").map_err(|_| {
+            tracing::error!("Invalid end date format: {}", params.end);
+            StatusCode::BAD_REQUEST
+        })?;
+
+    // Validate date range
+    if start_date > end_date {
+        tracing::error!(
+            "Start date {} is after end date {}",
+            params.start,
+            params.end
+        );
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
+
+    // Generate all dates in the range (inclusive)
+    let mut all_games = Vec::new();
+    let mut current_date = start_date;
+
+    while current_date <= end_date {
+        let date_str = current_date.format("%Y-%m-%d").to_string();
+
+        // Use GamesByDate endpoint for this specific date
+        let api_url =
+            games_by_date_path(league.clone(), Some(date_str.clone())).to_string();
+        let cache_key = CacheKey::new(format!("games_by_date_{}_{}", league, date_str));
+
+        let data = use_case_state
+            .cache
+            .lock()
+            .await
+            .get_or_set_with_ttl(cache_key, 3600, || async {
+                tracing::info!(
+                    "Cache miss for games by date, fetching from API: {} for date: {}",
+                    api_url,
+                    date_str
+                );
+                fetch_games_by_date_from_api(&api_url, &league).await
+            })
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to get games data for date {}: {}", date_str, e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+        // Parse the JSON data and add games to our collection
+        let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
+            tracing::error!("Failed to parse JSON data for date {}: {}", date_str, e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        // Add games from this date to our collection
+        if let Some(games_array) = json_data.as_array() {
+            for game in games_array {
+                all_games.push(game.clone());
+            }
+        }
+
+        // Move to next date
+        current_date = current_date.succ_opt().unwrap_or(current_date);
+    }
+
+    // Convert all games to MLBScheduleGame format
+    let schedule_games: Vec<MLBScheduleGame> =
+        serde_json::from_value(serde_json::Value::Array(all_games)).map_err(|e| {
+            tracing::error!("Failed to parse games as MLBScheduleGame: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let total_count = schedule_games.len();
+
+    Ok(Json(MLBScheduleResponse {
+        league: league.to_string(),
+        data_type: "current_games".to_string(),
+        data: schedule_games,
+        filtered_count: total_count,
+        total_count,
+    }))
 }
 
 async fn handle_data_request(
@@ -572,8 +839,8 @@ async fn handle_scores_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    // Determine the date range - default to 3 days back if not specified
-    let days_back = params.days_back.unwrap_or(3);
+    // Determine the date range - default to 7 days back to match date picker range
+    let days_back = params.days_back.unwrap_or(7);
     let today = chrono::Utc::now().date_naive();
 
     // Generate date range for the past N days
@@ -583,11 +850,12 @@ async fn handle_scores_request(
         let target_date = today - chrono::Duration::days(i.into());
         let date_str = target_date.format("%Y-%m-%d").to_string();
 
-        // For now, we'll focus on MLB and use the ScoresBasic endpoint
+        // For now, we'll focus on MLB and use the ScoresBasicFinal endpoint
         // This will be expanded to support other leagues
         let api_url = match league {
             League::Mlb => {
-                scores_basic_path(league.clone(), Some(date_str.clone())).to_string()
+                scores_basic_final_path(league.clone(), Some(date_str.clone()))
+                    .to_string()
             }
             _ => {
                 tracing::error!("Scores not yet supported for league: {}", league);
@@ -730,6 +998,102 @@ fn extract_play_by_play_events(
     ))
 }
 
+async fn fetch_schedule_from_api(
+    api_url: &str,
+    league: &League,
+    is_postseason: bool,
+) -> Result<String> {
+    let _parsed_url = Url::parse(api_url)?;
+
+    let season_type = if is_postseason {
+        "postseason"
+    } else {
+        "regular season"
+    };
+    tracing::info!(
+        "Fetching {} schedule data from API: {}",
+        season_type,
+        api_url
+    );
+
+    match league {
+        League::Mlb => {
+            let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
+                tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            let client = reqwest::Client::new();
+
+            tracing::info!("Making real API request for schedule: {}", api_url);
+
+            let response = client
+                .get(api_url)
+                .query(&[("key", &api_key)])
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to make HTTP request: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                tracing::error!(
+                    "API request failed with status {}: {}",
+                    status,
+                    error_text
+                );
+                return Err(StatusCode::from_u16(status.as_u16())
+                    .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                    .into());
+            }
+
+            let body = response.text().await.map_err(|e| {
+                tracing::error!("Failed to read response body: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            tracing::info!("Successfully fetched {} schedule data for MLB. Response length: {} characters", season_type, body.len());
+
+            // Log first 500 characters for debugging
+            let preview = if body.len() > 500 {
+                format!("{}...", &body[..500])
+            } else {
+                body.clone()
+            };
+            tracing::info!("Response preview: {}", preview);
+
+            // Check if response is valid JSON array
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body) {
+                if let Some(array) = parsed.as_array() {
+                    tracing::info!(
+                        "Response is valid JSON array with {} items",
+                        array.len()
+                    );
+                } else {
+                    tracing::warn!(
+                        "Response is valid JSON but not an array: {:?}",
+                        parsed
+                    );
+                }
+            } else {
+                tracing::error!("Response is not valid JSON");
+            }
+
+            Ok(body)
+        }
+        _ => {
+            tracing::error!("Schedule not supported for league: {}", league);
+            Err(StatusCode::BAD_REQUEST.into())
+        }
+    }
+}
+
 async fn fetch_data_from_api(
     api_url: &str,
     league: &League,
@@ -739,7 +1103,7 @@ async fn fetch_data_from_api(
 
     tracing::info!("Fetching {} data from API: {}", data_type, api_url);
 
-    // For now, return mock data since we're pre-loading from JSON files
+    // Return mock data since we're pre-loading from JSON files
     // In a real implementation, this would make actual HTTP requests to the API
     let mock_data = match (league, data_type) {
         (League::Nfl, "teams") => serde_json::json!([
@@ -1514,8 +1878,132 @@ pub async fn handle_twitter_search_request(
     Ok(Json(twitter_response))
 }
 
+pub async fn handle_odds_by_date_request(
+    Query(params): Query<OddsByDateQuery>,
+    State(use_case_state): State<UseCaseState>,
+) -> Result<Json<OddsByDateResponse>> {
+    let league = params.league.parse::<League>().map_err(|_| {
+        tracing::error!("Invalid league: {}", params.league);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    if params.date.is_empty() {
+        tracing::error!("Date parameter is required");
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
+
+    // Only support MLB for now
+    if league != League::Mlb {
+        tracing::error!("Odds not yet supported for league: {}", league);
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
+
+    let api_path = odds_by_date_path(league.clone(), Some(params.date.clone()));
+    let api_url = api_path.to_string();
+
+    let cache_key = CacheKey::odds_by_date(&league, &params.date);
+
+    // Check cache first
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        if let Some(cached_data) = cache.get(&cache_key).await? {
+            tracing::info!("Returning cached odds data for date: {}", params.date);
+            let response: OddsByDateResponse = serde_json::from_str(&cached_data)
+                .map_err(|e| {
+                    tracing::error!("Failed to deserialize cached data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            return Ok(Json(response));
+        }
+    }
+
+    // Fetch from API
+    let raw_data = fetch_odds_by_date_from_api(&api_url, &league).await?;
+
+    // Parse the JSON response
+    let game_odds: Vec<GameOdds> = serde_json::from_str(&raw_data).map_err(|e| {
+        tracing::error!("Failed to parse odds JSON: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let response = OddsByDateResponse {
+        league: league.to_string(),
+        date: params.date.clone(),
+        data: game_odds,
+        games_count: 0, // Will be set from data length
+    };
+
+    // Update games_count from actual data
+    let response = OddsByDateResponse {
+        games_count: response.data.len(),
+        ..response
+    };
+
+    // Cache the response
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        let serialized = serde_json::to_string(&response).map_err(|e| {
+            tracing::error!("Failed to serialize response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        cache.set(&cache_key, &serialized).await?;
+    }
+
+    tracing::info!(
+        "Successfully fetched and cached odds for date: {}",
+        params.date
+    );
+    Ok(Json(response))
+}
+
+async fn fetch_odds_by_date_from_api(api_url: &str, league: &League) -> Result<String> {
+    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
+        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let client = reqwest::Client::new();
+
+    tracing::info!(
+        "Making real API request to: {} for league: {}",
+        api_url,
+        league
+    );
+
+    let response = client
+        .get(api_url)
+        .query(&[("key", &api_key)])
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to make HTTP request: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Unknown error".to_string());
+        tracing::error!("API request failed with status {}: {}", status, error_text);
+        return Err(StatusCode::from_u16(status.as_u16())
+            .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+            .into());
+    }
+
+    let body = response.text().await.map_err(|e| {
+        tracing::error!("Failed to read response body: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    tracing::info!("Successfully fetched odds data from API");
+    Ok(body)
+}
+
 // Function aliases for server routes
 pub use handle_box_score_request as box_score;
 pub use handle_game_by_date_request as game_by_date;
+pub use handle_odds_by_date_request as odds_by_date;
 pub use handle_stadiums_request as stadiums;
 pub use handle_twitter_search_request as twitter_search;

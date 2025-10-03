@@ -1,13 +1,17 @@
-import { ArrowLeft, MapPin, Clock } from "lucide-react";
+// Third-party library imports
 import {
+  Box,
   Button,
   Card,
-  Box,
-  VStack,
   HStack,
-  Text,
   Table,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
+import { ArrowLeft, Clock, MapPin } from "lucide-react";
+
+// Internal imports - config
+import { League } from "../config";
 
 interface PlayerStat {
   name: string;
@@ -81,7 +85,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
         return ["1st", "2nd", "3rd", "4th"];
       case "nba":
         return ["1st", "2nd", "3rd", "4th"];
-      case "mlb":
+      case League.MLB:
         return ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"];
       case "nhl":
         return ["1st", "2nd", "3rd"];

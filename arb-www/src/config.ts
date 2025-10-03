@@ -3,10 +3,63 @@
  */
 
 /**
+ * Supported leagues enum
+ */
+export enum League {
+  MLB = 'mlb',
+  NBA = 'nba',
+  NFL = 'nfl',
+  NHL = 'nhl',
+}
+
+/**
+ * League type for type safety
+ */
+export type LeagueType = `${League}`;
+
+/**
+ * Game status enum
+ */
+export enum GameStatus {
+  LIVE = 'live',
+  FINAL = 'final',
+  UPCOMING = 'upcoming',
+  CANCELLED = 'cancelled',
+  IN_PROGRESS = 'InProgress',
+  COMPLETED = 'Completed',
+  SCHEDULED = 'Scheduled',
+  POSTPONED = 'Postponed',
+}
+
+/**
+ * Game status type for type safety
+ */
+export type GameStatusType = `${GameStatus}`;
+
+/**
+ * Quarter/Period types for different sports
+ */
+export enum QuarterType {
+  Q1 = 'Q1',
+  Q2 = 'Q2',
+  Q3 = 'Q3',
+  Q4 = 'Q4',
+  OT = 'OT',
+  TOP = 'Top',
+  BOT = 'Bot',
+  INNING = 'Inning',
+}
+
+/**
+ * Quarter type for type safety
+ */
+export type QuarterTypeType = `${QuarterType}`;
+
+/**
  * Environment Variables
  */
 export const ENV = {
-  TWITTERAPIIO_API_KEY: import.meta.env.VITE_TWITTERAPIIO_API_KEY,
+  TWITTERAPIIO_API_KEY: (import.meta as any).env?.VITE_TWITTERAPIIO_API_KEY,
 } as const;
 
 /**
@@ -39,8 +92,30 @@ export const APP_CONFIG = {
  * Sports Configuration
  */
 export const SPORTS_CONFIG = {
-  supportedLeagues: ['mlb', 'nba', 'nfl', 'nhl'] as const,
-  defaultLeague: 'mlb' as const,
+  supportedLeagues: Object.values(League),
+  defaultLeague: League.MLB,
+} as const;
+
+/**
+ * Postseason Configuration
+ */
+export const POSTSEASON_CONFIG = {
+  [League.MLB]: {
+    startDate: '10-01', // MM-DD format
+    seasonIdentifier: '2025POST',
+  },
+  [League.NFL]: {
+    startDate: '01-01', // MM-DD format
+    seasonIdentifier: '2025POST',
+  },
+  [League.NBA]: {
+    startDate: '04-01', // MM-DD format
+    seasonIdentifier: '2025POST',
+  },
+  [League.NHL]: {
+    startDate: '04-01', // MM-DD format
+    seasonIdentifier: '2025POST',
+  },
 } as const;
 
 /**
@@ -92,4 +167,93 @@ export const buildApiUrl = (endpoint: string, params?: Record<string, string>): 
  */
 export const getApiUrl = (endpoint: keyof typeof API_CONFIG.endpoints): string => {
   return `${API_CONFIG.baseUrl}${API_CONFIG.endpoints[endpoint]}`;
+};
+
+/**
+ * Check if a date is in postseason for a given league
+ */
+export const isPostseasonDate = (league: League, dateString: string): boolean => {
+  const config = POSTSEASON_CONFIG[league];
+  if (!config) return false;
+  
+  try {
+    const date = new Date(dateString);
+    const currentYear = date.getFullYear();
+    const postseasonStartDate = new Date(`${currentYear}-${config.startDate}`);
+    
+    return date >= postseasonStartDate;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Get postseason season identifier for a league and date
+ */
+export const getPostseasonSeasonIdentifier = (league: League, dateString: string): string | null => {
+  if (isPostseasonDate(league, dateString)) {
+    return POSTSEASON_CONFIG[league].seasonIdentifier;
+  }
+  return null;
+};
+
+/**
+ * Get the appropriate season identifier for a league and date
+ * Returns regular season identifier if not postseason, postseason identifier if postseason
+ */
+export const getSeasonIdentifier = (league: League, dateString: string): string => {
+  if (isPostseasonDate(league, dateString)) {
+    return POSTSEASON_CONFIG[league].seasonIdentifier;
+  }
+  // For regular season, we can derive the year from the date
+  const year = new Date(dateString).getFullYear();
+  return year.toString();
+};
+
+/**
+ * Map API status strings to our standardized GameStatus enum
+ */
+export const mapApiStatusToGameStatus = (apiStatus: string): GameStatus => {
+  switch (apiStatus?.toLowerCase()) {
+    case 'inprogress':
+    case 'live':
+      return GameStatus.LIVE;
+    case 'completed':
+    case 'final':
+      return GameStatus.FINAL;
+    case 'scheduled':
+    case 'upcoming':
+      return GameStatus.UPCOMING;
+    case 'postponed':
+    case 'cancelled':
+      return GameStatus.CANCELLED;
+    default:
+      return GameStatus.UPCOMING; // Default to upcoming for unknown statuses
+  }
+};
+
+/**
+ * Get display-friendly status text
+ */
+export const getStatusDisplayText = (status: GameStatus): string => {
+  switch (status) {
+    case GameStatus.LIVE:
+      return 'Live';
+    case GameStatus.FINAL:
+      return 'Final';
+    case GameStatus.UPCOMING:
+      return 'Upcoming';
+    case GameStatus.CANCELLED:
+      return 'Cancelled';
+    case GameStatus.IN_PROGRESS:
+      return 'In Progress';
+    case GameStatus.COMPLETED:
+      return 'Completed';
+    case GameStatus.SCHEDULED:
+      return 'Scheduled';
+    case GameStatus.POSTPONED:
+      return 'Postponed';
+    default:
+      return 'Unknown';
+  }
 };

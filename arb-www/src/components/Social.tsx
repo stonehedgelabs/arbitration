@@ -1,25 +1,35 @@
+// React imports
 import { useEffect, useRef, useState } from "react";
+
+// Third-party library imports
 import {
   Box,
-  VStack,
-  Flex,
-  Text,
-  Input,
   Button,
-  Spinner,
+  Flex,
   IconButton,
+  Input,
+  Spinner,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
-import { Search, X, MessageCircle } from "lucide-react";
+import { MessageCircle, Search, X } from "lucide-react";
 import { Tweet } from "react-tweet";
+
+// Internal imports - config
+import { League, GameStatus, mapApiStatusToGameStatus } from "../config";
+
+// Internal imports - services
+import useArb from "../services/Arb";
+
+// Internal imports - store
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
+  clearTwitterData,
   fetchTwitterData,
   loadMoreTwitterData,
-  setTwitterSearchQuery,
   setTwitterHasSearched,
-  clearTwitterData,
+  setTwitterSearchQuery,
 } from "../store/slices/sportsDataSlice";
-import useArb from "../services/Arb";
 
 interface SocialSectionProps {
   selectedLeague: string;
@@ -54,7 +64,7 @@ export function Social({ selectedLeague }: SocialSectionProps) {
 
   // Fetch data on mount
   useEffect(() => {
-    if (selectedLeague === "mlb") {
+    if (selectedLeague === League.MLB) {
       fetchMLBScores();
       fetchMLBTeamProfiles();
       fetchMLBStadiums();
@@ -63,7 +73,7 @@ export function Social({ selectedLeague }: SocialSectionProps) {
 
   // Generate team names from live games
   const getLiveGameTeamNames = () => {
-    if (selectedLeague === "mlb" && mlbScores?.data) {
+    if (selectedLeague === League.MLB && mlbScores?.data) {
       console.log("Social: Checking for live games...", {
         totalGames: mlbScores.data.length,
         gameStatuses: mlbScores.data.map((g) => ({
@@ -75,25 +85,8 @@ export function Social({ selectedLeague }: SocialSectionProps) {
       });
 
       // Use the same status detection logic as the Scores component
-      const getStatus = (
-        apiStatus: string,
-      ): "live" | "final" | "upcoming" | "cancelled" => {
-        switch (apiStatus) {
-          case "Final":
-          case "Completed":
-            return "final";
-          case "InProgress":
-          case "In Progress":
-          case "Live":
-            return "live";
-          case "NotNecessary":
-          case "Cancelled":
-          case "Postponed":
-          case "Suspended":
-            return "cancelled";
-          default:
-            return "upcoming";
-        }
+      const getStatus = (apiStatus: string): GameStatus => {
+        return mapApiStatusToGameStatus(apiStatus);
       };
 
       // Convert MLB games to the same format as Live component
@@ -129,7 +122,9 @@ export function Social({ selectedLeague }: SocialSectionProps) {
 
       console.log("Social: All games processed:", allGames);
 
-      const liveGames = allGames.filter((game) => game.status === "live");
+      const liveGames = allGames.filter(
+        (game) => game.status === GameStatus.LIVE,
+      );
       console.log("Social: Live games found:", liveGames);
 
       // Extract team names from live games

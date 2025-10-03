@@ -1,22 +1,32 @@
+// React imports
 import { useEffect } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+
+// Third-party library imports
+import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
 import { motion } from "motion/react";
-import { Box, Text, HStack, VStack, Button } from "@chakra-ui/react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { setSelectedLeague } from "../store/slices/sportsDataSlice";
+
+// Internal imports - config
+import { League } from "../config";
+
+// Internal imports - components
 import { Bet } from "./Bet.tsx";
+import { BottomNav } from "./BottomNav.tsx";
 import { FavoritesManager } from "./FavoritesManager.tsx";
 import { ForYouSection } from "./ForYouSection.tsx";
 import { LeagueSelector } from "./LeagueSelector.tsx";
-import { BottomNav } from "./BottomNav.tsx";
-import { Scores, Live } from "./Scores.tsx";
+import { Live, Scores } from "./Scores.tsx";
 import { PlayByPlayMLB } from "./PlayByPlayMLB.tsx";
 import { Social } from "./Social.tsx";
+
+// Internal imports - store
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import {
-  loadFavorites,
   addFavoriteTeam,
+  loadFavorites,
   removeFavoriteTeam,
 } from "../store/slices/favoritesSlice.ts";
+import { setSelectedLeague } from "../store/slices/sportsDataSlice";
 
 export function Arbitration() {
   const dispatch = useAppDispatch();
@@ -122,7 +132,7 @@ export function Arbitration() {
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
       >
         <Box minH="100vh" bg="gray.50">
-          {currentLeague === "mlb" ? (
+          {currentLeague === League.MLB ? (
             <PlayByPlayMLB gameId={gameId} onBack={handleBackFromPlayByPlay} />
           ) : (
             <Box
