@@ -2,6 +2,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { mockData, leagues, forYouFeed, boxScoreData, League } from '../../services/MockData.ts';
 import { buildApiUrl } from '../../config';
 import { TwitterSearchResponse } from '../../schema/twitterapi';
+import { getCurrentLocalDate } from '../../utils';
 
 // Async thunk for fetching box score data
 export const fetchBoxScore = createAsyncThunk(
@@ -22,8 +23,14 @@ export const fetchBoxScore = createAsyncThunk(
 // Async thunk for fetching Twitter data
 export const fetchTwitterData = createAsyncThunk(
   'sportsData/fetchTwitterData',
-  async (query: string) => {
-    const apiUrl = buildApiUrl('/api/v1/twitter-search', { query });
+  async ({ query, filter = 'latest' }: { query: string; filter?: 'top' | 'latest' }) => {
+    const params: { query: string; queryType?: string } = { query };
+    if (filter === 'top') {
+      params.queryType = 'Top';
+    } else {
+      params.queryType = 'Latest';
+    }
+    const apiUrl = buildApiUrl('/api/v1/twitter-search', params);
     console.log('Fetching Twitter data from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
@@ -36,7 +43,44 @@ export const fetchTwitterData = createAsyncThunk(
       }
     }
     const data = await response.json();
-    console.log('Twitter data received:', data);
+    console.log('Initial Twitter data received:', {
+      tweetsCount: data.tweets?.length || 0,
+      hasNextPage: data.has_next_page,
+      nextCursor: data.next_cursor
+    });
+    return data;
+  }
+);
+
+// Async thunk for loading more Twitter data (pagination)
+export const loadMoreTwitterData = createAsyncThunk(
+  'sportsData/loadMoreTwitterData',
+  async ({ query, filter = 'latest', cursor }: { query: string; filter?: 'top' | 'latest'; cursor: string }) => {
+    const params: { query: string; queryType?: string; cursor: string } = { query, cursor };
+    if (filter === 'top') {
+      params.queryType = 'Top';
+    } else {
+      params.queryType = 'Latest';
+    }
+    const apiUrl = buildApiUrl('/api/v1/twitter-search', params);
+    console.log('Loading more Twitter data from:', apiUrl);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Twitter API rate limit exceeded. Please try again in a few minutes.');
+      } else if (response.status === 401) {
+        throw new Error('Twitter API authentication failed. Please check the API key configuration.');
+      } else {
+        throw new Error(`Twitter API error: ${response.status} ${response.statusText}`);
+      }
+    }
+    const data = await response.json();
+    console.log('More Twitter data received:', {
+      tweetsCount: data.tweets?.length || 0,
+      hasNextPage: data.has_next_page,
+      nextCursor: data.next_cursor,
+      previousCursor: cursor
+    });
     return data;
   }
 );
@@ -55,13 +99,14 @@ interface SportsDataState {
   twitterError: string | null;
   twitterSearchQuery: string;
   twitterHasSearched: boolean;
+  twitterLoadingMore: boolean;
 }
 
 const initialState: SportsDataState = {
   leagues,
   selectedLeague: 'nfl',
   activeTab: 'for-you',
-  selectedDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+  selectedDate: getCurrentLocalDate(), // Today's date in YYYY-MM-DD format using centralized function
   leagueData: mockData,
   forYouFeed,
   boxScoreData,
@@ -71,6 +116,7 @@ const initialState: SportsDataState = {
   twitterError: null,
   twitterSearchQuery: '',
   twitterHasSearched: false,
+  twitterLoadingMore: false,
 };
 
 const sportsDataSlice = createSlice({
@@ -121,6 +167,38 @@ const sportsDataSlice = createSlice({
       .addCase(fetchTwitterData.rejected, (state, action) => {
         state.twitterLoading = false;
         state.twitterError = action.error.message || 'Failed to fetch Twitter data';
+      })
+      .addCase(loadMoreTwitterData.pending, (state) => {
+        state.twitterLoadingMore = true;
+        state.twitterError = null;
+      })
+      .addCase(loadMoreTwitterData.fulfilled, (state, action) => {
+        state.twitterLoadingMore = false;
+        if (state.twitterData && action.payload) {
+          // Create a map of existing tweet IDs to avoid duplicates
+          const existingTweetIds = new Set(state.twitterData.tweets.map(tweet => tweet.id));
+          
+          // Filter out duplicate tweets from new data
+          const newTweets = action.payload.tweets.filter((tweet: any) => !existingTweetIds.has(tweet.id));
+          
+          // If no new tweets were added, we might be stuck in a loop
+          if (newTweets.length === 0) {
+            console.log("No new tweets found, stopping pagination to prevent infinite loop");
+            state.twitterData.has_next_page = false;
+          } else {
+            // Append only new tweets to existing ones
+            state.twitterData.tweets = [...state.twitterData.tweets, ...newTweets];
+          }
+          
+          // Update pagination info
+          state.twitterData.has_next_page = action.payload.has_next_page;
+          state.twitterData.next_cursor = action.payload.next_cursor;
+        }
+        state.twitterError = null;
+      })
+      .addCase(loadMoreTwitterData.rejected, (state, action) => {
+        state.twitterLoadingMore = false;
+        state.twitterError = action.error.message || 'Failed to load more Twitter data';
       });
   },
 });

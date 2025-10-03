@@ -1,6 +1,7 @@
 import { Button, Box, HStack } from "@chakra-ui/react";
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import { setSelectedLeague } from "../store/slices/sportsDataSlice.ts";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export interface League {
   id: string;
@@ -11,6 +12,8 @@ export interface League {
 
 export function LeagueSelector() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const leagues = useAppSelector((state) => state.sportsData.leagues);
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
@@ -18,6 +21,19 @@ export function LeagueSelector() {
 
   const handleLeagueChange = (leagueId: string) => {
     dispatch(setSelectedLeague(leagueId));
+
+    // Navigate to the appropriate URL based on current path
+    const currentPath = location.pathname;
+    if (currentPath.startsWith("/scores/")) {
+      navigate(`/scores/${leagueId}`);
+    } else if (currentPath.startsWith("/live/")) {
+      navigate(`/live/${leagueId}`);
+    } else if (currentPath.startsWith("/social/")) {
+      navigate(`/social/${leagueId}`);
+    } else {
+      // Default to scores if we're on a different page
+      navigate(`/scores/${leagueId}`);
+    }
   };
   const getLeagueColors = (isSelected: boolean) => {
     if (isSelected) {

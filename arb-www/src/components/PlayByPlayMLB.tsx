@@ -11,10 +11,19 @@ import {
   IconButton,
   Image,
 } from "@chakra-ui/react";
-import { ArrowLeft, RefreshCw, Zap, TrendingUp, Target, X, AlertTriangle, Circle } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  Zap,
+  TrendingUp,
+  Target,
+  X,
+  AlertTriangle,
+  Circle,
+} from "lucide-react";
 import { Play } from "../schema/mlb/playbyplay";
-import { PLAY_BY_PLAY_CONFIG, buildApiUrl } from "../config";
-import { getPlayLabel, getPlayIcon } from "../utils";
+import { buildApiUrl } from "../config";
+import { getPlayLabel, getPlayIcon, formatRelativeTime } from "../utils";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { fetchBoxScore } from "../store/slices/sportsDataSlice";
 import useArb from "../services/Arb";
@@ -37,69 +46,125 @@ const MAX_EVENTS = 50;
 export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   // Get gameId from URL params if not provided as prop
   const urlParams = new URLSearchParams(window.location.search);
-  const gameIdFromUrl = urlParams.get('gameId');
+  const gameIdFromUrl = urlParams.get("gameId");
   const actualGameId = gameId || gameIdFromUrl;
 
   // Get league from URL path (e.g., /scores/mlb/76782 -> mlb)
-  const pathParts = window.location.pathname.split('/');
+  const pathParts = window.location.pathname.split("/");
   const leagueFromUrl = pathParts[2]; // /scores/mlb/76782 -> mlb
 
   // Get box-score data from Redux state
   const dispatch = useAppDispatch();
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
-  const selectedLeague = useAppSelector((state) => state.sportsData.selectedLeague);
-  
+  const selectedLeague = useAppSelector(
+    (state) => state.sportsData.selectedLeague,
+  );
+
   // Use league from URL if available, otherwise fall back to Redux state
   const currentLeague = leagueFromUrl || selectedLeague;
 
   // Get all data from Redux state
-  const { 
-    mlbTeamProfiles, 
-    fetchMLBTeamProfiles
-  } = useArb();
+  const { mlbTeamProfiles, fetchMLBTeamProfiles } = useArb();
 
   // Get current game data from box-score
-  const currentGame = actualGameId ? boxScoreData[actualGameId as keyof typeof boxScoreData] : null;
+  const currentGame = actualGameId
+    ? boxScoreData[actualGameId as keyof typeof boxScoreData]
+    : null;
 
-  // Fetch ALL data when component loads
+  // Reset fetch ref when game ID changes
   useEffect(() => {
-    if (currentLeague === 'mlb') {
-      // Fetch team profiles for logos
-      if (!mlbTeamProfiles || mlbTeamProfiles.data.length === 0) {
-        console.log('Fetching MLB team profiles...');
-        fetchMLBTeamProfiles();
-      }
+    hasFetchedRef.current = false;
+  }, [actualGameId]);
+
+  // Single useEffect to handle all data fetching
+  useEffect(() => {
+    if (!actualGameId || hasFetchedRef.current) return;
+
+    hasFetchedRef.current = true;
+
+    // Always fetch team profiles if needed (they might be lost on refresh)
+    if (
+      currentLeague === "mlb" &&
+      (!mlbTeamProfiles || mlbTeamProfiles.data.length === 0)
+    ) {
+      console.log("Fetching MLB team profiles...");
+      fetchMLBTeamProfiles();
     }
-  }, [currentLeague]); // Removed mlbTeamProfiles and fetchMLBTeamProfiles to prevent loops
+
+    // Fetch box score if it doesn't exist
+    if (!currentGame) {
+      console.log(
+        "Box score not found for game",
+        actualGameId,
+        "- fetching from API",
+      );
+      dispatch(fetchBoxScore({ league: currentLeague, gameId: actualGameId }));
+    }
+
+    // Fetch play-by-play data
+    console.log("Fetching play-by-play data...");
+    fetchPlayByPlay();
+  }, [actualGameId]); // Only depend on actualGameId to prevent multiple triggers
+
+  // Ensure team profiles are always available (for refresh scenarios)
+  useEffect(() => {
+    if (
+      currentLeague === "mlb" &&
+      (!mlbTeamProfiles || mlbTeamProfiles.data.length === 0)
+    ) {
+      console.log("Team profiles missing, fetching...");
+      fetchMLBTeamProfiles();
+    }
+  }, [currentLeague, mlbTeamProfiles, fetchMLBTeamProfiles]);
 
   // Create team ID to logo mapping from the fetched data
-  const teamIdToLogo = mlbTeamProfiles?.data?.reduce((acc: Record<number, string>, team) => {
-    acc[team.TeamID] = team.WikipediaLogoUrl;
-    return acc;
-  }, {} as Record<number, string>) || {};
+  const teamIdToLogo =
+    mlbTeamProfiles?.data?.reduce(
+      (acc: Record<number, string>, team) => {
+        acc[team.TeamID] = team.WikipediaLogoUrl;
+        return acc;
+      },
+      {} as Record<number, string>,
+    ) || {};
 
-  // Fetch box score if it doesn't exist
-  useEffect(() => {
-    console.log('useEffect triggered - actualGameId:', actualGameId, 'currentGame:', currentGame, 'currentLeague:', currentLeague);
-    if (actualGameId && !currentGame) {
-      console.log('Box score not found for game', actualGameId, '- fetching from API');
-      dispatch(fetchBoxScore({ league: currentLeague, gameId: actualGameId }));
-    } else if (actualGameId && currentGame) {
-      console.log('Box score already exists for game', actualGameId);
-    } else {
-      console.log('No game ID or no current game');
-    }
-  }, [actualGameId, currentGame, currentLeague, dispatch]);
+  // Create team ID to team info mapping from the fetched data
+  const teamIdToInfo =
+    mlbTeamProfiles?.data?.reduce(
+      (
+        acc: Record<
+          number,
+          { name: string; city: string; abbreviation: string }
+        >,
+        team,
+      ) => {
+        acc[team.TeamID] = {
+          name: team.Name,
+          city: team.City,
+          abbreviation: team.Key,
+        };
+        return acc;
+      },
+      {} as Record<
+        number,
+        { name: string; city: string; abbreviation: string }
+      >,
+    ) || {};
 
   // Debug logging
-  console.log('PlayByPlayMLB - actualGameId:', actualGameId);
-  console.log('PlayByPlayMLB - currentGame:', currentGame);
-  console.log('PlayByPlayMLB - mlbTeamProfiles:', mlbTeamProfiles);
-  console.log('PlayByPlayMLB - teamIdToLogo:', teamIdToLogo);
+  console.log("PlayByPlayMLB - actualGameId:", actualGameId);
+  console.log("PlayByPlayMLB - currentGame:", currentGame);
+  console.log("PlayByPlayMLB - mlbTeamProfiles:", mlbTeamProfiles);
+  console.log("PlayByPlayMLB - teamIdToLogo:", teamIdToLogo);
+  console.log("PlayByPlayMLB - teamIdToInfo:", teamIdToInfo);
 
   if (!actualGameId) {
     return (
-      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
         <VStack gap="4">
           <Text color="red.500" fontSize="lg" fontWeight="semibold">
             No Game Selected
@@ -112,13 +177,12 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       </Box>
     );
   }
-  const [playByPlayData, setPlayByPlayData] = useState<ActualPlayByPlayResponse | null>(null);
+  const [playByPlayData, setPlayByPlayData] =
+    useState<ActualPlayByPlayResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastTimestamp, setLastTimestamp] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const intervalRef = useRef<number | null>(null);
-  const timeUpdateRef = useRef<number | null>(null);
+  const hasFetchedRef = useRef(false);
 
   // Format event description using the utility function
   const formatEventDescription = (play: Play): string => {
@@ -129,19 +193,19 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   const getPlayIconComponent = (play: Play) => {
     const iconType = getPlayIcon(play);
     const iconProps = { size: 16, color: "#6B7280" }; // Grey color
-    
+
     switch (iconType) {
-      case 'strikeout':
+      case "strikeout":
         return <Zap {...iconProps} />;
-      case 'walk':
+      case "walk":
         return <TrendingUp {...iconProps} />;
-      case 'hit':
+      case "hit":
         return <Target {...iconProps} />;
-      case 'out':
+      case "out":
         return <X {...iconProps} />;
-      case 'sacrifice':
+      case "sacrifice":
         return <Circle {...iconProps} />;
-      case 'error':
+      case "error":
         return <AlertTriangle {...iconProps} />;
       default:
         return <Circle {...iconProps} />;
@@ -150,151 +214,97 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
 
   // Format inning display (Top 9, Bot 9, etc.)
   const formatInning = (inningNumber: number, inningHalf: string): string => {
-    const half = inningHalf === 'T' ? 'Top' : 'Bot';
+    const half = inningHalf === "T" ? "Top" : "Bot";
     return `${half} ${inningNumber}`;
   };
 
-  // Format timestamp for display as relative time
+  // Format timestamp for display as relative time using centralized utility
   const formatTimestamp = (timestamp: string): string => {
-    try {
-      // Parse the UTC timestamp and convert to local time
-      const utcDate = new Date(timestamp + 'Z'); // Ensure it's treated as UTC
-      const localDate = new Date(utcDate.getTime() + (utcDate.getTimezoneOffset() * 60000));
-      
-      const diffInSeconds = Math.floor((currentTime.getTime() - localDate.getTime()) / 1000);
-      
-      // Handle future timestamps or invalid dates
-      if (diffInSeconds < 0) {
-        return "Just now";
-      }
-      
-      if (diffInSeconds < 60) {
-        return `${diffInSeconds} sec${diffInSeconds !== 1 ? 's' : ''} ago`;
-      } else if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        return `${minutes} min${minutes !== 1 ? 's' : ''} ago`;
-      } else if (diffInSeconds < 86400) {
-        const hours = Math.floor(diffInSeconds / 3600);
-        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-      } else {
-        const days = Math.floor(diffInSeconds / 86400);
-        return `${days} day${days !== 1 ? 's' : ''} ago`;
-      }
-    } catch {
-      return "Just now";
-    }
+    // Debug logging to see what's happening
+    console.log("PlayByPlay timestamp formatting:", {
+      original: timestamp,
+      currentTime: currentTime.toISOString(),
+      result: formatRelativeTime(timestamp, currentTime),
+    });
+
+    return formatRelativeTime(timestamp, currentTime);
   };
 
   // Fetch play-by-play data
-  const fetchPlayByPlay = async (isInitial = false) => {
+  const fetchPlayByPlay = async () => {
     try {
+      setLoading(true);
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
       const params: Record<string, string> = {
-        league: 'mlb',
+        league: "mlb",
         game_id: actualGameId,
-        interval: '1min',
-        t: now.toString() // Send as string to our backend, but it will be converted to int
+        interval: "1min",
+        t: now.toString(), // Send as string to our backend, but it will be converted to int
       };
-      
-      if (lastTimestamp) {
-        params.last_timestamp = lastTimestamp;
-      }
-      
-      const url = buildApiUrl('/api/v1/play-by-play', params);
-      
+
+      const url = buildApiUrl("/api/v1/play-by-play", params);
+
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`Failed to fetch play-by-play data: ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch play-by-play data: ${response.statusText}`,
+        );
       }
-      
-      const data: ActualPlayByPlayResponse = await response.json();
-      
-      // Debug logging
-      console.log('Play-by-play API response:', data);
-      console.log('Plays data:', data.data);
-      console.log('Number of plays:', data.data.length);
 
-      if (isInitial) {
-        // For initial load, limit to latest events
-        const limitedData = {
-          ...data,
-          data: data.data.slice(0, MAX_EVENTS)
-        };
-        setPlayByPlayData(limitedData);
-        setLastTimestamp(now.toString());
-      } else {
-        // For subsequent fetches, append new events and limit to latest events
-        setPlayByPlayData(prev => {
-          if (!prev) return data;
-          
-          // Merge new plays with existing ones, avoiding duplicates
-          const existingPlayIds = new Set(prev.data.map(p => p.PlayID));
-          const newPlays = data.data.filter(p => !existingPlayIds.has(p.PlayID));
-          
-          // Combine and sort by timestamp, then limit to latest events
-          const allPlays = [...newPlays, ...prev.data]
-            .sort((a, b) => b.Updated.localeCompare(a.Updated))
-            .slice(0, MAX_EVENTS);
-          
-          return {
-            ...data,
-            data: allPlays
-          };
-        });
-        setLastTimestamp(now.toString());
-      }
-      
+      const data: ActualPlayByPlayResponse = await response.json();
+
+      // Debug logging
+      console.log("Play-by-play API response:", data);
+      console.log("Plays data:", data.data);
+      console.log("Number of plays:", data.data.length);
+
+      // Limit to latest events
+      const limitedData = {
+        ...data,
+        data: data.data.slice(0, MAX_EVENTS),
+      };
+      setPlayByPlayData(limitedData);
+
       setError(null);
     } catch (err) {
-      console.error('Error fetching play-by-play data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch play-by-play data');
+      console.error("Error fetching play-by-play data:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch play-by-play data",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial fetch
-  useEffect(() => {
-    fetchPlayByPlay(true);
-  }, [actualGameId]);
-
-  // Set up polling
-  useEffect(() => {
-    if (playByPlayData) {
-      intervalRef.current = setInterval(() => {
-        fetchPlayByPlay(false);
-      }, PLAY_BY_PLAY_CONFIG.refreshInterval);
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [playByPlayData, gameId, lastTimestamp]);
-
   // Update current time every 10 seconds for relative time display
   useEffect(() => {
-    timeUpdateRef.current = setInterval(() => {
+    const timeUpdateRef = setInterval(() => {
       setCurrentTime(new Date());
     }, 10000); // Update every 10 seconds
 
     return () => {
-      if (timeUpdateRef.current) {
-        clearInterval(timeUpdateRef.current);
-      }
+      clearInterval(timeUpdateRef);
     };
   }, []);
 
   // Manual refresh
   const handleRefresh = () => {
-    setLoading(true);
-    fetchPlayByPlay(false);
+    fetchPlayByPlay();
   };
+
+  // Get game data for team name lookups
+  const gameData = currentGame?.data?.Game;
 
   if (loading && !playByPlayData) {
     return (
-      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
         <VStack gap="4">
           <Spinner size="lg" color="red.500" />
           <Text color="gray.600">Loading play-by-play...</Text>
@@ -303,9 +313,31 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     );
   }
 
+  // Don't render until we have the current game data
+  if (!currentGame || !gameData) {
+    return (
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <VStack gap="4">
+          <Spinner size="lg" color="red.500" />
+          <Text color="gray.600">Loading game data...</Text>
+        </VStack>
+      </Box>
+    );
+  }
+
   if (error) {
     return (
-      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
         <VStack gap="4">
           <Text color="red.500" fontSize="lg" fontWeight="semibold">
             Error loading play-by-play
@@ -321,9 +353,18 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     );
   }
 
-  if (!playByPlayData || !playByPlayData.data || playByPlayData.data.length === 0) {
+  if (
+    !playByPlayData ||
+    !playByPlayData.data ||
+    playByPlayData.data.length === 0
+  ) {
     return (
-      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
         <VStack gap="4">
           <Text color="gray.600" fontSize="lg" fontWeight="semibold">
             No play-by-play data available for this game.
@@ -336,13 +377,30 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   }
 
   // Extract plays from the actual API response structure and sort by time DESC (newest first)
-  const plays = [...playByPlayData.data].sort((a, b) => 
-    new Date(b.Updated).getTime() - new Date(a.Updated).getTime()
+  const plays = [...playByPlayData.data].sort(
+    (a, b) => new Date(b.Updated).getTime() - new Date(a.Updated).getTime(),
   );
-  
-  // Get team names from box score data
-  const awayTeam = currentGame?.awayTeam?.name || currentGame?.AwayTeam || "Away Team";
-  const homeTeam = currentGame?.homeTeam?.name || currentGame?.HomeTeam || "Home Team";
+
+  // Get team names using team IDs from box score data
+  const awayTeamId = gameData?.AwayTeamID;
+  const homeTeamId = gameData?.HomeTeamID;
+
+  console.log("> teamIdToInfo:", teamIdToInfo);
+  console.log("> awayTeamId:", awayTeamId, "homeTeamId:", homeTeamId);
+
+  // Use team profile data if available, otherwise fall back to box score team names
+  const awayTeam =
+    awayTeamId && teamIdToInfo[awayTeamId]
+      ? `${teamIdToInfo[awayTeamId].city} ${teamIdToInfo[awayTeamId].name}`
+      : gameData?.AwayTeam || "Away Team";
+
+  const homeTeam =
+    homeTeamId && teamIdToInfo[homeTeamId]
+      ? `${teamIdToInfo[homeTeamId].city} ${teamIdToInfo[homeTeamId].name}`
+      : gameData?.HomeTeam || "Home Team";
+
+  console.log("Team IDs from box score:", { awayTeamId, homeTeamId });
+  console.log("Team names:", { awayTeam, homeTeam });
 
   // Function to get team logo for a play
   const getTeamLogoForPlay = (play: Play): string | null => {
@@ -351,7 +409,9 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     // For now, let's use HitterTeamID as the primary acting player
     const actingTeamId = play.HitterTeamID;
     const logo = teamIdToLogo[actingTeamId] || null;
-    console.log(`Play ${play.PlayID}: HitterTeamID=${actingTeamId}, logo=${logo}`);
+    console.log(
+      `Play ${play.PlayID}: HitterTeamID=${actingTeamId}, logo=${logo}`,
+    );
     return logo;
   };
 
@@ -380,29 +440,31 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
               {currentGame && (
                 <HStack gap="2" mt="1">
                   <Text fontSize="sm" fontWeight="medium">
-                    {currentGame.AwayTeamRuns || 0} - {currentGame.HomeTeamRuns || 0}
+                    {currentGame.AwayTeamRuns || 0} -{" "}
+                    {currentGame.HomeTeamRuns || 0}
                   </Text>
                   {currentGame.Inning && currentGame.InningHalf && (
                     <Text fontSize="xs" color="gray.500">
-                      {currentGame.InningHalf === 'T' ? 'Top' : 'Bot'} {currentGame.Inning}
+                      {currentGame.InningHalf === "T" ? "Top" : "Bot"}{" "}
+                      {currentGame.Inning}
                     </Text>
                   )}
                 </HStack>
               )}
             </VStack>
           </HStack>
-          
+
           <HStack gap="2">
             <Badge colorScheme="red" variant="solid">
               Live
             </Badge>
-                   <IconButton
-                     aria-label="Refresh"
-                     size="sm"
-                     variant="ghost"
-                     onClick={handleRefresh}
-                     loading={loading}
-                   >
+            <IconButton
+              aria-label="Refresh"
+              size="sm"
+              variant="ghost"
+              onClick={handleRefresh}
+              loading={loading}
+            >
               <RefreshCw size={16} />
             </IconButton>
           </HStack>
@@ -414,7 +476,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
         <HStack justify="space-between" align="center">
           <VStack align="start" gap="1">
             <Text fontSize="sm" fontWeight="medium">
-              {currentGame?.Status || 'Live Game'}
+              {currentGame?.Status || "Live Game"}
             </Text>
             <Text fontSize="xs" color="gray.600">
               Play-by-Play Events
@@ -422,15 +484,17 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
             {currentGame && (
               <HStack gap="4" mt="1">
                 <Text fontSize="xs" color="gray.500">
-                  Hits: {currentGame.AwayTeamHits || 0} - {currentGame.HomeTeamHits || 0}
+                  Hits: {currentGame.AwayTeamHits || 0} -{" "}
+                  {currentGame.HomeTeamHits || 0}
                 </Text>
                 <Text fontSize="xs" color="gray.500">
-                  Errors: {currentGame.AwayTeamErrors || 0} - {currentGame.HomeTeamErrors || 0}
+                  Errors: {currentGame.AwayTeamErrors || 0} -{" "}
+                  {currentGame.HomeTeamErrors || 0}
                 </Text>
               </HStack>
             )}
           </VStack>
-          
+
           <VStack align="end" gap="1">
             <Text fontSize="xs" color="gray.600">
               {plays.length} events
@@ -476,40 +540,53 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                           />
                         )}
                         {/* Play icon */}
-                        <Box display="flex" alignItems="center" justifyContent="center" minW="20px">
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          minW="20px"
+                        >
                           {getPlayIconComponent(play)}
                         </Box>
                       </HStack>
-                      
+
                       {/* Main content */}
                       <VStack align="start" gap="1" flex="1">
-                      <Text fontSize="sm" fontWeight="medium">
-                        {formatEventDescription(play)}
-                      </Text>
-                    </VStack>
-                    
-                    {/* Right side info */}
-                    <VStack align="end" gap="1">
-                      <Text fontSize="xs" color="gray.500">
-                        {formatTimestamp(play.Updated)}
-                      </Text>
-                      <Text fontSize="xs" color="gray.500">
-                        {formatInning(play.InningNumber, play.InningHalf)}
-                      </Text>
-                      {currentGame && (
-                        <Text fontSize="xs" color="gray.600" fontWeight="medium">
-                          {currentGame.AwayTeam} {currentGame.AwayTeamRuns || 0} - {currentGame.HomeTeamRuns || 0} {currentGame.HomeTeam}
+                        <Text fontSize="sm" fontWeight="medium">
+                          {formatEventDescription(play)}
                         </Text>
-                      )}
-                      {play.Balls !== undefined && play.Strikes !== undefined && (
-                        <Text fontSize="xs" color="gray.400">
-                          {play.Balls}-{play.Strikes}
+                      </VStack>
+
+                      {/* Right side info */}
+                      <VStack align="end" gap="1">
+                        <Text fontSize="xs" color="gray.500">
+                          {formatTimestamp(play.Updated)}
                         </Text>
-                      )}
-                    </VStack>
-                  </HStack>
-                </Card.Body>
-              </Card.Root>
+                        <Text fontSize="xs" color="gray.500">
+                          {formatInning(play.InningNumber, play.InningHalf)}
+                        </Text>
+                        {currentGame && (
+                          <Text
+                            fontSize="xs"
+                            color="gray.600"
+                            fontWeight="medium"
+                          >
+                            {currentGame.AwayTeam}{" "}
+                            {currentGame.AwayTeamRuns || 0} -{" "}
+                            {currentGame.HomeTeamRuns || 0}{" "}
+                            {currentGame.HomeTeam}
+                          </Text>
+                        )}
+                        {play.Balls !== undefined &&
+                          play.Strikes !== undefined && (
+                            <Text fontSize="xs" color="gray.400">
+                              {play.Balls}-{play.Strikes}
+                            </Text>
+                          )}
+                      </VStack>
+                    </HStack>
+                  </Card.Body>
+                </Card.Root>
               );
             })
           )}

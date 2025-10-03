@@ -1,4 +1,4 @@
-import { Calendar, Wifi } from "lucide-react";
+import { Wifi } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import {
   Badge,
@@ -14,6 +14,12 @@ import useArb from "../services/Arb";
 import { BoxScoreDetail } from "./BoxScoreDetail";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { setSelectedDate } from "../store/slices/sportsDataSlice";
+import {
+  convertUtcToLocalDate,
+  getCurrentLocalDate,
+  formatDateForSlider,
+} from "../utils";
+import { useNavigate } from "react-router-dom";
 
 interface Team {
   name: string;
@@ -42,31 +48,33 @@ interface Game {
   division?: string;
 }
 
-interface ScoresSectionProps {
-  games: Game[];
-  selectedLeague?: string;
-  onGameClick?: (gameId: string) => void;
-}
-
-// Date utility functions
+// Date utility functions using centralized utils
 const getDateRange = () => {
   const today = new Date();
+  const todayString = getCurrentLocalDate();
+  console.log(
+    "Date range calculation - today:",
+    today.toISOString(),
+    "local date:",
+    todayString,
+  );
   const dates = [];
 
   // 7 days before today
   for (let i = 7; i > 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     dates.push({
-      date: date.toISOString().split("T")[0],
-      display: formatDateDisplay(date),
+      date: dateString,
+      display: formatDateForSlider(date),
       isToday: false,
     });
   }
 
   // Today (centered)
   dates.push({
-    date: today.toISOString().split("T")[0],
+    date: todayString,
     display: "Today",
     isToday: true,
   });
@@ -75,38 +83,15 @@ const getDateRange = () => {
   for (let i = 1; i <= 7; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     dates.push({
-      date: date.toISOString().split("T")[0],
-      display: formatDateDisplay(date),
+      date: dateString,
+      display: formatDateForSlider(date),
       isToday: false,
     });
   }
 
   return dates;
-};
-
-const formatDateDisplay = (date: Date) => {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  const dayName = days[date.getDay()];
-  const month = months[date.getMonth()];
-  const day = date.getDate();
-
-  return `${dayName} ${month} ${day}`;
 };
 
 // Helper function to safely parse dates
@@ -165,14 +150,119 @@ const BasesIcon = () => {
   );
 };
 
+// Convert MLB games to the expected format
+const convertMLBGameToGame = (
+  rawGame: any,
+  mlbTeamProfiles?: any,
+  mlbStadiums?: any,
+): Game | null => {
+  // Map API status to our status format
+  const getStatus = (
+    apiStatus: string,
+  ): "live" | "final" | "upcoming" | "cancelled" => {
+    switch (apiStatus) {
+      case "Final":
+      case "Completed":
+        return "final";
+      case "InProgress":
+      case "In Progress":
+      case "Live":
+        return "live";
+      case "NotNecessary":
+      case "Cancelled":
+      case "Postponed":
+      case "Suspended":
+        return "cancelled";
+      default:
+        return "upcoming";
+    }
+  };
+
+  // Helper functions to get team profiles and stadiums
+  const getTeamProfile = (teamName: string) => {
+    if (!mlbTeamProfiles?.data) return null;
+    return mlbTeamProfiles.data.find(
+      (team: any) => team.Name === teamName || team.Key === teamName,
+    );
+  };
+
+  const getStadium = (stadiumId: number) => {
+    if (!mlbStadiums?.data) return null;
+    return mlbStadiums.data.find(
+      (stadium: any) => stadium.StadiumID === stadiumId,
+    );
+  };
+
+  // Check if this is a game that should be filtered out
+  const gameStatus = getStatus(rawGame.Status);
+
+  // Filter out cancelled games (NotNecessary, Cancelled, Postponed, etc.)
+  if (gameStatus === "cancelled") {
+    return null; // This will be filtered out
+  }
+
+  // Also filter out games that are marked as "upcoming" but the game time is in the past
+  const gameTime = new Date(rawGame.DateTime);
+  const now = new Date();
+  const isPastGame = gameTime < now;
+
+  if (isPastGame && gameStatus === "upcoming") {
+    return null; // This will be filtered out
+  }
+
+  // Get team profiles for better names and logos
+  const homeTeamProfile = getTeamProfile(rawGame.HomeTeam);
+  const awayTeamProfile = getTeamProfile(rawGame.AwayTeam);
+  const stadium = getStadium(rawGame.StadiumID);
+  const gameId = rawGame.GameID?.toString() || "";
+
+  const convertedGame = {
+    id: gameId,
+    homeTeam: {
+      name: homeTeamProfile
+        ? `${homeTeamProfile.City} ${homeTeamProfile.Name}`
+        : rawGame.HomeTeam || "",
+      score: rawGame.HomeTeamRuns || 0,
+      logo: homeTeamProfile?.WikipediaLogoUrl,
+    },
+    awayTeam: {
+      name: awayTeamProfile
+        ? `${awayTeamProfile.City} ${awayTeamProfile.Name}`
+        : rawGame.AwayTeam || "",
+      score: rawGame.AwayTeamRuns || 0,
+      logo: awayTeamProfile?.WikipediaLogoUrl,
+    },
+    time: rawGame.DateTime || new Date().toISOString(),
+    date: rawGame.DateTime
+      ? convertUtcToLocalDate(rawGame.DateTime)
+      : new Date().toISOString().split("T")[0],
+    status: getStatus(rawGame.Status),
+    quarter: rawGame.Inning
+      ? `${rawGame.InningHalf === "B" ? "Bot" : "Top"} ${rawGame.Inning}`
+      : undefined,
+    // Location/Venue information
+    stadium: stadium?.Name,
+    city: stadium?.City,
+    state: stadium?.State,
+    country: stadium?.Country,
+    capacity: stadium?.Capacity,
+    surface: stadium?.Surface,
+    weather: rawGame.Weather || rawGame.WeatherCondition,
+    temperature: rawGame.Temperature || rawGame.TempF,
+    stadiumId: rawGame.StadiumID, // Store stadium ID for potential future lookup
+    division: homeTeamProfile?.Division, // Store division for display
+  };
+
+  return convertedGame;
+};
+
 // Live Games Component
-export function Live({
-  games,
-  selectedLeague,
-  onGameClick,
-}: ScoresSectionProps) {
-  const dispatch = useAppDispatch();
-  const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
+export function Live() {
+  // Get selectedLeague from Redux
+  const selectedLeague = useAppSelector(
+    (state) => state.sportsData.selectedLeague,
+  );
+  const navigate = useNavigate();
 
   // Fetch data hooks
   const {
@@ -192,18 +282,6 @@ export function Live({
       fetchMLBStadiums();
     }
   }, [selectedLeague, fetchMLBScores, fetchMLBTeamProfiles, fetchMLBStadiums]);
-
-  // Helper function to get team profile by abbreviation
-  const getTeamProfile = (teamAbbr: string) => {
-    if (!mlbTeamProfiles?.data) return null;
-    return mlbTeamProfiles.data.find((team) => team.Key === teamAbbr);
-  };
-
-  // Helper function to get stadium by ID
-  const getStadium = (stadiumId: number) => {
-    if (!mlbStadiums?.data) return null;
-    return mlbStadiums.data.find((stadium) => stadium.StadiumID === stadiumId);
-  };
 
   // Format time from DateTime (convert UTC to local time)
   const formatTime = (dateTime: string) => {
@@ -230,100 +308,15 @@ export function Live({
     }
   };
 
-  // Convert MLB games to the expected format
-  const convertMLBGameToGame = (rawGame: any): Game | null => {
-    // Map API status to our status format
-    const getStatus = (
-      apiStatus: string,
-    ): "live" | "final" | "upcoming" | "cancelled" => {
-      switch (apiStatus) {
-        case "Final":
-        case "Completed":
-          return "final";
-        case "InProgress":
-        case "In Progress":
-        case "Live":
-          return "live";
-        case "NotNecessary":
-        case "Cancelled":
-        case "Postponed":
-        case "Suspended":
-          return "cancelled";
-        default:
-          return "upcoming";
-      }
-    };
-
-    // Check if this is a game that should be filtered out
-    const gameStatus = getStatus(rawGame.Status);
-
-    // Filter out cancelled games (NotNecessary, Cancelled, Postponed, etc.)
-    if (gameStatus === "cancelled") {
-      return null; // This will be filtered out
-    }
-
-    // Also filter out games that are marked as "upcoming" but the game time is in the past
-    const gameTime = new Date(rawGame.DateTime);
-    const now = new Date();
-    const isPastGame = gameTime < now;
-
-    if (isPastGame && gameStatus === "upcoming") {
-      return null; // This will be filtered out
-    }
-
-    // Get team profiles for better names and logos
-    const homeTeamProfile = getTeamProfile(rawGame.HomeTeam);
-    const awayTeamProfile = getTeamProfile(rawGame.AwayTeam);
-    const stadium = getStadium(rawGame.StadiumID);
-    const gameId = rawGame.GameID?.toString() || "";
-
-    const convertedGame = {
-      id: gameId,
-      homeTeam: {
-        name: homeTeamProfile
-          ? `${homeTeamProfile.City} ${homeTeamProfile.Name}`
-          : rawGame.HomeTeam || "",
-        score: rawGame.HomeTeamRuns || 0,
-        logo: homeTeamProfile?.WikipediaLogoUrl,
-      },
-      awayTeam: {
-        name: awayTeamProfile
-          ? `${awayTeamProfile.City} ${awayTeamProfile.Name}`
-          : rawGame.AwayTeam || "",
-        score: rawGame.AwayTeamRuns || 0,
-        logo: awayTeamProfile?.WikipediaLogoUrl,
-      },
-      time: rawGame.DateTime || new Date().toISOString(),
-      date: rawGame.DateTime
-        ? new Date(rawGame.DateTime).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0],
-      status: getStatus(rawGame.Status),
-      quarter: rawGame.Inning
-        ? `${rawGame.InningHalf === "B" ? "Bot" : "Top"} ${rawGame.Inning}`
-        : undefined,
-      // Location/Venue information
-      stadium: stadium?.Name,
-      city: stadium?.City,
-      state: stadium?.State,
-      country: stadium?.Country,
-      capacity: stadium?.Capacity,
-      surface: stadium?.Surface,
-      weather: rawGame.Weather || rawGame.WeatherCondition,
-      temperature: rawGame.Temperature || rawGame.TempF,
-      stadiumId: rawGame.StadiumID, // Store stadium ID for potential future lookup
-      division: homeTeamProfile?.Division, // Store division for display
-    };
-
-    return convertedGame;
-  };
-
   // Get all games - use the same logic as Scores component
   const allGames =
     selectedLeague === "mlb" && mlbScores
       ? mlbScores.data
-          .map(convertMLBGameToGame)
+          .map((game) =>
+            convertMLBGameToGame(game, mlbTeamProfiles, mlbStadiums),
+          )
           .filter((game): game is Game => game !== null)
-      : games;
+      : [];
 
   // Debug logging
   console.log("Live component debug:", {
@@ -460,9 +453,7 @@ export function Live({
                 _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
                 transition="all 0.2s"
                 onClick={() => {
-                  if (onGameClick) {
-                    onGameClick(game.id);
-                  }
+                  navigate(`/scores/${selectedLeague}/${game.id}`);
                 }}
               >
                 <Card.Body p="4">
@@ -654,7 +645,12 @@ export function Live({
   );
 }
 
-export function Scores({ games, selectedLeague }: ScoresSectionProps) {
+export function Scores() {
+  // Get selectedLeague from Redux
+  const selectedLeague = useAppSelector(
+    (state) => state.sportsData.selectedLeague,
+  );
+
   const {
     mlbScores,
     mlbTeamProfiles,
@@ -668,23 +664,70 @@ export function Scores({ games, selectedLeague }: ScoresSectionProps) {
 
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedGameDate, setSelectedGameDate] = useState<string | null>(null);
-  const [gameRunners, setGameRunners] = useState<
-    Record<string, { first: boolean; second: boolean; third: boolean }>
-  >({});
-  const [loadingRunners, setLoadingRunners] = useState<Set<string>>(new Set());
   const dateSelectorRef = useRef<HTMLDivElement>(null);
-  const fetchedGamesRef = useRef<Set<string>>(new Set());
 
   // Redux state
   const dispatch = useAppDispatch();
   const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
 
-  // Fetch MLB scores and team profiles when component mounts
+  // Fetch MLB scores and team profiles when component mounts or league changes
   useEffect(() => {
-    fetchMLBScores();
-    fetchMLBTeamProfiles();
-    fetchMLBStadiums();
-  }, []); // Empty dependency array - only run once on mount
+    if (selectedLeague === "mlb") {
+      fetchMLBScores();
+      fetchMLBTeamProfiles();
+      fetchMLBStadiums();
+    }
+  }, [selectedLeague, fetchMLBScores, fetchMLBTeamProfiles, fetchMLBStadiums]);
+
+  // Initialize selected date to today only on first load (when selectedDate is empty)
+  useEffect(() => {
+    if (
+      selectedLeague === "mlb" &&
+      mlbScores?.data &&
+      mlbScores.data.length > 0 &&
+      !selectedDate
+    ) {
+      const todayString = getCurrentLocalDate();
+
+      // Check if there are games today
+      const gamesToday = mlbScores.data!.some((game) => {
+        if (game?.DateTime) {
+          const gameDateString = convertUtcToLocalDate(game.DateTime);
+          return gameDateString === todayString;
+        }
+        return false;
+      });
+
+      if (gamesToday) {
+        // If there are games today, set to today
+        console.log("Initializing selected date to today:", todayString);
+        dispatch(setSelectedDate(todayString));
+      } else {
+        // If no games today, find the most recent game date
+        const gameDates = mlbScores
+          .data!.map((game) => {
+            if (game?.DateTime) {
+              return convertUtcToLocalDate(game.DateTime);
+            }
+            return null;
+          })
+          .filter(Boolean)
+          .sort()
+          .reverse(); // Most recent first
+
+        if (gameDates.length > 0) {
+          const mostRecentGameDate = gameDates[0];
+          if (mostRecentGameDate) {
+            console.log(
+              "No games today, initializing selected date to most recent game date:",
+              mostRecentGameDate,
+            );
+            dispatch(setSelectedDate(mostRecentGameDate));
+          }
+        }
+      }
+    }
+  }, [selectedLeague, mlbScores, selectedDate, dispatch]);
 
   // Fetch box score data for runner information
 
@@ -714,18 +757,6 @@ export function Scores({ games, selectedLeague }: ScoresSectionProps) {
     }
   }, [selectedLeague, mlbScores]);
 
-  // Helper function to get team profile by abbreviation
-  const getTeamProfile = (teamAbbr: string) => {
-    if (!mlbTeamProfiles?.data) return null;
-    return mlbTeamProfiles.data.find((team) => team.Key === teamAbbr);
-  };
-
-  // Helper function to get stadium by ID
-  const getStadium = (stadiumId: number) => {
-    if (!mlbStadiums?.data) return null;
-    return mlbStadiums.data.find((stadium) => stadium.StadiumID === stadiumId);
-  };
-
   // Format time from DateTime (convert UTC to local time)
   const formatTime = (dateTime: string) => {
     try {
@@ -749,104 +780,6 @@ export function Scores({ games, selectedLeague }: ScoresSectionProps) {
     } catch {
       return "TBD";
     }
-  };
-
-  // Convert MLB games to the expected format
-  const convertMLBGameToGame = (rawGame: any): Game | null => {
-    // Map API status to our status format
-    const getStatus = (
-      apiStatus: string,
-    ): "live" | "final" | "upcoming" | "cancelled" => {
-      switch (apiStatus) {
-        case "Final":
-        case "Completed":
-          return "final";
-        case "InProgress":
-        case "In Progress":
-        case "Live":
-          return "live";
-        case "NotNecessary":
-        case "Cancelled":
-        case "Postponed":
-        case "Suspended":
-          return "cancelled";
-        default:
-          return "upcoming";
-      }
-    };
-
-    // Check if this is a game that should be filtered out
-    const gameStatus = getStatus(rawGame.Status);
-
-    // Filter out cancelled games (NotNecessary, Cancelled, Postponed, etc.)
-    if (gameStatus === "cancelled") {
-      console.log("Filtering out cancelled game:", {
-        id: rawGame.GameID,
-        status: rawGame.Status,
-        time: rawGame.DateTime,
-        teams: `${rawGame.AwayTeam} @ ${rawGame.HomeTeam}`,
-      });
-      return null; // This will be filtered out
-    }
-
-    // Also filter out games that are marked as "upcoming" but the game time is in the past
-    const gameTime = new Date(rawGame.DateTime);
-    const now = new Date();
-    const isPastGame = gameTime < now;
-
-    if (isPastGame && gameStatus === "upcoming") {
-      console.log("Filtering out potentially cancelled game (past time):", {
-        id: rawGame.GameID,
-        status: rawGame.Status,
-        time: rawGame.DateTime,
-        teams: `${rawGame.AwayTeam} @ ${rawGame.HomeTeam}`,
-        isPast: isPastGame,
-      });
-      return null; // This will be filtered out
-    }
-
-    // Get team profiles for better names and logos
-    const homeTeamProfile = getTeamProfile(rawGame.HomeTeam);
-    const awayTeamProfile = getTeamProfile(rawGame.AwayTeam);
-    const stadium = getStadium(rawGame.StadiumID);
-    const gameId = rawGame.GameID?.toString() || "";
-
-    const convertedGame = {
-      id: gameId,
-      homeTeam: {
-        name: homeTeamProfile
-          ? `${homeTeamProfile.City} ${homeTeamProfile.Name}`
-          : rawGame.HomeTeam || "",
-        score: rawGame.HomeTeamRuns || 0,
-        logo: homeTeamProfile?.WikipediaLogoUrl,
-      },
-      awayTeam: {
-        name: awayTeamProfile
-          ? `${awayTeamProfile.City} ${awayTeamProfile.Name}`
-          : rawGame.AwayTeam || "",
-        score: rawGame.AwayTeamRuns || 0,
-        logo: awayTeamProfile?.WikipediaLogoUrl,
-      },
-      status: getStatus(rawGame.Status || ""),
-      time: rawGame.DateTime || new Date().toISOString(), // Store raw datetime for proper timezone conversion, fallback to current time
-      date: rawGame.Day ? rawGame.Day.split("T")[0] : "", // Extract YYYY-MM-DD from ISO date
-      quarter: rawGame.Inning
-        ? `${rawGame.InningHalf === "B" ? "Bot" : "Top"} ${rawGame.Inning}`
-        : undefined,
-      // Location/Venue information
-      stadium: stadium?.Name || rawGame.Stadium || rawGame.Venue,
-      city: stadium?.City || homeTeamProfile?.City, // Use stadium city first, fallback to team profile city
-      state: stadium?.State || rawGame.State || rawGame.StateProvince,
-      country: stadium?.Country,
-      capacity: stadium?.Capacity,
-      surface: stadium?.Surface,
-      weather: rawGame.Weather || rawGame.WeatherCondition,
-      temperature: rawGame.Temperature || rawGame.TempF,
-      stadiumId: rawGame.StadiumID, // Store stadium ID for potential future lookup
-      division: homeTeamProfile?.Division, // Store division for display
-    };
-
-    return convertedGame;
   };
 
   // Handle game click for box score navigation
@@ -876,40 +809,36 @@ export function Scores({ games, selectedLeague }: ScoresSectionProps) {
   const allGames =
     selectedLeague === "mlb" && mlbScores
       ? mlbScores.data
-          .map(convertMLBGameToGame)
+          .map((game) =>
+            convertMLBGameToGame(game, mlbTeamProfiles, mlbStadiums),
+          )
           .filter((game): game is Game => game !== null)
-      : games;
+      : [];
 
   // Filter games by selected date
   const filteredGames = allGames.filter((game) => {
-    // Check if the date string is valid before parsing
-    if (!isValidDate(game.time)) {
-      console.warn("Invalid date for game:", game.id, game.time);
-      return false;
+    // Use the pre-converted game.date field instead of converting game.time
+    const matches = game.date === selectedDate;
+
+    // Log only matches for debugging
+    if (matches) {
+      console.log("Game matches selected date:", {
+        gameId: game.id,
+        gameDate: game.date,
+        selectedDate,
+        teams: `${game.awayTeam.name} @ ${game.homeTeam.name}`,
+      });
     }
 
-    try {
-      const gameDate = new Date(game.time);
-      // Use local date instead of UTC to avoid timezone issues
-      const gameDateString = `${gameDate.getFullYear()}-${String(gameDate.getMonth() + 1).padStart(2, "0")}-${String(gameDate.getDate()).padStart(2, "0")}`;
-      const matches = gameDateString === selectedDate;
+    return matches;
+  });
 
-      if (matches) {
-        console.log("Game on selected date:", {
-          id: game.id,
-          status: game.status,
-          time: game.time,
-          teams: `${game.awayTeam.name} @ ${game.homeTeam.name}`,
-          gameDate: gameDateString,
-          selectedDate: selectedDate,
-        });
-      }
-
-      return matches;
-    } catch (error) {
-      console.warn("Error parsing date for game:", game.id, game.time, error);
-      return false;
-    }
+  // Debug logging
+  console.log("Scores component debug:", {
+    selectedLeague,
+    allGames: allGames.length,
+    selectedDate,
+    filteredGames: filteredGames.length,
   });
 
   // Sort games: LIVE games first, then by start time in ascending order
@@ -1062,7 +991,10 @@ export function Scores({ games, selectedLeague }: ScoresSectionProps) {
               <Box
                 key={dateInfo.date}
                 data-date={dateInfo.isToday ? "today" : undefined}
-                onClick={() => dispatch(setSelectedDate(dateInfo.date))}
+                onClick={() => {
+                  console.log("Date clicked:", dateInfo.date);
+                  dispatch(setSelectedDate(dateInfo.date));
+                }}
                 cursor="pointer"
                 px="2"
                 py="1"
@@ -1119,7 +1051,9 @@ export function Scores({ games, selectedLeague }: ScoresSectionProps) {
                     alignItems="center"
                     justifyContent="center"
                   >
-                    <Text fontSize="2xl">🏈</Text>
+                    <Text fontSize="2xl" color="gray.400">
+                      😭
+                    </Text>
                   </Box>
                   <VStack gap="2">
                     <Text fontSize="lg" fontWeight="semibold" color="gray.900">

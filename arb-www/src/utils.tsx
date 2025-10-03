@@ -1,6 +1,80 @@
+import { formatDistanceToNow } from "date-fns";
+import { fromZonedTime } from "date-fns-tz";
+
 /**
  * Utility functions for device detection and common operations
  */
+
+/**
+ * Converts a UTC datetime string to local time and returns the date in YYYY-MM-DD format
+ * @param utcDateTime - UTC datetime string (e.g., "2025-10-01T21:08:00")
+ * @returns {string} Local date in YYYY-MM-DD format
+ */
+export const convertUtcToLocalDate = (utcDateTime: string): string => {
+  const date = new Date(utcDateTime);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+/**
+ * Gets the current local date in YYYY-MM-DD format
+ * @returns {string} Current local date in YYYY-MM-DD format
+ */
+export const getCurrentLocalDate = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+};
+
+/**
+ * Formats a date for display in the date slider
+ * @param date - Date object or date string
+ * @returns {string} Formatted date string (e.g., "Wed Oct 2")
+ */
+export const formatDateForSlider = (date: Date | string): string => {
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const dayName = days[dateObj.getDay()];
+  const month = months[dateObj.getMonth()];
+  const day = dateObj.getDate();
+
+  return `${dayName} ${month} ${day}`;
+};
+
+/**
+ * Checks if a date string represents today
+ * @param dateString - Date string in YYYY-MM-DD format
+ * @returns {boolean} True if the date is today
+ */
+export const isToday = (dateString: string): boolean => {
+  return dateString === getCurrentLocalDate();
+};
+
+export const formatRelativeTime = (timestamp: string): string => {
+  try {
+    // Convert EST/EDT timestamp to UTC
+    const utcDate = fromZonedTime(timestamp, "America/New_York");
+
+    // Get relative time
+    return formatDistanceToNow(utcDate, { addSuffix: true });
+  } catch (error) {
+    console.error("Error formatting relative time:", timestamp, error);
+    return "Just now";
+  }
+};
 
 /**
  * Detects if the current device is a mobile device

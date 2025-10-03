@@ -74,17 +74,14 @@ export function Arbitration() {
     }
   };
 
+  const handleBackFromPlayByPlay = () => {
+    // Navigate back to the previous page or to the live games tab
+    navigate(-1);
+  };
+
   // Get current league data based on URL league
   const currentLeagueData =
     leagueData[currentLeague as keyof typeof leagueData];
-
-  const handlePlayByPlayClick = (gameId: string) => {
-    navigate(`/scores/${currentLeague}/${gameId}`);
-  };
-
-  const handleBackFromPlayByPlay = () => {
-    navigate(`/scores/${currentLeague}`);
-  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -97,21 +94,9 @@ export function Arbitration() {
           />
         );
       case "scores":
-        return (
-          <Scores
-            games={currentLeagueData?.games as any}
-            onGameClick={handlePlayByPlayClick}
-            selectedLeague={currentLeague}
-          />
-        );
+        return <Scores />;
       case "play-by-play":
-        return (
-          <Live
-            games={currentLeagueData?.games as any}
-            selectedLeague={currentLeague}
-            onGameClick={handlePlayByPlayClick}
-          />
-        );
+        return <Live />;
       case "social":
         return <Social selectedLeague={currentLeague} />;
       case "bet":
