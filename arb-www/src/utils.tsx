@@ -1,5 +1,76 @@
 import { formatDistanceToNow } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
+import { DEBUG } from "./config";
+
+/**
+ * Debug utility - wraps console methods to respect debug configuration
+ */
+// Store original console methods
+const originalConsole = {
+  log: console.log,
+  warn: console.warn,
+  info: console.info,
+  error: console.error,
+  group: console.group,
+  groupEnd: console.groupEnd,
+  table: console.table,
+  time: console.time,
+  timeEnd: console.timeEnd,
+};
+
+// Override console methods
+console.log = (...args: any[]) => {
+  if (DEBUG.enabled) {
+    originalConsole.log(...args);
+  }
+};
+
+console.warn = (...args: any[]) => {
+  if (DEBUG.enabled) {
+    originalConsole.warn(...args);
+  }
+};
+
+console.info = (...args: any[]) => {
+  if (DEBUG.enabled) {
+    originalConsole.info(...args);
+  }
+};
+
+// Always show errors
+console.error = (...args: any[]) => {
+  originalConsole.error(...args);
+};
+
+console.group = (label?: string) => {
+  if (DEBUG.enabled) {
+    originalConsole.group(label);
+  }
+};
+
+console.groupEnd = () => {
+  if (DEBUG.enabled) {
+    originalConsole.groupEnd();
+  }
+};
+
+console.table = (data: any) => {
+  if (DEBUG.enabled) {
+    originalConsole.table(data);
+  }
+};
+
+console.time = (label: string) => {
+  if (DEBUG.enabled) {
+    originalConsole.time(label);
+  }
+};
+
+console.timeEnd = (label: string) => {
+  if (DEBUG.enabled) {
+    originalConsole.timeEnd(label);
+  }
+};
 
 /**
  * Utility functions for device detection and common operations

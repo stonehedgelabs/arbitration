@@ -15,6 +15,9 @@ import {
 import { MessageCircle, Search, X } from "lucide-react";
 import { Tweet } from "react-tweet";
 
+// Internal imports - components
+import { TwitterCardSkeleton } from "./Skeleton";
+
 // Internal imports - config
 import { League, GameStatus, mapApiStatusToGameStatus } from "../config";
 
@@ -333,131 +336,131 @@ export function Social({ selectedLeague }: SocialSectionProps) {
 
   return (
     <Box minH="100vh" bg="gray.50">
-      <VStack gap="4" align="stretch" p="4" pb="20">
+      <VStack gap="3" align="stretch" p="4" pb="20">
         {/* Header */}
-        <VStack gap="4" align="stretch">
-          <Text fontSize="2xl" fontWeight="bold" color="gray.900">
-            Social Feed
-          </Text>
+        <Text fontSize="2xl" fontWeight="bold" color="gray.900">
+          Social Feed
+        </Text>
 
-          {/* Search Bar */}
-          <Box position="relative">
-            <Search
-              size={16}
-              style={{
-                position: "absolute",
-                left: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "#a0aec0",
-                zIndex: 1,
-              }}
-            />
-            <Input
-              type="text"
-              placeholder="Search tweets, teams, players..."
-              value={twitterSearchQuery || generatedQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              pl="10"
-              pr="12"
-              bg="white"
-              borderColor="gray.300"
-              _focus={{
-                borderColor: "blue.500",
-                boxShadow: "0 0 0 1px #3182ce",
-              }}
-            />
-            {(twitterSearchQuery || generatedQuery) && (
-              <IconButton
-                aria-label="Clear search"
-                size="sm"
-                position="absolute"
-                right="2"
-                top="50%"
-                transform="translateY(-50%)"
-                variant="ghost"
-                onClick={clearSearch}
-              >
-                <X size={16} />
-              </IconButton>
-            )}
-          </Box>
-
-          {/* Filter Toggle */}
-          <Box>
-            <Flex
-              bg="gray.100"
-              borderRadius="lg"
-              p="1"
-              position="relative"
-              h="10"
-              align="center"
-              w="fit-content"
-            >
-              <Button
-                flex="1"
-                h="8"
-                borderRadius="md"
-                bg={tweetFilter === "top" ? "white" : "transparent"}
-                color={tweetFilter === "top" ? "blue.600" : "gray.600"}
-                fontWeight="medium"
-                fontSize="sm"
-                onClick={() => setTweetFilter("top")}
-                _hover={{ bg: tweetFilter === "top" ? "white" : "gray.200" }}
-                boxShadow={tweetFilter === "top" ? "sm" : "none"}
-                px="4"
-              >
-                Top
-              </Button>
-              <Button
-                flex="1"
-                h="8"
-                borderRadius="md"
-                bg={tweetFilter === "latest" ? "white" : "transparent"}
-                color={tweetFilter === "latest" ? "blue.600" : "gray.600"}
-                fontWeight="medium"
-                fontSize="sm"
-                onClick={() => setTweetFilter("latest")}
-                _hover={{ bg: tweetFilter === "latest" ? "white" : "gray.200" }}
-                boxShadow={tweetFilter === "latest" ? "sm" : "none"}
-                px="4"
-              >
-                Latest
-              </Button>
-            </Flex>
-          </Box>
-
-          {/* Search Button */}
-          <Button
-            onClick={() => {
-              const query = twitterSearchQuery || generatedQuery;
-              if (query.trim()) {
-                dispatch(setTwitterHasSearched(true));
-                dispatch(fetchTwitterData({ query, filter: tweetFilter }));
-              }
+        {/* Search Bar */}
+        <Box position="relative">
+          <Search
+            size={16}
+            style={{
+              position: "absolute",
+              left: "12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#a0aec0",
+              zIndex: 1,
             }}
-            colorScheme="blue"
-            size="md"
-            disabled={
-              !(twitterSearchQuery || generatedQuery)?.trim() || twitterLoading
-            }
+          />
+          <Input
+            type="text"
+            placeholder="Search tweets, teams, players..."
+            value={twitterSearchQuery || generatedQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            pl="10"
+            pr="12"
+            bg="white"
+            borderColor="gray.300"
+            _focus={{
+              borderColor: "blue.500",
+              boxShadow: "0 0 0 1px #3182ce",
+            }}
+          />
+          {(twitterSearchQuery || generatedQuery) && (
+            <IconButton
+              aria-label="Clear search"
+              size="sm"
+              position="absolute"
+              right="2"
+              top="50%"
+              transform="translateY(-50%)"
+              variant="ghost"
+              onClick={clearSearch}
+            >
+              <X size={16} />
+            </IconButton>
+          )}
+        </Box>
+
+        {/* Filter Toggle */}
+        <Box>
+          <Flex
+            bg="gray.100"
+            borderRadius="md"
+            p="0.5"
+            position="relative"
+            h="7"
+            align="center"
+            w="fit-content"
           >
-            <Search size={16} style={{ marginRight: "8px" }} />
-            Search Tweets
-          </Button>
-        </VStack>
+            <Button
+              flex="1"
+              h="6"
+              borderRadius="sm"
+              bg={tweetFilter === "top" ? "white" : "transparent"}
+              color={tweetFilter === "top" ? "blue.600" : "gray.600"}
+              fontWeight="medium"
+              fontSize="xs"
+              onClick={() => setTweetFilter("top")}
+              _hover={{ bg: tweetFilter === "top" ? "white" : "gray.200" }}
+              boxShadow={tweetFilter === "top" ? "sm" : "none"}
+              px="3"
+            >
+              Top
+            </Button>
+            <Button
+              flex="1"
+              h="6"
+              borderRadius="sm"
+              bg={tweetFilter === "latest" ? "white" : "transparent"}
+              color={tweetFilter === "latest" ? "blue.600" : "gray.600"}
+              fontWeight="medium"
+              fontSize="xs"
+              onClick={() => setTweetFilter("latest")}
+              _hover={{ bg: tweetFilter === "latest" ? "white" : "gray.200" }}
+              boxShadow={tweetFilter === "latest" ? "sm" : "none"}
+              px="3"
+            >
+              Latest
+            </Button>
+          </Flex>
+        </Box>
+
+        {/* Search Button */}
+        <Button
+          onClick={() => {
+            const query = twitterSearchQuery || generatedQuery;
+            if (query.trim()) {
+              dispatch(setTwitterHasSearched(true));
+              dispatch(fetchTwitterData({ query, filter: tweetFilter }));
+            }
+          }}
+          colorScheme="blue"
+          size="md"
+          disabled={
+            !(twitterSearchQuery || generatedQuery)?.trim() || twitterLoading
+          }
+        >
+          <Search size={16} style={{ marginRight: "8px" }} />
+          Search Tweets
+        </Button>
 
         {/* Loading State */}
         {twitterLoading && (
-          <VStack gap="4" py="8">
-            <Spinner size="lg" color="blue.500" />
-            <Text color="gray.600">Searching for tweets...</Text>
+          <VStack gap="0" align="stretch">
+            <Text color="gray.600" fontSize="sm" mb="2">
+              Searching for tweets...
+            </Text>
+            <TwitterCardSkeleton />
           </VStack>
         )}
 
         {/* Typing Indicator */}
         {isTyping && !twitterLoading && (
-          <VStack gap="4" py="8">
+          <VStack gap="2" py="4">
             <Text color="gray.500" fontSize="sm">
               Waiting for you to finish typing...
             </Text>
@@ -466,7 +469,7 @@ export function Social({ selectedLeague }: SocialSectionProps) {
 
         {/* Error State */}
         {twitterError && (
-          <VStack gap="4" py="8">
+          <VStack gap="2" py="4">
             <MessageCircle size={48} color="#e53e3e" />
             <Text color="red.500" textAlign="center" maxW="md">
               {twitterError}
@@ -504,7 +507,7 @@ export function Social({ selectedLeague }: SocialSectionProps) {
           !twitterError &&
           twitterData &&
           twitterData.tweets.length === 0 && (
-            <VStack gap="4" py="8">
+            <VStack gap="2" py="4">
               <MessageCircle size={48} color="#a0aec0" />
               <Text color="gray.500" textAlign="center" maxW="md">
                 No tweets found for "{twitterSearchQuery || "sports"}"
@@ -520,19 +523,23 @@ export function Social({ selectedLeague }: SocialSectionProps) {
           !twitterError &&
           twitterData &&
           twitterData.tweets.length > 0 && (
-            <VStack gap="2" align="stretch">
-              <Text color="gray.600" fontSize="sm">
-                Found {twitterData.tweets.length} tweets
+            <VStack gap="0" align="stretch">
+              <Text color="gray.600" fontSize="sm" mb="2">
+                Found {twitterData?.tweets.length || 0} tweets
               </Text>
-              {twitterData.tweets.map((tweet) => (
-                <Box key={tweet.id}>
+              {twitterData?.tweets.map((tweet) => (
+                <Box
+                  key={tweet.id}
+
+                  // mb={index < twitterData.tweets.length - 1 ? "8px" : "0"}
+                >
                   <Tweet id={tweet.id} />
                 </Box>
               ))}
 
               {/* Load More Indicator */}
               {twitterLoadingMore && (
-                <VStack gap="2" py="4">
+                <VStack gap="1" py="2">
                   <Spinner size="sm" color="blue.500" />
                   <Text color="gray.500" fontSize="sm">
                     Loading more tweets...
@@ -541,8 +548,8 @@ export function Social({ selectedLeague }: SocialSectionProps) {
               )}
 
               {/* End of results indicator */}
-              {!twitterData.has_next_page && !twitterLoadingMore && (
-                <Text color="gray.400" fontSize="sm" textAlign="center" py="4">
+              {!twitterData?.has_next_page && !twitterLoadingMore && (
+                <Text color="gray.400" fontSize="sm" textAlign="center" py="2">
                   No more tweets to load
                 </Text>
               )}

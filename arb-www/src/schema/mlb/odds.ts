@@ -1,11 +1,11 @@
 import { BaseDTO } from '../BaseDTO';
 
 export interface PregameOdd {
-  GameOddId: number;
-  Sportsbook: string;
-  GameId: number;
-  Created: string;
-  Updated: string;
+  GameOddId: number | null;
+  Sportsbook: string | null;
+  GameId: number | null;
+  Created: string | null;
+  Updated: string | null;
   HomeMoneyLine: number | null;
   AwayMoneyLine: number | null;
   HomePointSpread: number | null;
@@ -15,18 +15,18 @@ export interface PregameOdd {
   OverUnder: number | null;
   OverPayout: number | null;
   UnderPayout: number | null;
-  SportsbookId: number;
+  SportsbookId: number | null;
   SportsbookUrl: string | null;
-  OddType: string;
+  OddType: string | null;
   Unlisted: string | null;
 }
 
 export interface LiveOdd {
   GameOddId: number;
-  Sportsbook: string;
+  Sportsbook: string | null;
   GameId: number;
-  Created: string;
-  Updated: string;
+  Created: string | null;
+  Updated: string | null;
   HomeMoneyLine: number | null;
   AwayMoneyLine: number | null;
   HomePointSpread: number | null;
@@ -36,18 +36,18 @@ export interface LiveOdd {
   OverUnder: number | null;
   OverPayout: number | null;
   UnderPayout: number | null;
-  SportsbookId: number;
+  SportsbookId: number | null;
   SportsbookUrl: string | null;
-  OddType: string;
+  OddType: string | null;
   Unlisted: string | null;
 }
 
 export interface AlternateMarketPregameOdd {
   GameOddId: number;
-  Sportsbook: string;
+  Sportsbook: string | null;
   GameId: number;
-  Created: string;
-  Updated: string;
+  Created: string | null;
+  Updated: string | null;
   HomeMoneyLine: number | null;
   AwayMoneyLine: number | null;
   HomePointSpread: number | null;
@@ -57,31 +57,31 @@ export interface AlternateMarketPregameOdd {
   OverUnder: number | null;
   OverPayout: number | null;
   UnderPayout: number | null;
-  SportsbookId: number;
+  SportsbookId: number | null;
   SportsbookUrl: string | null;
-  OddType: string;
+  OddType: string | null;
   Unlisted: string | null;
 }
 
 export interface GameOdds {
-  GameId: number;
-  Season: number;
-  SeasonType: number;
-  Day: string;
-  DateTime: string;
-  Status: string;
-  AwayTeamId: number;
-  HomeTeamId: number;
-  AwayTeamName: string;
-  HomeTeamName: string;
-  GlobalGameId: number;
-  GlobalAwayTeamId: number;
-  GlobalHomeTeamId: number;
+  GameId: number | null;
+  Season: number | null;
+  SeasonType: number | null;
+  Day: string | null;
+  DateTime: string | null;
+  Status: string | null;
+  AwayTeamId: number | null;
+  HomeTeamId: number | null;
+  AwayTeamName: string | null;
+  HomeTeamName: string | null;
+  GlobalGameId: number | null;
+  GlobalAwayTeamId: number | null;
+  GlobalHomeTeamId: number | null;
   HomeTeamScore: number | null;
   AwayTeamScore: number | null;
   TotalScore: number | null;
-  HomeRotationNumber: number;
-  AwayRotationNumber: number;
+  HomeRotationNumber: number | null;
+  AwayRotationNumber: number | null;
   PregameOdds: PregameOdd[];
   LiveOdds: LiveOdd[];
   AlternateMarketPregameOdds: AlternateMarketPregameOdd[];

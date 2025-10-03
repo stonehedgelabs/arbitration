@@ -14,6 +14,9 @@ import { ArrowLeft } from "lucide-react";
 import useArb from "../services/Arb";
 import { useAppSelector } from "../store/hooks";
 
+// Internal imports - components
+import { Skeleton, SkeletonCircle } from "./Skeleton";
+
 interface BoxScoreDetailMLBProps {
   gameId: string;
   onBack: () => void;
@@ -53,7 +56,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
       homePointSpread: odds.HomePointSpread,
       awayPointSpread: odds.AwayPointSpread,
       overUnder: odds.OverUnder,
-      sportsbook: odds.Sportsbook,
+      sportsbook: odds.Sportsbook || "Unknown",
     };
   };
 

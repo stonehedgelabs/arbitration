@@ -15,6 +15,9 @@ import {
 } from "@chakra-ui/react";
 import { Wifi } from "lucide-react";
 
+// Internal imports - components
+import { Skeleton, SkeletonCircle } from "./Skeleton";
+
 // Internal imports - config
 import {
   isPostseasonDate,
@@ -120,19 +123,46 @@ const getGameOdds = (
   gameId: string,
   oddsData: any,
 ): Game["odds"] | undefined => {
-  if (!oddsData?.data) return undefined;
+  if (!oddsData?.data) {
+    console.log("No odds data available for gameId:", gameId);
+    return undefined;
+  }
+
+  console.log(
+    "Looking for odds for gameId:",
+    gameId,
+    "in odds data:",
+    oddsData.data.length,
+    "games",
+  );
 
   const gameOdds = oddsData.data.find(
     (odds: any) => odds.GameId?.toString() === gameId,
   );
-  if (!gameOdds) return undefined;
+
+  if (!gameOdds) {
+    console.log(
+      "No odds found for gameId:",
+      gameId,
+      "Available GameIds:",
+      oddsData.data.map((o: any) => o.GameId),
+    );
+    return undefined;
+  }
+
+  console.log("Found odds for gameId:", gameId, "odds:", gameOdds);
 
   // Get the first available odds (prefer pregame odds)
   const pregameOdds = gameOdds.PregameOdds?.[0];
   const liveOdds = gameOdds.LiveOdds?.[0];
   const odds = pregameOdds || liveOdds;
 
-  if (!odds) return undefined;
+  if (!odds) {
+    console.log("No pregame or live odds found for gameId:", gameId);
+    return undefined;
+  }
+
+  console.log("Using odds for gameId:", gameId, "odds:", odds);
 
   return {
     homeMoneyLine: odds.HomeMoneyLine,
@@ -140,7 +170,7 @@ const getGameOdds = (
     homePointSpread: odds.HomePointSpread,
     awayPointSpread: odds.AwayPointSpread,
     overUnder: odds.OverUnder,
-    sportsbook: odds.Sportsbook,
+    sportsbook: odds.Sportsbook || "Unknown",
   };
 };
 
@@ -197,10 +227,29 @@ const BasesIcon = () => {
 const TeamOddsDisplay = ({
   odds,
   isAway = false,
+  isLoading = false,
 }: {
   odds: Game["odds"];
   isAway?: boolean;
+  isLoading?: boolean;
 }) => {
+  if (isLoading) {
+    return (
+      <VStack gap="1" align="stretch" fontSize="xs" w="full">
+        {/* Money Line skeleton */}
+        <HStack justify="space-between" align="center" w="full">
+          <Skeleton w="30%" h="2.5" />
+          <Skeleton w="40%" h="2.5" />
+        </HStack>
+        {/* Point Spread skeleton */}
+        <HStack justify="space-between" align="center" w="full">
+          <Skeleton w="35%" h="2.5" />
+          <Skeleton w="25%" h="2.5" />
+        </HStack>
+      </VStack>
+    );
+  }
+
   if (!odds) return null;
 
   const moneyLine = isAway ? odds.awayMoneyLine : odds.homeMoneyLine;
@@ -235,8 +284,92 @@ const TeamOddsDisplay = ({
   );
 };
 
+// Game Card Skeleton Component
+const GameCardSkeleton = () => {
+  return (
+    <Card.Root
+      variant="outline"
+      size="sm"
+      _hover={{ bg: "gray.50" }}
+      transition="all 0.2s"
+      cursor="pointer"
+    >
+      <Card.Body p="4">
+        <VStack gap="3" align="stretch">
+          {/* Game Status and Time */}
+          <HStack justify="space-between" align="center">
+            <Skeleton w="20" h="5" />
+            <Skeleton w="16" h="4" />
+          </HStack>
+
+          {/* Away Team */}
+          <HStack justify="space-between" align="center" gap="2">
+            <HStack gap="3" align="center" flex="1" minW="0">
+              <SkeletonCircle size="8" />
+              <Skeleton w="70%" h="4" />
+            </HStack>
+            <HStack gap="2" align="center">
+              <Skeleton w="6" h="6" />
+              <Skeleton w="16" h="8" />
+            </HStack>
+          </HStack>
+
+          {/* Home Team */}
+          <HStack justify="space-between" align="center" gap="2">
+            <HStack gap="3" align="center" flex="1" minW="0">
+              <SkeletonCircle size="8" />
+              <Skeleton w="70%" h="4" />
+            </HStack>
+            <HStack gap="2" align="center">
+              <Skeleton w="6" h="6" />
+              <Skeleton w="16" h="8" />
+            </HStack>
+          </HStack>
+
+          {/* Venue Info */}
+          <HStack gap="2" align="center" flexWrap="wrap">
+            <Skeleton w="24" h="5" />
+            <Skeleton w="20" h="5" />
+            <Skeleton w="16" h="5" />
+          </HStack>
+
+          {/* Game-level odds skeleton */}
+          <Box mt="2" pt="2" borderTop="1px solid" borderColor="gray.200">
+            <HStack
+              justify="space-between"
+              align="center"
+              fontSize="xs"
+              w="full"
+            >
+              <Skeleton w="50%" h="2.5" />
+              <Skeleton w="35%" h="2.5" />
+            </HStack>
+          </Box>
+        </VStack>
+      </Card.Body>
+    </Card.Root>
+  );
+};
+
 // Game-level odds display (Total and Sportsbook)
-const GameOddsDisplay = ({ odds }: { odds: Game["odds"] }) => {
+const GameOddsDisplay = ({
+  odds,
+  isLoading = false,
+}: {
+  odds: Game["odds"];
+  isLoading?: boolean;
+}) => {
+  if (isLoading) {
+    return (
+      <HStack justify="space-between" align="center" fontSize="xs" w="full">
+        {/* Total skeleton */}
+        <Skeleton w="50%" h="2.5" />
+        {/* Sportsbook skeleton */}
+        <Skeleton w="35%" h="2.5" />
+      </HStack>
+    );
+  }
+
   if (!odds) return null;
 
   return (
@@ -642,12 +775,12 @@ export function Live() {
     <Box p="4">
       <VStack gap="4" align="stretch">
         {/* Header */}
-        <HStack gap="2" align="center">
+        {/* <HStack gap="2" align="center">
           <Wifi size={20} color="red" />
           <Text fontSize="lg" fontWeight="bold" color="gray.500">
             Live Games
           </Text>
-        </HStack>
+        </HStack> */}
 
         {/* Games List */}
         {sortedLiveGames.length === 0 ? (
@@ -877,6 +1010,7 @@ export function Scores() {
     mlbOddsByDate,
     mlbScoresLoading,
     mlbScoresError: mlbError,
+    oddsLoading,
     fetchMLBScores,
     fetchMLBTeamProfiles,
     fetchMLBStadiums,
@@ -971,7 +1105,18 @@ export function Scores() {
     }
   }, [selectedLeague, selectedDate, fetchMLBOddsByDate]);
 
-  // Fetch current_games data for the date picker range (7 days back + 7 days forward)
+  // Debug odds data when it changes
+  useEffect(() => {
+    if (mlbOddsByDate) {
+      console.log("MLB Odds data received:", mlbOddsByDate);
+      if (mlbOddsByDate.data) {
+        console.log("Number of games with odds:", mlbOddsByDate.data.length);
+        console.log("Sample odds data:", mlbOddsByDate.data[0]);
+      }
+    }
+  }, [mlbOddsByDate]);
+
+  // Fetch current-games data for the date picker range (7 days back + 7 days forward)
   useEffect(() => {
     if (selectedLeague === League.MLB) {
       const today = new Date();
@@ -985,7 +1130,7 @@ export function Scores() {
       const endDateStr = endDate.toISOString().split("T")[0];
 
       console.log(
-        "Fetching current_games for date range:",
+        "Fetching current-games for date range:",
         startDateStr,
         "to",
         endDateStr,
@@ -1073,7 +1218,7 @@ export function Scores() {
     );
   }
 
-  // Get all games intelligently combining scores and current_games data
+  // Get all games intelligently combining scores and current-games data
   const allGames = (() => {
     if (selectedLeague !== League.MLB) return [];
 
@@ -1082,6 +1227,13 @@ export function Scores() {
 
     // Add games from scores data (past and current games with actual scores)
     if (mlbScores?.data) {
+      console.log(
+        "Processing scores data for past games:",
+        mlbScores.data.length,
+        "games",
+      );
+      console.log("Sample scores game GameID:", mlbScores.data[0]?.GameID);
+
       const scoreGames = mlbScores.data
         .map((game) =>
           convertMLBGameToGame(
@@ -1096,7 +1248,7 @@ export function Scores() {
       console.log("Added", scoreGames.length, "games from scores data");
     }
 
-    // Add games from current_games data (future games and any missing past games)
+    // Add games from current-games data (future games and any missing past games)
     if (currentGames?.data) {
       const currentGamesList = currentGames.data
         .map((game) =>
@@ -1119,7 +1271,7 @@ export function Scores() {
       });
 
       games.push(...futureGames);
-      console.log("Added", futureGames.length, "games from current_games data");
+      console.log("Added", futureGames.length, "games from current-games data");
     }
 
     // Add games from schedule data (only for postseason dates)
@@ -1167,7 +1319,7 @@ export function Scores() {
         gameMap.set(game.id, game);
       } else {
         // If game already exists, prefer the one with more complete data
-        // (e.g., from scores data over current_games data for live/completed games)
+        // (e.g., from scores data over current-games data for live/completed games)
         if (
           game.status === GameStatus.LIVE ||
           game.status === GameStatus.FINAL
@@ -1294,6 +1446,23 @@ export function Scores() {
     );
   }
 
+  // Show skeleton cards when fetching date data
+  if (
+    selectedLeague === League.MLB &&
+    isFetchingDateData &&
+    !sortedGames.length
+  ) {
+    return (
+      <Box minH="100vh" bg="gray.50" p="4">
+        <VStack gap="3" align="stretch">
+          {Array.from({ length: 3 }, (_, index) => (
+            <GameCardSkeleton key={`skeleton-${index}`} />
+          ))}
+        </VStack>
+      </Box>
+    );
+  }
+
   // Show error state for MLB
   if (selectedLeague === League.MLB && mlbError) {
     return (
@@ -1326,7 +1495,9 @@ export function Scores() {
         <VStack gap="4" align="stretch">
           {sortedGames.length === 0 ? (
             // Show loading state if we're fetching data, otherwise show no games
-            isFetchingDateData || mlbScoresLoading ? (
+            isFetchingDateData ||
+            mlbScoresLoading ||
+            (selectedLeague === League.MLB && !mlbScores) ? (
               <Card.Root
                 bg="white"
                 borderRadius="12px"
@@ -1337,7 +1508,7 @@ export function Scores() {
                 <Card.Body p="8" textAlign="center">
                   <VStack gap="4">
                     <Spinner size="lg" color="red.500" />
-                    <Text color="gray.600">Loading games for this date...</Text>
+                    <Text color="gray.600">Loading games...</Text>
                   </VStack>
                 </Card.Body>
               </Card.Root>
@@ -1389,300 +1560,320 @@ export function Scores() {
                   Games on {getDateDisplayName(selectedDate)}
                   </Text>
               </HStack> */}
-              {sortedGames.map((game) => {
-                return (
-                  <Card.Root
-                    key={game.id}
-                    bg="white"
-                    borderRadius="12px"
-                    shadow="sm"
-                    border="1px"
-                    borderColor="gray.200"
-                    _active={{ transform: "scale(0.98)" }}
-                    transition="all 0.2s"
-                    cursor="pointer"
-                    onClick={() => handleGameClick(game.id, game.date)}
-                  >
-                    <Card.Body p="4">
-                      <VStack align="stretch" gap="3">
-                        {/* Time and Status Header */}
-                        <HStack justify="space-between" align="center">
-                          <Text fontSize="sm" color="gray.500">
-                            {formatTime(game.time)}
-                          </Text>
-                          <HStack gap="2" align="center">
-                            {getStatusBadge(game.status, game.quarter)}
-                            {game.isPostseason && (
-                              <Badge
-                                variant="solid"
-                                bg="purple.500"
-                                color="white"
-                                fontSize="xs"
-                                px="2"
-                                py="1"
-                                borderRadius="full"
-                              >
-                                Postseason
-                              </Badge>
-                            )}
-                            {game.status === GameStatus.LIVE && (
-                              <Badge
-                                variant="solid"
-                                bg="red.500"
-                                color="white"
-                                fontSize="xs"
-                                px="2"
-                                py="1"
-                                borderRadius="full"
-                                display="flex"
-                                alignItems="center"
-                                gap="1"
-                              >
-                                <Wifi size={12} />
-                                Live
-                              </Badge>
-                            )}
-                          </HStack>
-                        </HStack>
-
-                        {/* Location Information */}
-                        {(game.stadium || game.city) && (
-                          <HStack
-                            justify="space-between"
-                            align="center"
-                            gap="3"
-                          >
-                            <HStack gap="2" align="center" flexWrap="wrap">
-                              {game.stadium && (
-                                <Badge
-                                  variant="outline"
-                                  colorScheme="gray"
-                                  fontSize="xs"
-                                  px="2"
-                                  py="1"
-                                  borderRadius="full"
-                                >
-                                  {game.stadium}
-                                </Badge>
-                              )}
-                              {game.city && game.state && (
-                                <Badge
-                                  variant="outline"
-                                  colorScheme="blue"
-                                  fontSize="xs"
-                                  px="2"
-                                  py="1"
-                                  borderRadius="full"
-                                >
-                                  {game.city}, {game.state}
-                                </Badge>
-                              )}
-                              {game.capacity && (
-                                <Badge
-                                  variant="outline"
-                                  colorScheme="green"
-                                  fontSize="xs"
-                                  px="2"
-                                  py="1"
-                                  borderRadius="full"
-                                >
-                                  {game.capacity.toLocaleString()} seats
-                                </Badge>
-                              )}
-                              {game.surface && (
-                                <Badge
-                                  variant="outline"
-                                  colorScheme="purple"
-                                  fontSize="xs"
-                                  px="2"
-                                  py="1"
-                                  borderRadius="full"
-                                >
-                                  {game.surface}
-                                </Badge>
-                              )}
-                              {game.division && (
-                                <Badge
-                                  variant="outline"
-                                  colorScheme="orange"
-                                  fontSize="xs"
-                                  px="2"
-                                  py="1"
-                                  borderRadius="full"
-                                >
-                                  {game.division} Division
-                                </Badge>
-                              )}
+              {isFetchingDateData
+                ? // Show skeleton cards while loading
+                  Array.from({ length: 3 }, (_, index) => (
+                    <GameCardSkeleton key={`skeleton-${index}`} />
+                  ))
+                : sortedGames.map((game) => {
+                    return (
+                      <Card.Root
+                        key={game.id}
+                        bg="white"
+                        borderRadius="12px"
+                        shadow="sm"
+                        border="1px"
+                        borderColor="gray.200"
+                        _active={{ transform: "scale(0.98)" }}
+                        transition="all 0.2s"
+                        cursor="pointer"
+                        onClick={() => handleGameClick(game.id, game.date)}
+                      >
+                        <Card.Body p="4">
+                          <VStack align="stretch" gap="3">
+                            {/* Time and Status Header */}
+                            <HStack justify="space-between" align="center">
+                              <Text fontSize="sm" color="gray.500">
+                                {formatTime(game.time)}
+                              </Text>
+                              <HStack gap="2" align="center">
+                                {getStatusBadge(game.status, game.quarter)}
+                                {game.isPostseason && (
+                                  <Badge
+                                    variant="solid"
+                                    bg="purple.500"
+                                    color="white"
+                                    fontSize="xs"
+                                    px="2"
+                                    py="1"
+                                    borderRadius="full"
+                                  >
+                                    Postseason
+                                  </Badge>
+                                )}
+                                {game.status === GameStatus.LIVE && (
+                                  <Badge
+                                    variant="solid"
+                                    bg="red.500"
+                                    color="white"
+                                    fontSize="xs"
+                                    px="2"
+                                    py="1"
+                                    borderRadius="full"
+                                    display="flex"
+                                    alignItems="center"
+                                    gap="1"
+                                  >
+                                    <Wifi size={12} />
+                                    Live
+                                  </Badge>
+                                )}
+                              </HStack>
                             </HStack>
 
-                            {/* Bases Icon for MLB Live Games */}
-                            {selectedLeague === League.MLB &&
-                              game.status === GameStatus.LIVE && <BasesIcon />}
-                          </HStack>
-                        )}
+                            {/* Location Information */}
+                            {(game.stadium || game.city) && (
+                              <HStack
+                                justify="space-between"
+                                align="center"
+                                gap="3"
+                              >
+                                <HStack gap="2" align="center" flexWrap="wrap">
+                                  {game.stadium && (
+                                    <Badge
+                                      variant="outline"
+                                      colorScheme="gray"
+                                      fontSize="xs"
+                                      px="2"
+                                      py="1"
+                                      borderRadius="full"
+                                    >
+                                      {game.stadium}
+                                    </Badge>
+                                  )}
+                                  {game.city && game.state && (
+                                    <Badge
+                                      variant="outline"
+                                      colorScheme="blue"
+                                      fontSize="xs"
+                                      px="2"
+                                      py="1"
+                                      borderRadius="full"
+                                    >
+                                      {game.city}, {game.state}
+                                    </Badge>
+                                  )}
+                                  {game.capacity && (
+                                    <Badge
+                                      variant="outline"
+                                      colorScheme="green"
+                                      fontSize="xs"
+                                      px="2"
+                                      py="1"
+                                      borderRadius="full"
+                                    >
+                                      {game.capacity.toLocaleString()} seats
+                                    </Badge>
+                                  )}
+                                  {game.surface && (
+                                    <Badge
+                                      variant="outline"
+                                      colorScheme="purple"
+                                      fontSize="xs"
+                                      px="2"
+                                      py="1"
+                                      borderRadius="full"
+                                    >
+                                      {game.surface}
+                                    </Badge>
+                                  )}
+                                  {game.division && (
+                                    <Badge
+                                      variant="outline"
+                                      colorScheme="orange"
+                                      fontSize="xs"
+                                      px="2"
+                                      py="1"
+                                      borderRadius="full"
+                                    >
+                                      {game.division} Division
+                                    </Badge>
+                                  )}
+                                </HStack>
 
-                        {/* Away Team */}
-                        <HStack justify="space-between" align="center" gap="2">
-                          <HStack gap="3" align="center" flex="1" minW="0">
-                            <Box
-                              w="8"
-                              h="8"
-                              bg="gray.300"
-                              borderRadius="full"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              overflow="hidden"
-                              flexShrink="0"
+                                {/* Bases Icon for MLB Live Games */}
+                                {selectedLeague === League.MLB &&
+                                  game.status === GameStatus.LIVE && (
+                                    <BasesIcon />
+                                  )}
+                              </HStack>
+                            )}
+
+                            {/* Away Team */}
+                            <HStack
+                              justify="space-between"
+                              align="center"
+                              gap="2"
                             >
-                              {game.awayTeam.logo ? (
-                                <Image
-                                  src={game.awayTeam.logo}
-                                  alt={game.awayTeam.name}
-                                  w="full"
-                                  h="full"
-                                  objectFit="cover"
-                                />
-                              ) : (
+                              <HStack gap="3" align="center" flex="1" minW="0">
                                 <Box
-                                  w="full"
-                                  h="full"
+                                  w="8"
+                                  h="8"
                                   bg="gray.300"
                                   borderRadius="full"
-                                />
-                              )}
-                            </Box>
-                            <Text
-                              fontSize="sm"
-                              color="gray.900"
-                              fontWeight="medium"
-                              overflow="hidden"
-                              textOverflow="ellipsis"
-                              whiteSpace="nowrap"
-                              flex="1"
-                              minW="0"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                  overflow="hidden"
+                                  flexShrink="0"
+                                >
+                                  {game.awayTeam.logo ? (
+                                    <Image
+                                      src={game.awayTeam.logo}
+                                      alt={game.awayTeam.name}
+                                      w="full"
+                                      h="full"
+                                      objectFit="cover"
+                                    />
+                                  ) : (
+                                    <Box
+                                      w="full"
+                                      h="full"
+                                      bg="gray.300"
+                                      borderRadius="full"
+                                    />
+                                  )}
+                                </Box>
+                                <Text
+                                  fontSize="sm"
+                                  color="gray.900"
+                                  fontWeight="medium"
+                                  overflow="hidden"
+                                  textOverflow="ellipsis"
+                                  whiteSpace="nowrap"
+                                  flex="1"
+                                  minW="0"
+                                >
+                                  {game.awayTeam.name}
+                                </Text>
+                              </HStack>
+                              <HStack gap="2" align="center" flexShrink="0">
+                                <Text
+                                  fontSize="lg"
+                                  fontWeight="bold"
+                                  color="gray.900"
+                                  minW="8"
+                                  textAlign="right"
+                                >
+                                  {game.awayTeam.score}
+                                </Text>
+                                {(game.odds || oddsLoading) && (
+                                  <Box
+                                    p="2"
+                                    bg="gray.50"
+                                    borderRadius="6px"
+                                    border="1px solid"
+                                    borderColor="gray.200"
+                                    w="24"
+                                    flexShrink="0"
+                                  >
+                                    <TeamOddsDisplay
+                                      odds={game.odds}
+                                      isAway={true}
+                                      isLoading={oddsLoading && !game.odds}
+                                    />
+                                  </Box>
+                                )}
+                              </HStack>
+                            </HStack>
+
+                            {/* Home Team */}
+                            <HStack
+                              justify="space-between"
+                              align="center"
+                              gap="2"
                             >
-                              {game.awayTeam.name}
-                            </Text>
-                          </HStack>
-                          <HStack gap="2" align="center" flexShrink="0">
-                            <Text
-                              fontSize="lg"
-                              fontWeight="bold"
-                              color="gray.900"
-                              minW="8"
-                              textAlign="right"
-                            >
-                              {game.awayTeam.score}
-                            </Text>
-                            {game.odds && (
+                              <HStack gap="3" align="center" flex="1" minW="0">
+                                <Box
+                                  w="8"
+                                  h="8"
+                                  bg="gray.300"
+                                  borderRadius="full"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                  overflow="hidden"
+                                  flexShrink="0"
+                                >
+                                  {game.homeTeam.logo ? (
+                                    <Image
+                                      src={game.homeTeam.logo}
+                                      alt={game.homeTeam.name}
+                                      w="full"
+                                      h="full"
+                                      objectFit="cover"
+                                    />
+                                  ) : (
+                                    <Box
+                                      w="full"
+                                      h="full"
+                                      bg="gray.300"
+                                      borderRadius="full"
+                                    />
+                                  )}
+                                </Box>
+                                <Text
+                                  fontSize="sm"
+                                  color="gray.900"
+                                  fontWeight="medium"
+                                  overflow="hidden"
+                                  textOverflow="ellipsis"
+                                  whiteSpace="nowrap"
+                                  flex="1"
+                                  minW="0"
+                                >
+                                  {game.homeTeam.name}
+                                </Text>
+                              </HStack>
+                              <HStack gap="2" align="center" flexShrink="0">
+                                <Text
+                                  fontSize="lg"
+                                  fontWeight="bold"
+                                  color="gray.900"
+                                  minW="8"
+                                  textAlign="right"
+                                >
+                                  {game.homeTeam.score}
+                                </Text>
+                                {(game.odds || oddsLoading) && (
+                                  <Box
+                                    p="2"
+                                    bg="gray.50"
+                                    borderRadius="6px"
+                                    border="1px solid"
+                                    borderColor="gray.200"
+                                    w="24"
+                                    flexShrink="0"
+                                  >
+                                    <TeamOddsDisplay
+                                      odds={game.odds}
+                                      isAway={false}
+                                      isLoading={oddsLoading && !game.odds}
+                                    />
+                                  </Box>
+                                )}
+                              </HStack>
+                            </HStack>
+
+                            {/* Game-level odds (Total and Sportsbook) */}
+                            {(game.odds || oddsLoading) && (
                               <Box
-                                p="2"
-                                bg="gray.50"
-                                borderRadius="6px"
-                                border="1px solid"
+                                mt="2"
+                                pt="2"
+                                borderTop="1px solid"
                                 borderColor="gray.200"
-                                w="24"
-                                flexShrink="0"
                               >
-                                <TeamOddsDisplay
+                                <GameOddsDisplay
                                   odds={game.odds}
-                                  isAway={true}
+                                  isLoading={oddsLoading && !game.odds}
                                 />
                               </Box>
                             )}
-                          </HStack>
-                        </HStack>
-
-                        {/* Home Team */}
-                        <HStack justify="space-between" align="center" gap="2">
-                          <HStack gap="3" align="center" flex="1" minW="0">
-                            <Box
-                              w="8"
-                              h="8"
-                              bg="gray.300"
-                              borderRadius="full"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              overflow="hidden"
-                              flexShrink="0"
-                            >
-                              {game.homeTeam.logo ? (
-                                <Image
-                                  src={game.homeTeam.logo}
-                                  alt={game.homeTeam.name}
-                                  w="full"
-                                  h="full"
-                                  objectFit="cover"
-                                />
-                              ) : (
-                                <Box
-                                  w="full"
-                                  h="full"
-                                  bg="gray.300"
-                                  borderRadius="full"
-                                />
-                              )}
-                            </Box>
-                            <Text
-                              fontSize="sm"
-                              color="gray.900"
-                              fontWeight="medium"
-                              overflow="hidden"
-                              textOverflow="ellipsis"
-                              whiteSpace="nowrap"
-                              flex="1"
-                              minW="0"
-                            >
-                              {game.homeTeam.name}
-                            </Text>
-                          </HStack>
-                          <HStack gap="2" align="center" flexShrink="0">
-                            <Text
-                              fontSize="lg"
-                              fontWeight="bold"
-                              color="gray.900"
-                              minW="8"
-                              textAlign="right"
-                            >
-                              {game.homeTeam.score}
-                            </Text>
-                            {game.odds && (
-                              <Box
-                                p="2"
-                                bg="gray.50"
-                                borderRadius="6px"
-                                border="1px solid"
-                                borderColor="gray.200"
-                                w="24"
-                                flexShrink="0"
-                              >
-                                <TeamOddsDisplay
-                                  odds={game.odds}
-                                  isAway={false}
-                                />
-                              </Box>
-                            )}
-                          </HStack>
-                        </HStack>
-
-                        {/* Game-level odds (Total and Sportsbook) */}
-                        {game.odds && (
-                          <Box
-                            mt="2"
-                            pt="2"
-                            borderTop="1px solid"
-                            borderColor="gray.200"
-                          >
-                            <GameOddsDisplay odds={game.odds} />
-                          </Box>
-                        )}
-                      </VStack>
-                    </Card.Body>
-                  </Card.Root>
-                );
-              })}
+                          </VStack>
+                        </Card.Body>
+                      </Card.Root>
+                    );
+                  })}
             </VStack>
           )}
         </VStack>

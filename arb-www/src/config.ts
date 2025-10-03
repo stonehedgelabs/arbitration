@@ -3,6 +3,13 @@
  */
 
 /**
+ * Debug configuration
+ */
+export const DEBUG = {
+  enabled: process.env.NODE_ENV === 'development' || process.env.REACT_APP_DEBUG === 'true' || true,
+};
+
+/**
  * Supported leagues enum
  */
 export enum League {
@@ -226,6 +233,7 @@ export const mapApiStatusToGameStatus = (apiStatus: string): GameStatus => {
       return GameStatus.UPCOMING;
     case 'postponed':
     case 'cancelled':
+    case 'notnecessary':
       return GameStatus.CANCELLED;
     default:
       return GameStatus.UPCOMING; // Default to upcoming for unknown statuses

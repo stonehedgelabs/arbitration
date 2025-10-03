@@ -37,7 +37,7 @@ impl Server {
             .route("/api/team-profile", get(team_profile))
             .route("/api/v1/teams", get(teams))
             .route("/api/v1/schedule", get(schedule))
-            .route("/api/v1/current_games", get(current_games))
+            .route("/api/v1/current-games", get(current_games))
             .route("/api/v1/headshots", get(headshots))
             .route("/api/v1/play-by-play", get(play_by_play_handler))
             .route("/api/v1/scores", get(scores))

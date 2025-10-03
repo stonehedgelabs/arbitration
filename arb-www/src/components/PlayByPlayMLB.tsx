@@ -25,6 +25,9 @@ import {
   Zap,
 } from "lucide-react";
 
+// Internal imports - components
+import { Skeleton, SkeletonCircle } from "./Skeleton";
+
 // Internal imports - config
 import { buildApiUrl, League } from "../config";
 
@@ -522,7 +525,34 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       {/* Play-by-Play Events */}
       <Box p="4">
         <VStack gap="2" align="stretch">
-          {plays.length === 0 ? (
+          {loading ? (
+            // Show skeleton events while loading
+            Array.from({ length: 5 }, (_, index) => (
+              <Card.Root key={`skeleton-${index}`} bg="white" shadow="sm">
+                <Card.Body p="3">
+                  <HStack justify="space-between" align="start" gap="3">
+                    {/* Team logo and play icon skeleton */}
+                    <HStack gap="2" align="center">
+                      <SkeletonCircle size="6" />
+                      <Skeleton w="4" h="4" />
+                    </HStack>
+
+                    {/* Play description skeleton */}
+                    <VStack align="start" gap="1" flex="1" minW="0">
+                      <Skeleton w="80%" h="4" />
+                      <Skeleton w="60%" h="3" />
+                    </VStack>
+
+                    {/* Time and score skeleton */}
+                    <VStack align="end" gap="1" minW="0">
+                      <Skeleton w="12" h="3" />
+                      <Skeleton w="8" h="3" />
+                    </VStack>
+                  </HStack>
+                </Card.Body>
+              </Card.Root>
+            ))
+          ) : plays.length === 0 ? (
             <Card.Root>
               <Card.Body p="6">
                 <VStack gap="2">

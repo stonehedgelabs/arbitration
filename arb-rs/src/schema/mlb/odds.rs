@@ -3,15 +3,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PregameOdd {
     #[serde(rename = "GameOddId")]
-    pub game_odd_id: i64,
+    pub game_odd_id: Option<i64>,
     #[serde(rename = "Sportsbook")]
-    pub sportsbook: String,
+    pub sportsbook: Option<String>,
     #[serde(rename = "GameId")]
-    pub game_id: i64,
+    pub game_id: Option<i64>,
     #[serde(rename = "Created")]
-    pub created: String,
+    pub created: Option<String>,
     #[serde(rename = "Updated")]
-    pub updated: String,
+    pub updated: Option<String>,
     #[serde(rename = "HomeMoneyLine")]
     pub home_money_line: Option<i32>,
     #[serde(rename = "AwayMoneyLine")]
@@ -31,11 +31,11 @@ pub struct PregameOdd {
     #[serde(rename = "UnderPayout")]
     pub under_payout: Option<i32>,
     #[serde(rename = "SportsbookId")]
-    pub sportsbook_id: i32,
+    pub sportsbook_id: Option<i32>,
     #[serde(rename = "SportsbookUrl")]
     pub sportsbook_url: Option<String>,
     #[serde(rename = "OddType")]
-    pub odd_type: String,
+    pub odd_type: Option<String>,
     #[serde(rename = "Unlisted")]
     pub unlisted: Option<String>,
 }
@@ -43,15 +43,15 @@ pub struct PregameOdd {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LiveOdd {
     #[serde(rename = "GameOddId")]
-    pub game_odd_id: i64,
+    pub game_odd_id: Option<i64>,
     #[serde(rename = "Sportsbook")]
-    pub sportsbook: String,
+    pub sportsbook: Option<String>,
     #[serde(rename = "GameId")]
-    pub game_id: i64,
+    pub game_id: Option<i64>,
     #[serde(rename = "Created")]
-    pub created: String,
+    pub created: Option<String>,
     #[serde(rename = "Updated")]
-    pub updated: String,
+    pub updated: Option<String>,
     #[serde(rename = "HomeMoneyLine")]
     pub home_money_line: Option<i32>,
     #[serde(rename = "AwayMoneyLine")]
@@ -71,11 +71,11 @@ pub struct LiveOdd {
     #[serde(rename = "UnderPayout")]
     pub under_payout: Option<i32>,
     #[serde(rename = "SportsbookId")]
-    pub sportsbook_id: i32,
+    pub sportsbook_id: Option<i32>,
     #[serde(rename = "SportsbookUrl")]
     pub sportsbook_url: Option<String>,
     #[serde(rename = "OddType")]
-    pub odd_type: String,
+    pub odd_type: Option<String>,
     #[serde(rename = "Unlisted")]
     pub unlisted: Option<String>,
 }
@@ -83,15 +83,15 @@ pub struct LiveOdd {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlternateMarketPregameOdd {
     #[serde(rename = "GameOddId")]
-    pub game_odd_id: i64,
+    pub game_odd_id: Option<i64>,
     #[serde(rename = "Sportsbook")]
-    pub sportsbook: String,
+    pub sportsbook: Option<String>,
     #[serde(rename = "GameId")]
-    pub game_id: i64,
+    pub game_id: Option<i64>,
     #[serde(rename = "Created")]
-    pub created: String,
+    pub created: Option<String>,
     #[serde(rename = "Updated")]
-    pub updated: String,
+    pub updated: Option<String>,
     #[serde(rename = "HomeMoneyLine")]
     pub home_money_line: Option<i32>,
     #[serde(rename = "AwayMoneyLine")]
@@ -111,11 +111,11 @@ pub struct AlternateMarketPregameOdd {
     #[serde(rename = "UnderPayout")]
     pub under_payout: Option<i32>,
     #[serde(rename = "SportsbookId")]
-    pub sportsbook_id: i32,
+    pub sportsbook_id: Option<i32>,
     #[serde(rename = "SportsbookUrl")]
     pub sportsbook_url: Option<String>,
     #[serde(rename = "OddType")]
-    pub odd_type: String,
+    pub odd_type: Option<String>,
     #[serde(rename = "Unlisted")]
     pub unlisted: Option<String>,
 }
@@ -123,31 +123,31 @@ pub struct AlternateMarketPregameOdd {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameOdds {
     #[serde(rename = "GameId")]
-    pub game_id: i64,
+    pub game_id: Option<i64>,
     #[serde(rename = "Season")]
-    pub season: i32,
+    pub season: Option<i32>,
     #[serde(rename = "SeasonType")]
-    pub season_type: i32,
+    pub season_type: Option<i32>,
     #[serde(rename = "Day")]
-    pub day: String,
+    pub day: Option<String>,
     #[serde(rename = "DateTime")]
-    pub date_time: String,
+    pub date_time: Option<String>,
     #[serde(rename = "Status")]
-    pub status: String,
+    pub status: Option<String>,
     #[serde(rename = "AwayTeamId")]
-    pub away_team_id: i32,
+    pub away_team_id: Option<i32>,
     #[serde(rename = "HomeTeamId")]
-    pub home_team_id: i32,
+    pub home_team_id: Option<i32>,
     #[serde(rename = "AwayTeamName")]
-    pub away_team_name: String,
+    pub away_team_name: Option<String>,
     #[serde(rename = "HomeTeamName")]
-    pub home_team_name: String,
+    pub home_team_name: Option<String>,
     #[serde(rename = "GlobalGameId")]
-    pub global_game_id: i64,
+    pub global_game_id: Option<i64>,
     #[serde(rename = "GlobalAwayTeamId")]
-    pub global_away_team_id: i64,
+    pub global_away_team_id: Option<i64>,
     #[serde(rename = "GlobalHomeTeamId")]
-    pub global_home_team_id: i64,
+    pub global_home_team_id: Option<i64>,
     #[serde(rename = "HomeTeamScore")]
     pub home_team_score: Option<i32>,
     #[serde(rename = "AwayTeamScore")]
@@ -155,9 +155,9 @@ pub struct GameOdds {
     #[serde(rename = "TotalScore")]
     pub total_score: Option<i32>,
     #[serde(rename = "HomeRotationNumber")]
-    pub home_rotation_number: i32,
+    pub home_rotation_number: Option<i32>,
     #[serde(rename = "AwayRotationNumber")]
-    pub away_rotation_number: i32,
+    pub away_rotation_number: Option<i32>,
     #[serde(rename = "PregameOdds")]
     pub pregame_odds: Vec<PregameOdd>,
     #[serde(rename = "LiveOdds")]

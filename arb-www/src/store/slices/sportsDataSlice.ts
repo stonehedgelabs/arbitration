@@ -188,7 +188,7 @@ export const fetchCurrentGames = createAsyncThunk(
       start,
       end
     };
-    const apiUrl = buildApiUrl('/api/v1/current_games', params);
+    const apiUrl = buildApiUrl('/api/v1/current-games', params);
     console.log('Fetching current games from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {

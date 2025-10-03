@@ -9,6 +9,9 @@ import {
   VStack,
 } from "@chakra-ui/react";
 
+// Internal imports - components
+import { Skeleton, SkeletonCircle } from "./Skeleton";
+
 // Internal imports - config
 import { GameStatus } from "../config";
 
@@ -30,9 +33,14 @@ interface LiveGame {
 interface LiveGamesSectionProps {
   games: LiveGame[];
   onGameClick?: (gameId: string) => void;
+  loading?: boolean;
 }
 
-export function LiveGames({ games, onGameClick }: LiveGamesSectionProps) {
+export function LiveGames({
+  games,
+  onGameClick,
+  loading = false,
+}: LiveGamesSectionProps) {
   const liveGames = games.filter((game) => game.status === GameStatus.LIVE);
 
   return (
@@ -58,7 +66,64 @@ export function LiveGames({ games, onGameClick }: LiveGamesSectionProps) {
 
         {/* Games List */}
         <VStack gap="4" align="stretch">
-          {liveGames.length === 0 ? (
+          {loading ? (
+            // Show skeleton cards while loading
+            Array.from({ length: 3 }, (_, index) => (
+              <Card.Root
+                key={`skeleton-${index}`}
+                bg="white"
+                borderRadius="12px"
+                shadow="sm"
+                border="1px"
+                borderColor="gray.200"
+                overflow="hidden"
+                position="relative"
+              >
+                {/* Red vertical indicator skeleton */}
+                <Box
+                  position="absolute"
+                  left="0"
+                  top="0"
+                  bottom="0"
+                  w="4"
+                  bg="gray.200"
+                  borderRadius="12px 0 0 12px"
+                />
+
+                <Card.Body p="4" pl="6">
+                  <VStack align="stretch" gap="4">
+                    {/* Live Status and Quarter skeleton */}
+                    <HStack justify="space-between" align="center">
+                      <HStack gap="2" align="center">
+                        <Skeleton w="2" h="2" borderRadius="full" />
+                        <Skeleton w="8" h="4" />
+                        <Skeleton w="16" h="5" />
+                      </HStack>
+                      <Skeleton w="12" h="4" />
+                    </HStack>
+
+                    {/* Away Team skeleton */}
+                    <HStack justify="space-between" align="center" gap="2">
+                      <HStack gap="3" align="center" flex="1" minW="0">
+                        <SkeletonCircle size="8" />
+                        <Skeleton w="70%" h="4" />
+                      </HStack>
+                      <Skeleton w="6" h="6" />
+                    </HStack>
+
+                    {/* Home Team skeleton */}
+                    <HStack justify="space-between" align="center" gap="2">
+                      <HStack gap="3" align="center" flex="1" minW="0">
+                        <SkeletonCircle size="8" />
+                        <Skeleton w="70%" h="4" />
+                      </HStack>
+                      <Skeleton w="6" h="6" />
+                    </HStack>
+                  </VStack>
+                </Card.Body>
+              </Card.Root>
+            ))
+          ) : liveGames.length === 0 ? (
             <Card.Root
               bg="white"
               borderRadius="12px"

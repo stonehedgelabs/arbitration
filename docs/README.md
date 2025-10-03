@@ -217,13 +217,83 @@ export function DatePicker({ selectedLeague }: DatePickerProps) {
 )}
 ```
 
+**Skeleton Loading States**:
+```typescript
+// Prevents layout shifts during data loading
+const GameCardSkeleton = () => (
+  <Card.Root variant="outline" size="sm">
+    <Card.Body p="4">
+      <VStack gap="3" align="stretch">
+        <HStack justify="space-between">
+          <Skeleton w="20" h="5" /> {/* Status */}
+          <Skeleton w="16" h="4" />  {/* Time */}
+        </HStack>
+        <HStack justify="space-between">
+          <HStack gap="3" flex="1">
+            <SkeletonCircle size="8" /> {/* Team logo */}
+            <Skeleton w="70%" h="4" />  {/* Team name */}
+          </HStack>
+          <HStack gap="2">
+            <Skeleton w="6" h="6" />   {/* Score */}
+            <Skeleton w="16" h="8" />  {/* Odds */}
+          </HStack>
+        </HStack>
+      </VStack>
+    </Card.Body>
+  </Card.Root>
+);
+```
+
 **Memoized Components**:
 ```typescript
 const MemoizedGameCard = React.memo(GameCard);
 const MemoizedDatePicker = React.memo(DatePicker);
 ```
 
-#### 4. **Mobile-First Design**
+#### 4. **Skeleton Loading Implementation**
+
+The platform uses skeleton loading states throughout to prevent layout shifts and provide smooth loading experiences:
+
+**Skeleton Component System**:
+```typescript
+// Reusable skeleton components
+export const Skeleton: React.FC<SkeletonProps> = ({ w, h, borderRadius, children }) => (
+  <Box w={w} h={h} borderRadius={borderRadius} animation={`${pulse} 1.5s infinite`}>
+    {children}
+  </Box>
+);
+
+export const SkeletonCircle: React.FC<SkeletonProps & { size?: string }> = ({ size = "8" }) => (
+  <Skeleton w={size} h={size} borderRadius="full" />
+);
+
+export const SkeletonText: React.FC<SkeletonProps & { noOfLines?: number }> = ({ noOfLines = 1 }) => (
+  <VStack align="start" spacing="1" w="full">
+    {Array.from({ length: noOfLines }).map((_, i) => (
+      <Skeleton key={i} h="3" w={i === noOfLines - 1 && noOfLines > 1 ? "70%" : "full"} />
+    ))}
+  </VStack>
+);
+```
+
+**Implementation Patterns**:
+
+1. **Game Cards**: Full card skeletons that match actual layout dimensions
+2. **Play-by-Play Events**: Event item skeletons with proper spacing
+3. **Live Games**: Live game card skeletons with team info placeholders
+4. **Twitter Cards**: Tweet-sized skeletons for social content
+5. **Box Score Details**: Table and stat skeletons for detailed views
+
+**Responsive Skeleton Sizing**:
+```typescript
+// Skeletons adapt to container size using percentage-based widths
+<Skeleton w="full" h="4" />        // Full width
+<Skeleton w="70%" h="4" />         // 70% width (for text truncation)
+<Skeleton w="30%" h="4" />         // 30% width (for short content)
+<SkeletonCircle size="8" />        // Fixed size for avatars/logos
+```
+
+#### 5. **Mobile-First Design**
 - **iOS-Style Components**: Native-feeling interactions
 - **Touch Optimizations**: Proper touch targets and gestures
 - **Responsive Breakpoints**: Seamless desktop/mobile experience
