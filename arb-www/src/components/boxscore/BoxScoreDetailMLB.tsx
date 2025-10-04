@@ -11,12 +11,15 @@ import {
   Flex,
 } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
-import useArb from "../services/Arb";
-import { useAppSelector } from "../store/hooks";
+import useArb from "../../services/Arb.ts";
+import { useAppSelector } from "../../store/hooks.ts";
 
 // Internal imports - components
-import { Skeleton, SkeletonCircle } from "./Skeleton";
-import { Bases } from "./Bases";
+import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
+import { Bases } from "../Bases.tsx";
+
+// Internal imports - utils
+import { orEmpty } from "../../utils.ts";
 
 interface BoxScoreDetailMLBProps {
   gameId: string;
@@ -27,8 +30,10 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   const {
     mlbBoxScore,
     mlbTeamProfiles,
+    mlbStadiums,
     fetchMLBBoxScore,
     fetchMLBTeamProfiles,
+    fetchMLBStadiums,
   } = useArb();
   const [selectedTeam, setSelectedTeam] = useState<"away" | "home">("away");
 
@@ -66,6 +71,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   useEffect(() => {
     fetchMLBBoxScore(gameId);
     fetchMLBTeamProfiles();
+    fetchMLBStadiums();
   }, [gameId]); // Removed function dependencies to prevent loops
 
   // Show loading state while data is being fetched
@@ -86,6 +92,16 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   }
 
   const game = mlbBoxScore.data.Game;
+
+  // Helper function to get stadium information
+  const getStadiumInfo = () => {
+    if (!mlbStadiums?.data || !game.StadiumID) return null;
+    return mlbStadiums.data.find(
+      (stadium: any) => stadium.StadiumID === game.StadiumID,
+    );
+  };
+
+  const stadium = getStadiumInfo();
 
   // Get team profiles for colors and logos
   const awayTeamProfile = mlbTeamProfiles?.data?.find(
@@ -196,11 +212,13 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
           {/* Center - Game State */}
           <VStack gap="3" align="center" flex="1">
             <Text fontSize="sm" color="gray.600" fontWeight="medium">
-              {game.InningDescription || "Not started"}
+              {game.Status === "Final"
+                ? "Final"
+                : game.InningDescription || "Not started"}
             </Text>
             {/* Baseball Diamond with Base Runners */}
             <Bases
-              runnerOnFirst={game.RunnerOnFirst || true} // Test with fake data
+              runnerOnFirst={game.RunnerOnFirst}
               runnerOnSecond={game.RunnerOnSecond}
               runnerOnThird={game.RunnerOnThird}
               size="md"
@@ -254,31 +272,46 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
           {/* 1. TV Station */}
           <Box textAlign="center">
             <Text fontSize="xs" color="gray.600">
-              TV: {game.Channel || "TBD"}
+              TV: {orEmpty(game.Channel)}
             </Text>
           </Box>
 
-          {/* 2. Temperature & Venue */}
+          {/* 2. Weather and Venue */}
           <Box textAlign="center">
-            <HStack justify="center" gap="2" fontSize="xs" color="gray.600">
-              <HStack gap="1">
-                <Text>☀️</Text>
-                <Text>
-                  {game.ForecastTempHigh
-                    ? `${game.ForecastTempHigh}° F`
-                    : "72° F"}
-                </Text>
-                {game.ForecastDescription && (
-                  <Text>({game.ForecastDescription})</Text>
+            <VStack gap="1" fontSize="xs" color="gray.600">
+              {/* Weather */}
+              <HStack justify="center" gap="2">
+                <HStack gap="1">
+                  <Text>☀️</Text>
+                  <Text>
+                    {game.ForecastTempHigh
+                      ? `${game.ForecastTempHigh}° F`
+                      : "72° F"}
+                  </Text>
+                  <Text>({orEmpty(game.ForecastDescription)})</Text>
+                </HStack>
+                {game.ForecastWindSpeed && (
+                  <>
+                    <Text>•</Text>
+                    <Text>Wind: {game.ForecastWindSpeed} mph</Text>
+                  </>
                 )}
               </HStack>
-              {game.ForecastWindSpeed && (
-                <>
-                  <Text>•</Text>
-                  <Text>Wind: {game.ForecastWindSpeed} mph</Text>
-                </>
+              {/* Venue */}
+              {stadium && (
+                <Text>
+                  {stadium.Name &&
+                    orEmpty(stadium.Name) !== "--" &&
+                    orEmpty(stadium.Name)}
+                  {stadium.City &&
+                    orEmpty(stadium.City) !== "--" &&
+                    `, ${orEmpty(stadium.City)}`}
+                  {stadium.State &&
+                    orEmpty(stadium.State) !== "--" &&
+                    `, ${orEmpty(stadium.State)}`}
+                </Text>
               )}
-            </HStack>
+            </VStack>
           </Box>
 
           {/* 3. Odds */}
@@ -310,7 +343,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 )}
                 {gameOdds.sportsbook && (
                   <Text fontSize="2xs" color="gray.500">
-                    via {gameOdds.sportsbook}
+                    via {orEmpty(gameOdds.sportsbook)}
                   </Text>
                 )}
               </VStack>
@@ -330,7 +363,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     Pitcher
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
-                    {game.CurrentPitcher}
+                    {orEmpty(game.CurrentPitcher)}
                   </Text>
                 </VStack>
               )}
@@ -340,7 +373,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     Batter
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
-                    {game.CurrentHitter}
+                    {orEmpty(game.CurrentHitter)}
                   </Text>
                 </VStack>
               )}
@@ -361,7 +394,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     {game.AwayTeam}
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
-                    {game.AwayTeamStartingPitcher}
+                    {orEmpty(game.AwayTeamStartingPitcher)}
                   </Text>
                 </VStack>
               )}
@@ -371,7 +404,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     {game.HomeTeam}
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
-                    {game.HomeTeamStartingPitcher}
+                    {orEmpty(game.HomeTeamStartingPitcher)}
                   </Text>
                 </VStack>
               )}
@@ -396,7 +429,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     {game.AwayTeam}:
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
-                    {game.AwayTeamStartingPitcher || "TBD"}
+                    {orEmpty(game.AwayTeamStartingPitcher) || "TBD"}
                   </Text>
                 </HStack>
                 <HStack justify="space-between">
@@ -404,7 +437,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     {game.HomeTeam}:
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
-                    {game.HomeTeamStartingPitcher || "TBD"}
+                    {orEmpty(game.HomeTeamStartingPitcher) || "TBD"}
                   </Text>
                 </HStack>
               </VStack>
@@ -616,8 +649,8 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 </Text>
                 <Text fontSize="sm">
                   {selectedTeam === "away"
-                    ? game.AwayTeamStartingPitcher
-                    : game.HomeTeamStartingPitcher}
+                    ? orEmpty(game.AwayTeamStartingPitcher)
+                    : orEmpty(game.HomeTeamStartingPitcher)}
                 </Text>
               </Box>
             )}
@@ -628,7 +661,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 <Text fontSize="md" fontWeight="bold" mb="3">
                   Current Pitcher
                 </Text>
-                <Text fontSize="sm">{game.CurrentPitcher}</Text>
+                <Text fontSize="sm">{orEmpty(game.CurrentPitcher)}</Text>
               </Box>
             )}
 
@@ -709,6 +742,13 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               borderRadius="lg"
               border="1px"
               borderColor="border.100"
+              css={{
+                "&::-webkit-scrollbar": {
+                  display: "none",
+                },
+                "&::-ms-overflow-style": "none",
+                "&scrollbarWidth": "none",
+              }}
             >
               <Box as="table" w="full" minW="600px">
                 <Box as="thead" bg="gray.50">
@@ -910,6 +950,13 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               borderRadius="lg"
               border="1px"
               borderColor="border.100"
+              css={{
+                "&::-webkit-scrollbar": {
+                  display: "none",
+                },
+                "&::-ms-overflow-style": "none",
+                "&scrollbarWidth": "none",
+              }}
             >
               <Box as="table" w="full" minW="600px">
                 <Box as="thead" bg="gray.50">

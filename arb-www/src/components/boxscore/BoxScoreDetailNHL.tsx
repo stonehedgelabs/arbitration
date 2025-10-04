@@ -11,7 +11,7 @@ import {
   Flex,
 } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
-import useArb from "../services/Arb";
+import useArb from "../../services/Arb.ts";
 
 interface BoxScoreDetailNHLProps {
   gameId: string;

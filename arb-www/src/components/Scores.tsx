@@ -28,7 +28,7 @@ import {
 } from "../config";
 
 // Internal imports - components
-import { BoxScoreDetail } from "./BoxScoreDetail";
+import { BoxScoreDetail } from "./boxscore/BoxScoreDetail.tsx";
 import { DatePicker } from "./DatePicker";
 
 // Internal imports - schema
@@ -46,7 +46,8 @@ import {
   convertUtcToLocalDate,
   getCurrentLocalDate,
   formatDateForSlider,
-} from "../utils";
+  toLocalTime,
+} from "../utils.ts";
 
 interface Team {
   name: string;
@@ -573,58 +574,9 @@ export function Live() {
     }
   }, [selectedLeague, fetchMLBScores, fetchMLBTeamProfiles, fetchMLBStadiums]);
 
-  // Format time from DateTime (convert UTC to local time)
+  // Format time from DateTime (convert EST to local time)
   const formatTime = (dateTime: string) => {
-    try {
-      // Parse the UTC datetime string and convert to local time
-      const utcDate = new Date(dateTime);
-
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-
-      const dayName = days[utcDate.getDay()];
-      const monthName = months[utcDate.getMonth()];
-      const day = utcDate.getDate();
-
-      // Add ordinal suffix to day
-      const getOrdinalSuffix = (day: number) => {
-        if (day >= 11 && day <= 13) return "th";
-        switch (day % 10) {
-          case 1:
-            return "st";
-          case 2:
-            return "nd";
-          case 3:
-            return "rd";
-          default:
-            return "th";
-        }
-      };
-
-      // Format time in user's local timezone
-      const time = utcDate.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-
-      return `${dayName}. ${monthName} ${day}${getOrdinalSuffix(day)} at ${time}`;
-    } catch {
-      return "TBD";
-    }
+    return toLocalTime(dateTime);
   };
 
   // Get all games - use the same logic as Scores component
@@ -660,7 +612,7 @@ export function Live() {
           <Badge
             colorScheme="red"
             variant="solid"
-            fontSize="xs"
+            fontSize="2xs"
             px="2"
             py="1"
             borderRadius="full"
@@ -677,7 +629,7 @@ export function Live() {
           <Badge
             colorScheme="gray"
             variant="solid"
-            fontSize="xs"
+            fontSize="2xs"
             px="2"
             py="1"
             borderRadius="full"
@@ -690,7 +642,7 @@ export function Live() {
           <Badge
             colorScheme="blue"
             variant="outline"
-            fontSize="xs"
+            fontSize="2xs"
             px="2"
             py="1"
             borderRadius="full"
@@ -1083,58 +1035,9 @@ export function Scores() {
 
   // Fetch box score data for runner information
 
-  // Format time from DateTime (convert UTC to local time)
+  // Format time from DateTime (convert EST to local time)
   const formatTime = (dateTime: string) => {
-    try {
-      // Parse the UTC datetime string and convert to local time
-      const utcDate = new Date(dateTime);
-
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-
-      const dayName = days[utcDate.getDay()];
-      const monthName = months[utcDate.getMonth()];
-      const day = utcDate.getDate();
-
-      // Add ordinal suffix to day
-      const getOrdinalSuffix = (day: number) => {
-        if (day >= 11 && day <= 13) return "th";
-        switch (day % 10) {
-          case 1:
-            return "st";
-          case 2:
-            return "nd";
-          case 3:
-            return "rd";
-          default:
-            return "th";
-        }
-      };
-
-      // Format time in user's local timezone
-      const time = utcDate.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-
-      return `${dayName}. ${monthName} ${day}${getOrdinalSuffix(day)} at ${time}`;
-    } catch {
-      return "TBD";
-    }
+    return toLocalTime(dateTime);
   };
 
   // Handle back from box score
@@ -1288,7 +1191,7 @@ export function Scores() {
             variant="solid"
             bg="danger.100"
             color="text.100"
-            fontSize="xs"
+            fontSize="2xs"
             px="2"
             py="1"
             borderRadius="full"
@@ -1302,7 +1205,7 @@ export function Scores() {
             variant="solid"
             bg="danger.100"
             color="text.100"
-            fontSize="xs"
+            fontSize="2xs"
             px="2"
             py="1"
             borderRadius="full"
@@ -1316,7 +1219,7 @@ export function Scores() {
             variant="solid"
             bg="danger.100"
             color="text.100"
-            fontSize="xs"
+            fontSize="2xs"
             px="2"
             py="1"
             borderRadius="full"
@@ -1494,7 +1397,7 @@ export function Scores() {
                                     variant="solid"
                                     bg="gold"
                                     color="text.400"
-                                    fontSize="xs"
+                                    fontSize="2xs"
                                     px="2"
                                     py="1"
                                     borderRadius="full"
@@ -1507,7 +1410,7 @@ export function Scores() {
                                     variant="solid"
                                     bg="danger.100"
                                     color="text.400"
-                                    fontSize="xs"
+                                    fontSize="2xs"
                                     px="2"
                                     py="1"
                                     borderRadius="full"

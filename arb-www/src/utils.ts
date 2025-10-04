@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from "date-fns";
-import { fromZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { DEBUG } from "./config";
 
 /**
@@ -158,6 +158,68 @@ export const formatRelativeTime = (timestamp: string): string => {
 };
 
 /**
+ * Converts a datetime string from EST/EDT to local time and formats it for display
+ * @param estDateTime - EST/EDT datetime string (e.g., "2025-10-01T21:08:00")
+ * @returns {string} Formatted local time string (e.g., "Wed. Oct 1st at 6:08 PM")
+ */
+export const toLocalTime = (estDateTime: string): string => {
+  try {
+    // Convert EST/EDT timestamp to UTC first
+    const utcDate = fromZonedTime(estDateTime, "America/New_York");
+    
+    // Then convert to local time
+    const localDate = toZonedTime(utcDate, Intl.DateTimeFormat().resolvedOptions().timeZone);
+
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    const dayName = days[localDate.getDay()];
+    const monthName = months[localDate.getMonth()];
+    const day = localDate.getDate();
+
+    // Add ordinal suffix to day
+    const getOrdinalSuffix = (day: number) => {
+      if (day >= 11 && day <= 13) return "th";
+      switch (day % 10) {
+        case 1:
+          return "st";
+        case 2:
+          return "nd";
+        case 3:
+          return "rd";
+        default:
+          return "th";
+      }
+    };
+
+    // Format time in user's local timezone
+    const time = localDate.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    return `${dayName}. ${monthName} ${day}${getOrdinalSuffix(day)} at ${time}`;
+  } catch (error) {
+    console.error("Error converting to local time:", estDateTime, error);
+    return "TBD";
+  }
+};
+
+/**
  * Check if a date string is in the future
  * @param dateString - Date string in YYYY-MM-DD format
  * @returns {boolean} True if the date is in the future
@@ -272,6 +334,18 @@ export const getViewportDimensions = (): { width: number; height: number } => {
     width: window.innerWidth,
     height: window.innerHeight,
   };
+};
+
+/**
+ * Replaces "Scrambled" values with "--" for display
+ * @param value - The value to check
+ * @returns {string} The original value or "--" if scrambled/empty
+ */
+export const orEmpty = (value: string | undefined | null): string => {
+  if (!value || value === "Scrambled") {
+    return "--";
+  }
+  return value;
 };
 
 /**

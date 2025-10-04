@@ -1,6 +1,7 @@
-use crate::config::ArbConfig;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
+
+use crate::config::ArbConfig;
 
 #[derive(Debug, Display, EnumString, PartialEq, Clone)]
 #[strum(serialize_all = "lowercase")]

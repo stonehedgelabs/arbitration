@@ -2,13 +2,13 @@
 import { Box, Button, Text, VStack } from "@chakra-ui/react";
 
 // Internal imports - config
-import { League } from "../config";
+import { League } from "../../config.ts";
 
 // Internal imports - components
-import { BoxScoreDetailMLB } from "./BoxScoreDetailMLB";
-import { BoxScoreDetailNBA } from "./BoxScoreDetailNBA";
-import { BoxScoreDetailNFL } from "./BoxScoreDetailNFL";
-import { BoxScoreDetailNHL } from "./BoxScoreDetailNHL";
+import { BoxScoreDetailMLB } from "./BoxScoreDetailMLB.tsx";
+import { BoxScoreDetailNBA } from "./BoxScoreDetailNBA.tsx";
+import { BoxScoreDetailNFL } from "./BoxScoreDetailNFL.tsx";
+import { BoxScoreDetailNHL } from "./BoxScoreDetailNHL.tsx";
 
 interface BoxScoreDetailProps {
   gameId: string;

@@ -1,37 +1,37 @@
-// Standard library imports
-use std::collections::HashMap;
-use std::time::Instant;
+use std::{collections::HashMap, time::Instant};
 
-// Third-party library imports
 use async_std::sync::{Arc, Mutex};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
-    response::Json,
+    response::{Json, Redirect},
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-// Internal imports - api_paths
-use crate::api_paths::{
-    box_score_path, games_by_date_path, headshots_path, odds_by_date_path,
-    play_by_play_path, postseason_schedule_path, schedule_path, scores_basic_final_path,
-    scores_basic_path, stadiums_path, team_profile_path, teams_path, League,
+use crate::{
+    api_paths::{
+        box_score_path, games_by_date_path, headshots_path, odds_by_date_path,
+        play_by_play_path, postseason_schedule_path, schedule_path,
+        scores_basic_final_path, scores_basic_path, stadiums_path, team_profile_path,
+        teams_path, League,
+    },
+    cache::Cache,
+    config::ArbConfig,
+    error::Result,
+    schema::{
+        mlb::{
+            box_score::{BoxScore, BoxScoreResponse},
+            game_by_date::{GameByDate, GameByDateResponse},
+            odds::{GameOdds, OddsByDateResponse},
+            play_by_play::PlayByPlayResponse as SchemaPlayByPlayResponse,
+            schedule::{MLBScheduleGame, MLBScheduleResponse},
+            stadiums::{Stadium, StadiumsResponse},
+        },
+        twitterapi::tweet::{TwitterSearchResponse, TwitterTweet},
+    },
+    services::auth::{AppleOAuth, GoogleOAuth, User},
 };
-
-// Internal imports - other modules
-use crate::cache::Cache;
-use crate::config::ArbConfig;
-use crate::error::Result;
-
-// Internal imports - schema
-use crate::schema::mlb::box_score::{BoxScore, BoxScoreResponse};
-use crate::schema::mlb::game_by_date::{GameByDate, GameByDateResponse};
-use crate::schema::mlb::odds::{GameOdds, OddsByDateResponse};
-use crate::schema::mlb::play_by_play::PlayByPlayResponse as SchemaPlayByPlayResponse;
-use crate::schema::mlb::schedule::{MLBScheduleGame, MLBScheduleResponse};
-use crate::schema::mlb::stadiums::{Stadium, StadiumsResponse};
-use crate::schema::twitterapi::tweet::{TwitterSearchResponse, TwitterTweet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CacheKey(String);
@@ -65,7 +65,6 @@ impl CacheKey {
         CacheKey(value.into())
     }
 
-    // Helper methods for different cache key types
     pub fn team_profile(league: &League) -> Self {
         CacheKey::new(format!("team_profile:{}", league))
     }
@@ -99,6 +98,18 @@ impl CacheKey {
 
     pub fn odds_by_date(league: &League, date: &str) -> Self {
         CacheKey::new(format!("odds_by_date:{}:{}", league, date))
+    }
+
+    pub fn user(email: &str) -> Self {
+        CacheKey::new(format!("user:{}", email))
+    }
+
+    pub fn game_by_date(league: &League, date: &str, game_id: &str) -> Self {
+        CacheKey::new(format!("game_by_date:{}:{}:{}", league, date, game_id))
+    }
+
+    pub fn stadiums(league: &League) -> Self {
+        CacheKey::new(format!("stadiums:{}", league))
     }
 }
 
@@ -286,7 +297,6 @@ pub async fn team_profile(
 async fn fetch_team_data_from_api(api_url: &str, league: &League) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
-    // For MLB, make real API calls; for other leagues, use mock data for now
     match league {
         League::Mlb => {
             let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
@@ -333,7 +343,6 @@ async fn fetch_team_data_from_api(api_url: &str, league: &League) -> Result<Stri
             Ok(body)
         }
         _ => {
-            // Use mock data for other leagues for now
             let mock_data = match league {
                 League::Nfl => serde_json::json!({
                     "teams": [
@@ -423,7 +432,6 @@ async fn handle_schedule_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    // Only support MLB for now
     if league != League::Mlb {
         tracing::error!("Schedule not yet supported for league: {}", league);
         return Err(StatusCode::BAD_REQUEST.into());
@@ -433,19 +441,16 @@ async fn handle_schedule_request(
     let date_filter = params.filters.get("date").cloned();
 
     let (api_url, cache_key) = if let Some(ref date) = date_filter {
-        // Use GamesByDate endpoint for specific date - much more efficient
         let api_url = games_by_date_path(league.clone(), Some(date.clone())).to_string();
-        let cache_key = CacheKey::new(format!("games_by_date_{}_{}", league, date));
+        let cache_key = CacheKey::scores(&league, &date);
         (api_url, cache_key)
     } else if params.post.unwrap_or(false) {
-        // Use postseason schedule if post=true parameter is provided
         let api_url =
             postseason_schedule_path(league.clone(), use_case_state.config.clone())
                 .to_string();
         let cache_key = CacheKey::data_type("postseason_schedule", &league);
         (api_url, cache_key)
     } else {
-        // Fall back to full schedule (less efficient)
         let api_url = schedule_path(league.clone()).to_string();
         let cache_key = CacheKey::data_type("schedule", &league);
         (api_url, cache_key)
@@ -460,7 +465,6 @@ async fn handle_schedule_request(
                 "Cache miss for schedule data, fetching from API: {}",
                 api_url
             );
-            // Use appropriate fetch function based on endpoint
             if date_filter.is_some() {
                 tracing::info!(
                     "Using GamesByDate endpoint for date: {}",
@@ -495,12 +499,13 @@ async fn handle_schedule_request(
     let (filtered_games, filtered_count) = if params.filters.is_empty() {
         (schedule_games, total_count)
     } else {
-        // Apply filters if any
         let filtered_games = schedule_games
             .into_iter()
             .filter(|game| {
-                params.filters.iter().all(|(key, value)| {
-                    match key.as_str() {
+                params
+                    .filters
+                    .iter()
+                    .all(|(key, value)| match key.as_str() {
                         "status" => game
                             .status
                             .as_ref()
@@ -518,15 +523,13 @@ async fn handle_schedule_request(
                             .unwrap_or(false),
                         "date" => {
                             if let Some(day_str) = game.day.as_ref() {
-                                // The day field is in format "2025-03-18T00:00:00", so we need to check if it starts with the date
                                 day_str.starts_with(&format!("{}T", value))
                             } else {
                                 false
                             }
                         }
                         _ => true,
-                    }
-                })
+                    })
             })
             .collect::<Vec<_>>();
         let filtered_count = filtered_games.len();
@@ -552,13 +555,11 @@ async fn handle_current_games_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    // Only support MLB for now
     if league != League::Mlb {
         tracing::error!("Current games not yet supported for league: {}", league);
         return Err(StatusCode::BAD_REQUEST.into());
     }
 
-    // Parse start and end dates
     let start_date = chrono::NaiveDate::parse_from_str(&params.start, "%Y-%m-%d")
         .map_err(|_| {
             tracing::error!("Invalid start date format: {}", params.start);
@@ -571,7 +572,6 @@ async fn handle_current_games_request(
             StatusCode::BAD_REQUEST
         })?;
 
-    // Validate date range
     if start_date > end_date {
         tracing::error!(
             "Start date {} is after end date {}",
@@ -581,17 +581,15 @@ async fn handle_current_games_request(
         return Err(StatusCode::BAD_REQUEST.into());
     }
 
-    // Generate all dates in the range (inclusive)
     let mut all_games = Vec::new();
     let mut current_date = start_date;
 
     while current_date <= end_date {
         let date_str = current_date.format("%Y-%m-%d").to_string();
 
-        // Use GamesByDate endpoint for this specific date
         let api_url =
             games_by_date_path(league.clone(), Some(date_str.clone())).to_string();
-        let cache_key = CacheKey::new(format!("games_by_date_{}_{}", league, date_str));
+        let cache_key = CacheKey::scores(&league, &date_str);
 
         let data = use_case_state
             .cache
@@ -611,24 +609,20 @@ async fn handle_current_games_request(
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
 
-        // Parse the JSON data and add games to our collection
         let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
             tracing::error!("Failed to parse JSON data for date {}: {}", date_str, e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-        // Add games from this date to our collection
         if let Some(games_array) = json_data.as_array() {
             for game in games_array {
                 all_games.push(game.clone());
             }
         }
 
-        // Move to next date
         current_date = current_date.succ_opt().unwrap_or(current_date);
     }
 
-    // Convert all games to MLBScheduleGame format
     let schedule_games: Vec<MLBScheduleGame> =
         serde_json::from_value(serde_json::Value::Array(all_games)).map_err(|e| {
             tracing::error!("Failed to parse games as MLBScheduleGame: {}", e);
@@ -762,7 +756,6 @@ async fn handle_play_by_play_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    // Validate required game_id parameter
     if params.game_id.trim().is_empty() {
         tracing::error!("Missing or empty game_id parameter");
         return Err(StatusCode::BAD_REQUEST.into());
@@ -777,7 +770,6 @@ async fn handle_play_by_play_request(
         params.game_id
     );
 
-    // Determine if this is a delta request or full request
     let is_delta = params.last_timestamp.is_some() || params.delta_minutes.is_some();
     let cache_key = if is_delta {
         CacheKey::play_by_play_delta(
@@ -819,7 +811,6 @@ async fn handle_play_by_play_request(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // Extract events and calculate counts
     let (events, new_events_count, total_events_count, last_timestamp) =
         extract_play_by_play_events(json_data, &params.last_timestamp, params.t)?;
 
@@ -844,19 +835,15 @@ async fn handle_scores_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    // Determine the date range - default to 7 days back to match date picker range
     let days_back = params.days_back.unwrap_or(7);
     let today = chrono::Utc::now().date_naive();
 
-    // Generate date range for the past N days
     let mut all_games = Vec::new();
 
     for i in 0..days_back {
         let target_date = today - chrono::Duration::days(i.into());
         let date_str = target_date.format("%Y-%m-%d").to_string();
 
-        // For now, we'll focus on MLB and use the GamesByDate endpoint
-        // This will be expanded to support other leagues
         let api_url = match league {
             League::Mlb => {
                 games_by_date_path(league.clone(), Some(date_str.clone())).to_string()
@@ -867,7 +854,7 @@ async fn handle_scores_request(
             }
         };
 
-        let cache_key = CacheKey::new(format!("games_by_date:{}:{}", league, date_str));
+        let cache_key = CacheKey::scores(&league, &date_str);
 
         let data = use_case_state
             .cache
@@ -892,7 +879,6 @@ async fn handle_scores_request(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-        // Add games from this date to our collection
         if let Some(games_array) = json_data.as_array() {
             for game in games_array {
                 all_games.push(game.clone());
@@ -900,7 +886,6 @@ async fn handle_scores_request(
         }
     }
 
-    // Process all collected games to count live vs final games
     let (games_count, live_games_count, final_games_count) =
         process_scores_data(&serde_json::Value::Array(all_games.clone()))?;
 
@@ -919,7 +904,6 @@ fn extract_play_by_play_events(
     last_timestamp: &Option<String>,
     filter_timestamp: Option<i64>,
 ) -> Result<(serde_json::Value, usize, usize, Option<String>)> {
-    // Try to extract plays/events from the response
     let binding = vec![];
     let plays = data
         .get("Plays")
@@ -932,7 +916,6 @@ fn extract_play_by_play_events(
     let mut new_events = Vec::new();
     let mut latest_timestamp = last_timestamp.clone();
 
-    // Filter events based on timestamp if provided
     if let Some(last_ts) = last_timestamp {
         for play in plays {
             if let Some(play_timestamp) = play
@@ -948,9 +931,7 @@ fn extract_play_by_play_events(
             }
         }
     } else {
-        // First request - return all events
         new_events = plays.clone();
-        // Find the latest timestamp
         for play in plays {
             if let Some(play_timestamp) = play
                 .get("Timestamp")
@@ -967,7 +948,6 @@ fn extract_play_by_play_events(
         }
     }
 
-    // Apply timestamp filtering if provided
     if let Some(filter_ts) = filter_timestamp {
         new_events.retain(|play| {
             if let Some(play_timestamp) = play
@@ -976,7 +956,6 @@ fn extract_play_by_play_events(
                 .or_else(|| play.get("timestamp"))
                 .and_then(|v| v.as_str())
             {
-                // Parse the timestamp and convert to Unix timestamp
                 if let Ok(parsed_time) =
                     chrono::DateTime::parse_from_rfc3339(play_timestamp)
                 {
@@ -1064,7 +1043,6 @@ async fn fetch_schedule_from_api(
 
             tracing::info!("Successfully fetched {} schedule data for MLB. Response length: {} characters", season_type, body.len());
 
-            // Log first 500 characters for debugging
             let preview = if body.len() > 500 {
                 format!("{}...", &body[..500])
             } else {
@@ -1072,7 +1050,6 @@ async fn fetch_schedule_from_api(
             };
             tracing::info!("Response preview: {}", preview);
 
-            // Check if response is valid JSON array
             if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body) {
                 if let Some(array) = parsed.as_array() {
                     tracing::info!(
@@ -1107,8 +1084,6 @@ async fn fetch_data_from_api(
 
     tracing::info!("Fetching {} data from API: {}", data_type, api_url);
 
-    // Return mock data since we're pre-loading from JSON files
-    // In a real implementation, this would make actual HTTP requests to the API
     let mock_data = match (league, data_type) {
         (League::Nfl, "teams") => serde_json::json!([
             {"TeamID": 1, "Key": "ARI", "City": "Arizona", "Name": "Cardinals", "Conference": "NFC", "Division": "West"},
@@ -1175,7 +1150,6 @@ async fn fetch_play_by_play_from_api(
         game_id
     );
 
-    // Get API key from environment
     let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
         tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
         StatusCode::INTERNAL_SERVER_ERROR
@@ -1211,7 +1185,6 @@ async fn fetch_play_by_play_from_api(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // Log the first 200 characters of the response to debug
     let preview = if body.len() > 200 {
         format!("{}...", &body[..200])
     } else {
@@ -1223,7 +1196,6 @@ async fn fetch_play_by_play_from_api(
         preview
     );
 
-    // Check if the response looks like HTML (error page)
     if body.trim_start().starts_with("<!DOCTYPE")
         || body.trim_start().starts_with("<html")
     {
@@ -1247,7 +1219,6 @@ async fn fetch_scores_from_api(
         date
     );
 
-    // For MLB, make real API calls; for other leagues, use mock data for now
     match league {
         League::Mlb => {
             let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
@@ -1294,7 +1265,6 @@ async fn fetch_scores_from_api(
             Ok(response_text)
         }
         _ => {
-            // For other leagues, return mock data for now
             let mock_data = serde_json::json!([
                 {
                     "GameID": 1,
@@ -1445,10 +1415,7 @@ pub async fn handle_game_by_date_request(
     let api_path = games_by_date_path(league.clone(), Some(params.date.clone()));
     let api_url = api_path.to_string();
 
-    let cache_key = CacheKey::from(format!(
-        "game_by_date_{}_{}_{}",
-        league, params.date, params.game_id
-    ));
+    let cache_key = CacheKey::game_by_date(&league, &params.date, &params.game_id);
 
     // Check cache first
     {
@@ -1683,7 +1650,7 @@ pub async fn handle_stadiums_request(
     let api_path = stadiums_path(league.clone());
     let api_url = api_path.to_string();
 
-    let cache_key = CacheKey::from(format!("stadiums_{}", league));
+    let cache_key = CacheKey::stadiums(&league);
 
     // Check cache first
     {
@@ -1910,7 +1877,6 @@ pub async fn handle_odds_by_date_request(
         return Err(StatusCode::BAD_REQUEST.into());
     }
 
-    // Only support MLB for now
     if league != League::Mlb {
         tracing::error!("Odds not yet supported for league: {}", league);
         return Err(StatusCode::BAD_REQUEST.into());
@@ -2017,6 +1983,265 @@ async fn fetch_odds_by_date_from_api(api_url: &str, league: &League) -> Result<S
 
     tracing::info!("Successfully fetched odds data from API");
     Ok(body)
+}
+
+/// Google OAuth redirect endpoint
+/// GET /api/v1/signin/google
+pub async fn handle_google_auth_redirect(
+    State(use_case_state): State<UseCaseState>,
+) -> std::result::Result<Redirect, (StatusCode, String)> {
+    let google_oauth = GoogleOAuth::new(
+        use_case_state.config.api.google_oauth.client_id.clone(),
+        use_case_state.config.api.google_oauth.client_secret.clone(),
+        use_case_state.config.api.google_oauth.redirect_uri.clone(),
+        use_case_state.config.api.jwt_secret.clone(),
+    );
+
+    let auth_url = google_oauth.get_auth_url();
+    Ok(Redirect::to(&auth_url))
+}
+
+/// Google OAuth callback endpoint
+/// GET /api/v1/signin/google/callback
+pub async fn handle_google_auth_callback(
+    Query(params): Query<HashMap<String, String>>,
+    State(use_case_state): State<UseCaseState>,
+) -> std::result::Result<Redirect, (StatusCode, String)> {
+    let code = match params.get("code") {
+        Some(code) => code,
+        None => {
+            let error_url =
+                format!("{}?error=code", use_case_state.config.server.client_url);
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    let google_oauth = GoogleOAuth::new(
+        use_case_state.config.api.google_oauth.client_id.clone(),
+        use_case_state.config.api.google_oauth.client_secret.clone(),
+        use_case_state.config.api.google_oauth.redirect_uri.clone(),
+        use_case_state.config.api.jwt_secret.clone(),
+    );
+
+    // Exchange code for access token
+    let token_response = match google_oauth.exchange_code_for_token(code).await {
+        Ok(token) => token,
+        Err(e) => {
+            let error_url = format!(
+                "{}?error=token&message={}",
+                use_case_state.config.server.client_url,
+                urlencoding::encode(&e.to_string())
+            );
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    // Get user info from Google
+    let user_info = match google_oauth
+        .get_user_info(&token_response.access_token)
+        .await
+    {
+        Ok(info) => info,
+        Err(e) => {
+            let error_url = format!(
+                "{}?error=userinfo&message={}",
+                use_case_state.config.server.client_url,
+                urlencoding::encode(&e.to_string())
+            );
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    // Create or update user
+    let user = match google_oauth
+        .create_or_update_user(&user_info.email, &user_info.name)
+        .await
+    {
+        Ok(user) => user,
+        Err(e) => {
+            let error_url = format!(
+                "{}?error=user&message={}",
+                use_case_state.config.server.client_url,
+                urlencoding::encode(&e.to_string())
+            );
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    // Store user in Redis cache
+    let cache_key = CacheKey::user(&user.email);
+    let user_json = match serde_json::to_string(&user) {
+        Ok(json) => json,
+        Err(e) => {
+            let error_url = format!(
+                "{}?error=serialize&message={}",
+                use_case_state.config.server.client_url,
+                urlencoding::encode(&e.to_string())
+            );
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    // Store user in cache with configured TTL
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        if let Err(e) = cache
+            .set_with_ttl(
+                &cache_key,
+                &user_json,
+                use_case_state.config.cache.ttl.user_auth,
+            )
+            .await
+        {
+            tracing::warn!("Failed to cache user: {}", e);
+        }
+    }
+
+    // Redirect to client with success and user email
+    let success_url = format!(
+        "{}?a=ok&s=g&e={}",
+        use_case_state.config.server.client_url,
+        urlencoding::encode(&user.email)
+    );
+    Ok(Redirect::to(&success_url))
+}
+
+/// Apple OAuth redirect endpoint
+/// GET /api/v1/signin/apple
+pub async fn handle_apple_auth_redirect(
+    State(use_case_state): State<UseCaseState>,
+) -> std::result::Result<Redirect, (StatusCode, String)> {
+    let apple_oauth = AppleOAuth::new(
+        use_case_state.config.api.apple_oauth.client_id.clone(),
+        use_case_state.config.api.apple_oauth.redirect_uri.clone(),
+        use_case_state.config.api.apple_oauth.team_id.clone(),
+        use_case_state.config.api.apple_oauth.key_id.clone(),
+        use_case_state
+            .config
+            .api
+            .apple_oauth
+            .secret_key_path
+            .clone(),
+        use_case_state.config.api.apple_oauth.jwt_expire_seconds,
+        use_case_state.config.api.jwt_secret.clone(),
+    );
+
+    let auth_url = apple_oauth.get_auth_url();
+    Ok(Redirect::to(&auth_url))
+}
+
+/// Apple OAuth callback endpoint
+/// POST /api/v1/signin/apple/callback
+pub async fn handle_apple_auth_callback(
+    State(use_case_state): State<UseCaseState>,
+    body: String,
+) -> std::result::Result<Redirect, (StatusCode, String)> {
+    // Parse form data from body
+    let form_data: HashMap<String, String> = url::form_urlencoded::parse(body.as_bytes())
+        .into_owned()
+        .collect();
+
+    let code = match form_data.get("code") {
+        Some(code) => code,
+        None => {
+            let error_url =
+                format!("{}?error=code", use_case_state.config.server.client_url);
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    let apple_oauth = AppleOAuth::new(
+        use_case_state.config.api.apple_oauth.client_id.clone(),
+        use_case_state.config.api.apple_oauth.redirect_uri.clone(),
+        use_case_state.config.api.apple_oauth.team_id.clone(),
+        use_case_state.config.api.apple_oauth.key_id.clone(),
+        use_case_state
+            .config
+            .api
+            .apple_oauth
+            .secret_key_path
+            .clone(),
+        use_case_state.config.api.apple_oauth.jwt_expire_seconds,
+        use_case_state.config.api.jwt_secret.clone(),
+    );
+
+    // Exchange code for access token
+    let token_response = match apple_oauth.exchange_code_for_token(code).await {
+        Ok(token) => token,
+        Err(e) => {
+            let error_url = format!(
+                "{}?error=token&message={}",
+                use_case_state.config.server.client_url,
+                urlencoding::encode(&e.to_string())
+            );
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    // Get ID token
+    let id_token = match token_response.id_token {
+        Some(token) => token,
+        None => {
+            let error_url = format!(
+                "{}?error=missing_id_token",
+                use_case_state.config.server.client_url
+            );
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    // Create or update user from ID token
+    let user = match apple_oauth
+        .create_or_update_user_from_token(&id_token)
+        .await
+    {
+        Ok(user) => user,
+        Err(e) => {
+            let error_url = format!(
+                "{}?error=user&message={}",
+                use_case_state.config.server.client_url,
+                urlencoding::encode(&e.to_string())
+            );
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    // Store user in Redis cache
+    let cache_key = CacheKey::user(&user.email);
+    let user_json = match serde_json::to_string(&user) {
+        Ok(json) => json,
+        Err(e) => {
+            let error_url = format!(
+                "{}?error=serialize&message={}",
+                use_case_state.config.server.client_url,
+                urlencoding::encode(&e.to_string())
+            );
+            return Ok(Redirect::to(&error_url));
+        }
+    };
+
+    // Store user in cache with configured TTL
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        if let Err(e) = cache
+            .set_with_ttl(
+                &cache_key,
+                &user_json,
+                use_case_state.config.cache.ttl.user_auth,
+            )
+            .await
+        {
+            tracing::warn!("Failed to cache user: {}", e);
+        }
+    }
+
+    // Redirect to client with success and user email
+    let success_url = format!(
+        "{}?a=ok&s=a&e={}",
+        use_case_state.config.server.client_url,
+        urlencoding::encode(&user.email)
+    );
+    Ok(Redirect::to(&success_url))
 }
 
 // Function aliases for server routes

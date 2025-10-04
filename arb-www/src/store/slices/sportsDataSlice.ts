@@ -4,7 +4,7 @@ import { buildApiUrl } from '../../config';
 import { TwitterSearchResponse } from '../../schema/twitterapi';
 import { MLBOddsByDateResponse } from '../../schema/mlb/odds';
 import { MLBScoresResponse, MLBTeamProfilesResponse, StadiumsResponse, MLBScheduleResponse } from '../../schema/mlb';
-import { getCurrentLocalDate } from '../../utils';
+import { getCurrentLocalDate } from '../../utils.ts';
 
 // Async thunk for fetching box score data
 export const fetchBoxScore = createAsyncThunk(

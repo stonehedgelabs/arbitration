@@ -12,12 +12,12 @@ import { League } from "../config";
 // Internal imports - components
 import { Bet } from "./Bet.tsx";
 import { BottomNav } from "./BottomNav.tsx";
-import { BoxScoreDetailMLB } from "./BoxScoreDetailMLB.tsx";
-import { FavoritesManager } from "./FavoritesManager.tsx";
+import { BoxScoreDetailMLB } from "./boxscore/BoxScoreDetailMLB.tsx";
+import { FavoritesManager } from "./favorites/FavoritesManager.tsx";
 import { ForYouSection } from "./ForYouSection.tsx";
 import { LeagueSelector } from "./LeagueSelector.tsx";
 import { Live, Scores } from "./Scores.tsx";
-import { PlayByPlayMLB } from "./PlayByPlayMLB.tsx";
+import { PlayByPlayMLB } from "./play-by-play/PlayByPlayMLB.tsx";
 import { Social } from "./Social.tsx";
 
 // Internal imports - store

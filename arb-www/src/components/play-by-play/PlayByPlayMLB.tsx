@@ -26,23 +26,23 @@ import {
 } from "lucide-react";
 
 // Internal imports - components
-import { Skeleton, SkeletonCircle } from "./Skeleton";
+import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 
 // Internal imports - config
-import { buildApiUrl, League } from "../config";
+import { buildApiUrl, League } from "../../config.ts";
 
 // Internal imports - schema
-import { Play } from "../schema/mlb/playbyplay";
+import { Play } from "../../schema/mlb/playbyplay.ts";
 
 // Internal imports - services
-import useArb from "../services/Arb";
+import useArb from "../../services/Arb.ts";
 
 // Internal imports - store
-import { useAppSelector, useAppDispatch } from "../store/hooks";
-import { fetchBoxScore } from "../store/slices/sportsDataSlice";
+import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
+import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - utils
-import { formatRelativeTime, getPlayIcon, getPlayLabel } from "../utils";
+import { formatRelativeTime, getPlayIcon, getPlayLabel } from "../../utils.ts";
 
 // Interface for the actual API response structure
 interface ActualPlayByPlayResponse {

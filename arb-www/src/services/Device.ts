@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { isMobileDevice, getDeviceType, isTouchDevice, getViewportDimensions } from "../utils.tsx";
+import { isMobileDevice, getDeviceType, isTouchDevice, getViewportDimensions } from "../utils.ts";
 
 interface DeviceInfo {
   isMobile: boolean;

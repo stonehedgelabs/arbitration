@@ -11,7 +11,7 @@ import {
 import { ArrowLeft, Clock, MapPin } from "lucide-react";
 
 // Internal imports - config
-import { League } from "../config";
+import { League } from "../../config.ts";
 
 interface PlayerStat {
   name: string;

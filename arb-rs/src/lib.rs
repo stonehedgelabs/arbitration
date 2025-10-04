@@ -5,4 +5,5 @@ pub mod data_loader;
 pub mod error;
 pub mod schema;
 pub mod server;
+pub mod services;
 pub mod uses;

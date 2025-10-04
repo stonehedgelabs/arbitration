@@ -1,8 +1,7 @@
-use crate::config::CacheConfig;
-use crate::error::Result;
 use redis::{aio::MultiplexedConnection, Client};
 
-// Forward declaration - CacheKey is defined in uses.rs
+use crate::config::CacheConfig;
+use crate::error::Result;
 pub use crate::uses::CacheKey;
 
 #[derive(Clone)]

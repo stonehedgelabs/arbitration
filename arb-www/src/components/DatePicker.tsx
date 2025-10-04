@@ -9,7 +9,7 @@ import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { setSelectedDate } from "../store/slices/sportsDataSlice";
 
 // Internal imports - utils
-import { getCurrentLocalDate, formatDateForSlider } from "../utils";
+import { getCurrentLocalDate, formatDateForSlider } from "../utils.ts";
 
 // Date utility function
 const getDateRange = () => {

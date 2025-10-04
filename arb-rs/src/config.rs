@@ -24,6 +24,8 @@ pub struct ServerConfig {
     pub port: u16,
     /// CORS origins (comma-separated)
     pub cors_origins: String,
+    /// Client URL for redirects
+    pub client_url: String,
 }
 
 /// Redis cache configuration
@@ -58,6 +60,8 @@ pub struct CacheTtlConfig {
     pub stadiums: u64,
     /// TTL for Twitter search results (in seconds)
     pub twitter_search: u64,
+    /// TTL for user authentication data (in seconds)
+    pub user_auth: u64,
 }
 
 /// Sports seasons configuration
@@ -83,10 +87,46 @@ pub struct SeasonInfo {
 pub struct ApiConfig {
     /// SportsData.io API base URL
     pub sportsdata_base_url: String,
+    /// SportsData.io API key
+    pub sportsdata_api_key: String,
     /// Twitter API base URL
     pub twitter_base_url: String,
     /// Request timeout in seconds
     pub request_timeout: u64,
+    /// JWT secret for signing tokens
+    pub jwt_secret: String,
+    /// Google OAuth configuration
+    pub google_oauth: GoogleOAuthConfig,
+    /// Apple OAuth configuration
+    pub apple_oauth: AppleOAuthConfig,
+}
+
+/// Google OAuth configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GoogleOAuthConfig {
+    /// Google OAuth client ID
+    pub client_id: String,
+    /// Google OAuth client secret
+    pub client_secret: String,
+    /// Google OAuth redirect URI
+    pub redirect_uri: String,
+}
+
+/// Apple OAuth configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppleOAuthConfig {
+    /// Apple OAuth client ID
+    pub client_id: String,
+    /// Apple OAuth redirect URI
+    pub redirect_uri: String,
+    /// Apple Team ID
+    pub team_id: String,
+    /// Apple Key ID
+    pub key_id: String,
+    /// Path to Apple private key file
+    pub secret_key_path: String,
+    /// JWT expiration time in seconds
+    pub jwt_expire_seconds: u64,
 }
 
 impl Default for ArbConfig {
@@ -138,6 +178,7 @@ impl Default for ArbConfig {
                 host: "0.0.0.0".to_string(),
                 port: 3000,
                 cors_origins: "http://localhost:5173,http://localhost:3000".to_string(),
+                client_url: "http://localhost:3000".to_string(),
             },
             cache: CacheConfig {
                 enabled: true,
@@ -152,13 +193,29 @@ impl Default for ArbConfig {
                     box_scores: 1800,          // 30 minutes
                     stadiums: 7200,            // 2 hours
                     twitter_search: 60,        // 1 minute
+                    user_auth: 604800,         // 1 week (7 days)
                 },
             },
             seasons: SeasonsConfig { current_seasons },
             api: ApiConfig {
                 sportsdata_base_url: "https://api.sportsdata.io/v3".to_string(),
+                sportsdata_api_key: "".to_string(),
                 twitter_base_url: "https://api.twitterapi.io".to_string(),
                 request_timeout: 30,
+                jwt_secret: "".to_string(),
+                google_oauth: GoogleOAuthConfig {
+                    client_id: "".to_string(),
+                    client_secret: "".to_string(),
+                    redirect_uri: "".to_string(),
+                },
+                apple_oauth: AppleOAuthConfig {
+                    client_id: "".to_string(),
+                    redirect_uri: "".to_string(),
+                    team_id: "".to_string(),
+                    key_id: "".to_string(),
+                    secret_key_path: "".to_string(),
+                    jwt_expire_seconds: 3600, // 1 hour
+                },
             },
         }
     }
@@ -199,6 +256,60 @@ impl ArbConfig {
             config.server.cors_origins = cors_origins;
         }
 
+        if let Ok(client_url) = std::env::var("ARBITRATION_CLIENT_URL") {
+            config.server.client_url = client_url;
+        }
+
+        // Load JWT secret from environment
+        if let Ok(jwt_secret) = std::env::var("JWT_SECRET") {
+            config.api.jwt_secret = jwt_secret;
+        }
+
+        // Load Google OAuth configuration from environment variables
+        if let Ok(client_id) = std::env::var("GOOGLE_CLIENT_ID") {
+            config.api.google_oauth.client_id = client_id;
+        }
+
+        if let Ok(client_secret) = std::env::var("GOOGLE_CLIENT_SECRET") {
+            config.api.google_oauth.client_secret = client_secret;
+        }
+
+        if let Ok(redirect_uri) = std::env::var("GOOGLE_CLIENT_REDIRECT_URI") {
+            config.api.google_oauth.redirect_uri = redirect_uri;
+        }
+
+        // Load Apple OAuth configuration from environment variables
+        if let Ok(client_id) = std::env::var("APPLE_CLIENT_ID") {
+            config.api.apple_oauth.client_id = client_id;
+        }
+
+        if let Ok(redirect_uri) = std::env::var("APPLE_REDIRECT_URI") {
+            config.api.apple_oauth.redirect_uri = redirect_uri;
+        }
+
+        if let Ok(team_id) = std::env::var("APPLE_TEAM_ID") {
+            config.api.apple_oauth.team_id = team_id;
+        }
+
+        if let Ok(key_id) = std::env::var("APPLE_KEY_ID") {
+            config.api.apple_oauth.key_id = key_id;
+        }
+
+        if let Ok(secret_key_path) = std::env::var("APPLE_SECRET_KEY_PATH") {
+            config.api.apple_oauth.secret_key_path = secret_key_path;
+        }
+
+        if let Ok(jwt_expire_seconds) = std::env::var("JWT_EXPIRE_SECONDS") {
+            if let Ok(expire_seconds) = jwt_expire_seconds.parse::<u64>() {
+                config.api.apple_oauth.jwt_expire_seconds = expire_seconds;
+            }
+        }
+
+        // Load SportsData.io API key from environment
+        if let Ok(api_key) = std::env::var("SPORTSDATAIO_API_KEY") {
+            config.api.sportsdata_api_key = api_key;
+        }
+
         // Override seasons from environment variables
         for (sport, season_info) in &mut config.seasons.current_seasons {
             let env_key = format!("{}_REGULAR_SEASON", sport.to_uppercase());
@@ -230,8 +341,8 @@ impl ArbConfig {
         if let Some(season_info) = self.get_season_info(sport) {
             // Parse the date and check if it's on or after the postseason start date
             if let Ok(parsed_date) = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d") {
-                let month = parsed_date.month();
-                let day = parsed_date.day();
+                let _month = parsed_date.month();
+                let _day = parsed_date.day();
 
                 // Parse postseason start date (MM-DD format)
                 if let Ok(postseason_start) = chrono::NaiveDate::parse_from_str(

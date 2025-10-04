@@ -1,8 +1,8 @@
-// Standard library imports
 use async_std::sync::{Arc, Mutex};
-
-// Third-party library imports
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use tower::ServiceBuilder;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -10,13 +10,16 @@ use tower_http::{
 };
 use tracing::info;
 
-// Internal imports
-use crate::cache::Cache;
-use crate::config::ArbConfig;
-use crate::uses::{
-    box_score, current_games, game_by_date, headshots, health_check, odds_by_date,
-    play_by_play_handler, schedule, scores, stadiums, team_profile, teams,
-    twitter_search, UseCaseState,
+use crate::{
+    cache::Cache,
+    config::ArbConfig,
+    uses::{
+        box_score, current_games, game_by_date, handle_apple_auth_callback,
+        handle_apple_auth_redirect, handle_google_auth_callback,
+        handle_google_auth_redirect, headshots, health_check, odds_by_date,
+        play_by_play_handler, schedule, scores, stadiums, team_profile, teams,
+        twitter_search, UseCaseState,
+    },
 };
 
 pub struct Server {
@@ -46,6 +49,16 @@ impl Server {
             .route("/api/v1/odds-by-date", get(odds_by_date))
             .route("/api/v1/venues", get(stadiums))
             .route("/api/v1/twitter-search", get(twitter_search))
+            .route("/api/v1/signin/google", get(handle_google_auth_redirect))
+            .route(
+                "/api/v1/signin/google/callback",
+                get(handle_google_auth_callback),
+            )
+            .route("/api/v1/signin/apple", get(handle_apple_auth_redirect))
+            .route(
+                "/api/v1/signin/apple/callback",
+                post(handle_apple_auth_callback),
+            )
             .layer(
                 ServiceBuilder::new()
                     .layer(TraceLayer::new_for_http())
