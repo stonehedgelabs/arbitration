@@ -52,10 +52,7 @@ export function Login() {
     <AppLayout>
       <Box
         minH="100vh"
-        bg="linear-gradient(to bottom right, #ffffff, #ececf010, #ffffff)"
-        _dark={{
-          bg: "linear-gradient(to bottom right, oklch(0.145 0 0), oklch(0.269 0 0)10, oklch(0.145 0 0))",
-        }}
+        bg="primary.25"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -73,22 +70,22 @@ export function Login() {
               <Box
                 w="80px"
                 h="80px"
-                bg="linear-gradient(to bottom right, #030213, #030213cc)"
+                bg="primary.25"
                 borderRadius="24px"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
                 shadow="lg"
               >
-                <Text color="white" fontSize="xl" fontWeight="bold">
-                  SH
+                <Text color="text.400" fontSize="xl" fontWeight="bold">
+                  A
                 </Text>
               </Box>
               <Box>
-                <Text fontSize="2xl" fontWeight="bold" mb={2}>
+                <Text fontSize="2xl" fontWeight="bold" color="text.400" mb={2}>
                   Welcome to Arbitration
                 </Text>
-                <Text color="#717182" _dark={{ color: "oklch(0.708 0 0)" }}>
+                <Text color="text.400">
                   Sign in to get personalized sports content
                 </Text>
               </Box>
@@ -97,11 +94,13 @@ export function Login() {
             {/* Login Options */}
             <Box
               borderRadius="16px"
-              shadow="xl"
+              shadow="2xl"
               bg="white"
-              _dark={{ bg: "gray.800" }}
               w="full"
               p={6}
+              border="1px"
+              borderColor="gray.200"
+              transform="translateY(-8px)"
             >
               <VStack gap="4">
                 {/* Apple Login */}
@@ -109,13 +108,15 @@ export function Login() {
                   onClick={() => handleLogin("apple")}
                   w="full"
                   h="56px"
-                  bg="black"
-                  color="white"
-                  _hover={{ bg: "blackAlpha.900" }}
+                  bg="white"
+                  color="black"
                   borderRadius="12px"
                   fontSize="md"
                   fontWeight="medium"
                   className="ios-button-press"
+                  border="1px"
+                  borderColor="gray.200"
+                  shadow="md"
                 >
                   <AppleIcon />
                   Continue with Apple
@@ -124,14 +125,17 @@ export function Login() {
                 {/* Google Login */}
                 <Button
                   onClick={() => handleLogin("google")}
-                  variant="outline"
                   w="full"
                   h="56px"
-                  borderWidth="2px"
+                  borderWidth="1px"
                   borderRadius="12px"
                   fontSize="md"
                   fontWeight="medium"
                   className="ios-button-press"
+                  bg="white"
+                  color="black"
+                  borderColor="gray.200"
+                  shadow="md"
                 >
                   <GoogleIcon />
                   Continue with Google
@@ -146,9 +150,12 @@ export function Login() {
                   borderRadius="12px"
                   fontSize="md"
                   fontWeight="medium"
-                  color="#717182"
-                  _dark={{ color: "oklch(0.708 0 0)" }}
+                  bg="white"
+                  color="black"
                   className="ios-button-press"
+                  border="1px"
+                  borderColor="gray.200"
+                  shadow="md"
                 >
                   Continue as Guest
                 </Button>
@@ -158,27 +165,16 @@ export function Login() {
             {/* Terms */}
             <Text
               fontSize="xs"
-              color="#717182"
-              _dark={{ color: "oklch(0.708 0 0)" }}
+              color="text.400"
               textAlign="center"
               lineHeight="relaxed"
             >
               By continuing, you agree to our{" "}
-              <Text
-                as="span"
-                color="#030213"
-                _dark={{ color: "oklch(0.985 0 0)" }}
-                textDecoration="underline"
-              >
+              <Text as="span" color="text.400" textDecoration="underline">
                 Terms of Service
               </Text>{" "}
               and{" "}
-              <Text
-                as="span"
-                color="#030213"
-                _dark={{ color: "oklch(0.985 0 0)" }}
-                textDecoration="underline"
-              >
+              <Text as="span" color="text.400" textDecoration="underline">
                 Privacy Policy
               </Text>
             </Text>

@@ -1,7 +1,8 @@
-import { User, Trophy, Play, Users, DollarSign } from "lucide-react";
+import { Trophy, Play, Users } from "lucide-react";
 import { Box, HStack, VStack, Text } from "@chakra-ui/react";
 import { useAppSelector } from "../store/hooks.ts";
 import { useNavigate, useLocation } from "react-router-dom";
+import { ThemeToggleSimple } from "./ThemeToggle";
 
 export function BottomNav() {
   const navigate = useNavigate();
@@ -52,54 +53,61 @@ export function BottomNav() {
 
   return (
     <Box
-      bg="white"
+      bg="primary.25"
       borderTop="1px"
-      borderColor="gray.200"
+      borderColor="border.100"
       px="2"
       py="2"
       pb="calc(0.5rem + env(safe-area-inset-bottom))"
     >
-      <HStack justify="space-around" align="center" gap="0">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+      <HStack justify="space-between" align="center" gap="0">
+        <HStack justify="space-around" align="center" gap="0" flex="1">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
 
-          return (
-            <VStack
-              key={tab.id}
-              gap="1"
-              align="center"
-              cursor="pointer"
-              onClick={() => handleTabChange(tab.id)}
-              _active={{ transform: "scale(0.95)" }}
-              transition="all 0.2s"
-              flex="1"
-            >
-              <Box
-                w="10"
-                h="10"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                borderRadius="full"
-                bg="transparent"
+            return (
+              <VStack
+                key={tab.id}
+                gap="1"
+                align="center"
+                cursor="pointer"
+                onClick={() => handleTabChange(tab.id)}
+                _active={{ transform: "scale(0.95)" }}
                 transition="all 0.2s"
+                flex="1"
               >
-                <Box w="5" h="5" color={isActive ? "red.500" : "gray.500"}>
-                  <Icon size={20} />
+                <Box
+                  w="10"
+                  h="10"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  borderRadius="full"
+                  bg="transparent"
+                  transition="all 0.2s"
+                >
+                  <Box w="5" h="5" color={isActive ? "accent.100" : "text.300"}>
+                    <Icon size={20} />
+                  </Box>
                 </Box>
-              </Box>
-              <Text
-                fontSize="xs"
-                color={isActive ? "red.500" : "gray.500"}
-                fontWeight="normal"
-                transition="all 0.2s"
-              >
-                {tab.label}
-              </Text>
-            </VStack>
-          );
-        })}
+                <Text
+                  fontSize="xs"
+                  color={isActive ? "accent.100" : "text.300"}
+                  fontWeight="normal"
+                  transition="all 0.2s"
+                >
+                  {tab.label}
+                </Text>
+              </VStack>
+            );
+          })}
+        </HStack>
+
+        {/* Theme toggle - positioned on the right */}
+        <Box ml="2">
+          <ThemeToggleSimple size="sm" />
+        </Box>
       </HStack>
     </Box>
   );

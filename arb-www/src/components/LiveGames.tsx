@@ -44,17 +44,17 @@ export function LiveGames({
   const liveGames = games.filter((game) => game.status === GameStatus.LIVE);
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="primary.25">
       <VStack gap="4" align="stretch" p="4" pb="20">
         {/* Header */}
         <HStack justify="space-between" align="center">
-          <Text fontSize="2xl" fontWeight="bold" color="gray.900">
+          <Text fontSize="2xl" fontWeight="bold" color="text.400">
             Live Games
           </Text>
           <Badge
             variant="solid"
-            bg="red.500"
-            color="white"
+            bg="danger.100"
+            color="text.400"
             fontSize="xs"
             px="2"
             py="1"
@@ -71,11 +71,11 @@ export function LiveGames({
             Array.from({ length: 3 }, (_, index) => (
               <Card.Root
                 key={`skeleton-${index}`}
-                bg="white"
+                bg="primary.25"
                 borderRadius="12px"
                 shadow="sm"
                 border="1px"
-                borderColor="gray.200"
+                borderColor="border.100"
                 overflow="hidden"
                 position="relative"
               >
@@ -125,11 +125,11 @@ export function LiveGames({
             ))
           ) : liveGames.length === 0 ? (
             <Card.Root
-              bg="white"
+              bg="primary.25"
               borderRadius="12px"
               shadow="sm"
               border="1px"
-              borderColor="gray.200"
+              borderColor="border.100"
             >
               <Card.Body p="8" textAlign="center">
                 <VStack gap="4">
@@ -160,11 +160,11 @@ export function LiveGames({
             liveGames.map((game) => (
               <Card.Root
                 key={game.id}
-                bg="white"
+                bg="primary.25"
                 borderRadius="12px"
                 shadow="sm"
                 border="1px"
-                borderColor="gray.200"
+                borderColor="border.100"
                 _active={{ transform: "scale(0.98)" }}
                 transition="all 0.2s"
                 cursor="pointer"

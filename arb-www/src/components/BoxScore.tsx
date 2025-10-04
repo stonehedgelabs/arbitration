@@ -131,9 +131,9 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
     <Box minH="100vh" bg="gray.50">
       {/* Header */}
       <Box
-        bg="white"
+        bg="primary.25"
         borderBottom="1px"
-        borderColor="gray.200"
+        borderColor="border.100"
         position="sticky"
         top="0"
         zIndex="40"
@@ -161,11 +161,11 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
       <VStack gap="4" align="stretch" p="4" pb="20">
         {/* Game Overview Card */}
         <Card.Root
-          bg="white"
+          bg="primary.25"
           borderRadius="12px"
           shadow="sm"
           border="1px"
-          borderColor="gray.200"
+          borderColor="border.100"
         >
           <Card.Body p="4">
             <VStack gap="4" align="stretch">
@@ -261,11 +261,11 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
 
         {/* Scoring Summary */}
         <Card.Root
-          bg="white"
+          bg="primary.25"
           borderRadius="12px"
           shadow="sm"
           border="1px"
-          borderColor="gray.200"
+          borderColor="border.100"
         >
           <Card.Header pb="2">
             <Card.Title fontSize="lg" fontWeight="semibold" color="gray.900">
@@ -276,7 +276,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
             <Box overflowX="auto">
               <Table.Root size="sm">
                 <Table.Header>
-                  <Table.Row borderBottom="1px" borderColor="gray.200">
+                  <Table.Row borderBottom="1px" borderColor="border.100">
                     <Table.ColumnHeader
                       textAlign="left"
                       py="2"
@@ -380,11 +380,11 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
 
         {/* Team Statistics */}
         <Card.Root
-          bg="white"
+          bg="primary.25"
           borderRadius="12px"
           shadow="sm"
           border="1px"
-          borderColor="gray.200"
+          borderColor="border.100"
         >
           <Card.Header pb="2">
             <Card.Title fontSize="lg" fontWeight="semibold" color="gray.900">

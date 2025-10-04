@@ -117,14 +117,7 @@ export const SkeletonBox = ({
  * Mimics the layout of a tweet with avatar, name, handle, content, and engagement
  */
 export const TwitterCardSkeleton = ({ ...props }: SkeletonProps) => (
-  <Box
-    bg="white"
-    border="1px solid"
-    borderColor="gray.200"
-    borderRadius="lg"
-    p="4"
-    {...props}
-  >
+  <Box bg="primary.200" borderRadius="lg" p="4" minH="300px" {...props}>
     <Box display="flex" gap="3" mb="3">
       {/* Avatar */}
       <SkeletonCircle size="40px" />
@@ -133,14 +126,15 @@ export const TwitterCardSkeleton = ({ ...props }: SkeletonProps) => (
       <Box flex="1" minW="0">
         {/* Name and handle */}
         <Box display="flex" gap="2" mb="2" alignItems="center">
-          <SkeletonText width="120px" height="16px" />
-          <SkeletonText width="80px" height="14px" />
-          <SkeletonText width="60px" height="14px" />
+          <SkeletonText width="120px" height="32px" />
+          <SkeletonText width="80px" height="32px" />
+          <SkeletonText width="60px" height="32px" />
         </Box>
 
         {/* Tweet content */}
         <Box mb="3">
-          <SkeletonText width="100%" height="42px" mb="2" />
+          <SkeletonText width="100%" height="72px" mb="2" />
+          <SkeletonText width="100%" height="72px" mb="2" />
         </Box>
 
         {/* Engagement bar */}

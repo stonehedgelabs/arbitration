@@ -59,7 +59,6 @@ export function Bet({ bettingLines }: BetSectionProps) {
             fontSize="xs"
             borderColor="gray.300"
             color="gray.700"
-            _hover={{ bg: "gray.50" }}
           >
             <Box w="3" h="3" mr="1">
               <BarChart3 size={12} />
@@ -72,11 +71,11 @@ export function Bet({ bettingLines }: BetSectionProps) {
         <VStack gap="4" align="stretch">
           {bettingLines.length === 0 ? (
             <Card.Root
-              bg="white"
+              bg="primary.200"
               borderRadius="12px"
               shadow="sm"
               border="1px"
-              borderColor="gray.200"
+              borderColor="border.100"
             >
               <Card.Body p="8" textAlign="center">
                 <VStack gap="4">
@@ -109,11 +108,11 @@ export function Bet({ bettingLines }: BetSectionProps) {
             bettingLines.map((line) => (
               <Card.Root
                 key={line.id}
-                bg="white"
+                bg="primary.200"
                 borderRadius="12px"
                 shadow="sm"
                 border="1px"
-                borderColor="gray.200"
+                borderColor="border.100"
                 _active={{ transform: "scale(0.98)" }}
                 transition="all 0.2s"
               >
@@ -132,7 +131,11 @@ export function Bet({ bettingLines }: BetSectionProps) {
                           justifyContent="center"
                           flexShrink="0"
                         >
-                          <Text fontSize="sm" fontWeight="medium" color="white">
+                          <Text
+                            fontSize="sm"
+                            fontWeight="medium"
+                            color="text.400"
+                          >
                             {getPlayerInitials(line.playerName)}
                           </Text>
                         </Box>
@@ -219,7 +222,6 @@ export function Bet({ bettingLines }: BetSectionProps) {
                           h="8"
                           px="3"
                           borderColor="gray.300"
-                          _hover={{ bg: "gray.50" }}
                         >
                           <Text
                             fontSize="sm"

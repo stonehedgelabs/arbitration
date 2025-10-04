@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  frontend:
+    name: Frontend (React/TypeScript)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'yarn'
+        cache-dependency-path: 'arb-www/yarn.lock'
+        
+    - name: Install dependencies
+      run: |
+        cd arb-www
+        yarn install --frozen-lockfile
+        
+    - name: Type check
+      run: |
+        cd arb-www
+        yarn build
+        
+    - name: Lint check
+      run: |
+        cd arb-www
+        yarn lint
+        
+    - name: Prettier check
+      run: |
+        cd arb-www
+        yarn pretty --check
+
+  backend:
+    name: Backend (Rust)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+        override: true
+        
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          arb-rs/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+          
+    - name: Install cargo-sort
+      run: cargo install cargo-sort
+      
+    - name: Sort dependencies
+      run: |
+        cd arb-rs
+        cargo sort --check
+        
+    - name: Install dependencies
+      run: |
+        cd arb-rs
+        cargo install --path .
+        
+    - name: Build release
+      run: |
+        cd arb-rs
+        cargo build --release
+        
+    - name: Run clippy
+      run: |
+        cd arb-rs
+        cargo clippy --all-targets --all-features -- -D warnings
+        
+    - name: Run tests
+      run: |
+        cd arb-rs
+        cargo test

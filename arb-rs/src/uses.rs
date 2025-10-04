@@ -466,7 +466,12 @@ async fn handle_schedule_request(
                     "Using GamesByDate endpoint for date: {}",
                     date_filter.as_ref().unwrap()
                 );
-                fetch_games_by_date_from_api(&api_url, &league).await
+                fetch_games_by_date_from_api(
+                    &api_url,
+                    &league,
+                    date_filter.as_ref().unwrap(),
+                )
+                .await
             } else {
                 tracing::info!("Using full schedule endpoint");
                 fetch_schedule_from_api(&api_url, &league, params.post.unwrap_or(false))
@@ -598,7 +603,7 @@ async fn handle_current_games_request(
                     api_url,
                     date_str
                 );
-                fetch_games_by_date_from_api(&api_url, &league).await
+                fetch_games_by_date_from_api(&api_url, &league, &date_str).await
             })
             .await
             .map_err(|e| {
@@ -850,12 +855,11 @@ async fn handle_scores_request(
         let target_date = today - chrono::Duration::days(i.into());
         let date_str = target_date.format("%Y-%m-%d").to_string();
 
-        // For now, we'll focus on MLB and use the ScoresBasicFinal endpoint
+        // For now, we'll focus on MLB and use the GamesByDate endpoint
         // This will be expanded to support other leagues
         let api_url = match league {
             League::Mlb => {
-                scores_basic_final_path(league.clone(), Some(date_str.clone()))
-                    .to_string()
+                games_by_date_path(league.clone(), Some(date_str.clone())).to_string()
             }
             _ => {
                 tracing::error!("Scores not yet supported for league: {}", league);
@@ -863,7 +867,7 @@ async fn handle_scores_request(
             }
         };
 
-        let cache_key = CacheKey::scores(&league, &date_str);
+        let cache_key = CacheKey::new(format!("games_by_date:{}:{}", league, date_str));
 
         let data = use_case_state
             .cache
@@ -875,7 +879,7 @@ async fn handle_scores_request(
                     api_url,
                     date_str
                 );
-                fetch_scores_from_api(&api_url, &league, &date_str).await
+                fetch_games_by_date_from_api(&api_url, &league, &date_str).await
             })
             .await
             .map_err(|e| {
@@ -1464,7 +1468,7 @@ pub async fn handle_game_by_date_request(
     }
 
     // Fetch from API
-    let raw_data = fetch_games_by_date_from_api(&api_url, &league).await?;
+    let raw_data = fetch_games_by_date_from_api(&api_url, &league, &params.date).await?;
 
     // Parse the JSON response
     let games: Vec<serde_json::Value> = serde_json::from_str(&raw_data).map_err(|e| {
@@ -1520,7 +1524,11 @@ pub async fn handle_game_by_date_request(
     Ok(Json(response))
 }
 
-async fn fetch_games_by_date_from_api(api_url: &str, league: &League) -> Result<String> {
+async fn fetch_games_by_date_from_api(
+    api_url: &str,
+    league: &League,
+    date: &str,
+) -> Result<String> {
     let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
         tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
         StatusCode::INTERNAL_SERVER_ERROR
@@ -1529,9 +1537,10 @@ async fn fetch_games_by_date_from_api(api_url: &str, league: &League) -> Result<
     let client = reqwest::Client::new();
 
     tracing::info!(
-        "Making real API request to: {} for league: {}",
+        "Making real API request to: {} for league: {} and date: {}",
         api_url,
-        league
+        league,
+        date
     );
 
     let response = client
@@ -1570,10 +1579,13 @@ pub async fn handle_box_score_request(
 
     let cache_key = CacheKey::box_score(&league, &params.game_id);
 
-    // Check cache first
+    // Check cache first with configured TTL
     {
         let mut cache = use_case_state.cache.lock().await;
-        if let Some(cached_data) = cache.get(&cache_key).await? {
+        if let Some(cached_data) = cache
+            .slide_get_exp(&cache_key, use_case_state.config.cache.ttl.box_scores)
+            .await?
+        {
             tracing::info!("Returning cached box score for game_id: {}", params.game_id);
             let response: BoxScoreResponse =
                 serde_json::from_str(&cached_data).map_err(|e| {
@@ -1599,14 +1611,20 @@ pub async fn handle_box_score_request(
         league: league.to_string(),
     };
 
-    // Cache the response
+    // Cache the response with configured TTL
     {
         let mut cache = use_case_state.cache.lock().await;
         let serialized = serde_json::to_string(&response).map_err(|e| {
             tracing::error!("Failed to serialize response: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
-        cache.set(&cache_key, &serialized).await?;
+        cache
+            .set_with_ttl(
+                &cache_key,
+                &serialized,
+                use_case_state.config.cache.ttl.box_scores,
+            )
+            .await?;
     }
 
     tracing::info!(

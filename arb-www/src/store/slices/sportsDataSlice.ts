@@ -11,13 +11,11 @@ export const fetchBoxScore = createAsyncThunk(
   'sportsData/fetchBoxScore',
   async ({ league, gameId }: { league: string; gameId: string }) => {
     const apiUrl = buildApiUrl('/api/v1/box-score', { league, game_id: gameId });
-    console.log('Fetching box score from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch box score');
     }
     const data = await response.json();
-    console.log('Box score data received:', data);
     return { gameId, data };
   }
 );
@@ -33,7 +31,6 @@ export const fetchTwitterData = createAsyncThunk(
       params.queryType = 'Latest';
     }
     const apiUrl = buildApiUrl('/api/v1/twitter-search', params);
-    console.log('Fetching Twitter data from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       if (response.status === 429) {
@@ -45,11 +42,6 @@ export const fetchTwitterData = createAsyncThunk(
       }
     }
     const data = await response.json();
-    console.log('Initial Twitter data received:', {
-      tweetsCount: data.tweets?.length || 0,
-      hasNextPage: data.has_next_page,
-      nextCursor: data.next_cursor
-    });
     return data;
   }
 );
@@ -65,7 +57,6 @@ export const loadMoreTwitterData = createAsyncThunk(
       params.queryType = 'Latest';
     }
     const apiUrl = buildApiUrl('/api/v1/twitter-search', params);
-    console.log('Loading more Twitter data from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       if (response.status === 429) {
@@ -77,12 +68,6 @@ export const loadMoreTwitterData = createAsyncThunk(
       }
     }
     const data = await response.json();
-    console.log('More Twitter data received:', {
-      tweetsCount: data.tweets?.length || 0,
-      hasNextPage: data.has_next_page,
-      nextCursor: data.next_cursor,
-      previousCursor: cursor
-    });
     return data;
   }
 );
@@ -92,13 +77,11 @@ export const fetchOddsByDate = createAsyncThunk(
   'sportsData/fetchOddsByDate',
   async ({ league, date }: { league: string; date: string }) => {
     const apiUrl = buildApiUrl('/api/v1/odds-by-date', { league, date });
-    console.log('Fetching odds by date from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch odds by date');
     }
     const data = await response.json();
-    console.log('Odds by date data received:', data);
     return data;
   }
 );
@@ -112,13 +95,11 @@ export const fetchMLBScores = createAsyncThunk(
       params.date = date;
     }
     const apiUrl = buildApiUrl('/api/v1/scores', params);
-    console.log('Fetching MLB scores from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch MLB scores');
     }
     const data = await response.json();
-    console.log('MLB scores data received:', data);
     return data;
   }
 );
@@ -128,13 +109,11 @@ export const fetchMLBTeamProfiles = createAsyncThunk(
   'sportsData/fetchMLBTeamProfiles',
   async () => {
     const apiUrl = buildApiUrl('/api/team-profile', { league: 'mlb' });
-    console.log('Fetching MLB team profiles from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch MLB team profiles');
     }
     const data = await response.json();
-    console.log('MLB team profiles data received:', data);
     return data;
   }
 );
@@ -144,13 +123,11 @@ export const fetchMLBStadiums = createAsyncThunk(
   'sportsData/fetchMLBStadiums',
   async () => {
     const apiUrl = buildApiUrl('/api/v1/venues', { league: 'mlb' });
-    console.log('Fetching MLB stadiums from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch MLB stadiums');
     }
     const data = await response.json();
-    console.log('MLB stadiums data received:', data);
     return data;
   }
 );
@@ -168,13 +145,11 @@ export const fetchMLBSchedule = createAsyncThunk(
       params.date = date;
     }
     const apiUrl = buildApiUrl('/api/v1/schedule', params);
-    console.log('Fetching MLB schedule from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch MLB schedule');
     }
     const data = await response.json();
-    console.log('MLB schedule data received:', data);
     return data;
   }
 );
@@ -189,13 +164,11 @@ export const fetchCurrentGames = createAsyncThunk(
       end
     };
     const apiUrl = buildApiUrl('/api/v1/current-games', params);
-    console.log('Fetching current games from:', apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch current games');
     }
     const data = await response.json();
-    console.log('Current games data received:', data);
     return data;
   }
 );
@@ -352,7 +325,6 @@ const sportsDataSlice = createSlice({
           
           // If no new tweets were added, we might be stuck in a loop
           if (newTweets.length === 0) {
-            console.log("No new tweets found, stopping pagination to prevent infinite loop");
             state.twitterData.has_next_page = false;
           } else {
             // Append only new tweets to existing ones

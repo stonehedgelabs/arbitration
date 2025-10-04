@@ -1,131 +1,255 @@
 import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react";
 
-const config = defineConfig({
-  theme: {
-    breakpoints: {
-      xxs: "16em",
-      xs: "20em",
-      xl: "80em",
-      "2xl": "96em",
-      "3xl": "120em",
-      "4xl": "160em",
-      "5xl": "192em",
-      "6xl": "224em",
-      "7xl": "256em",
-      "8xl": "288em",
-      "9xl": "320em",
-      "10xl": "352em",
-      "11xl": "384em",
-      "12xl": "416em",
+/* Palette
+Midnight green: #114b5f
+Lapis Lazuli: #456990
+Nyanza: #e4fde1
+Bright pink (Crayola): #f45b69
+Wine: #6b2737
+*/
+
+// Light theme (neutral backgrounds, subtle depth)
+const lightColors = {
+  // Background surfaces
+  primary: {
+    25:  { value: "#FFFFFF" }, // Base background (white)
+    50:  { value: "#FAFAFA" }, // Slight warmth (app shell)
+    100: { value: "#F5F5F5" }, // Panels/cards
+    200: { value: "#EEEEEE" }, // Toolbars
+    300: { value: "#E0E0E0" }, // Modals/dropdowns
+    400: { value: "#CFCFCF" }, // Dividers
+    500: { value: "#BDBDBD" }, // Disabled bg
+  },
+
+  // Accent colors for interactivity
+  accent: {
+    50: { value: "#87A5C5" },
+    100: { value: "#456990" },
+    200: { value: "#385574" },
+    300: { value: "#E4E4E4" },
+    400: { value: "#0D3D4C" },
+  },
+
+  // Simplified neutral text hierarchy
+  text: {
+    100: { value: "#FFFFFF" }, // Almost white (use sparingly)
+    200: { value: "#E6E6E6" }, // Slightly muted light gray
+    300: { value: "#BDBDBD" }, // Very muted mid-gray
+    400: { value: "#5C5C5C" }, // Dark gray (main body)
+    500: { value: "#1A1A1A" }, // Almost black (max contrast)
+  },
+
+  // Borders
+  border: {
+    default: { value: "#E0E0E0" },
+    accent: { value: "#456990" },
+  },
+
+  // Semantic colors
+  success: {
+    50: { value: "#E4FDE1" },
+    100: { value: "#42F22E" },
+    200: { value: "#1CB40C" },
+  },
+  warning: {
+    50: { value: "#FFF3E0" },
+    100: { value: "#FF9800" },
+    200: { value: "#F57C00" },
+  },
+  danger: {
+    50: { value: "#FDDFE1" },
+    100: { value: "#F45B69" },
+    200: { value: "#6B2737" },
+  },
+  info: {
+    50: { value: "#D7E1EC" },
+    100: { value: "#456990" },
+    200: { value: "#2A4057" },
+  },
+
+  // Interactive states
+  interactive: {
+    hover: { value: "#D7E1EC" },
+    active: { value: "#456990" },
+    focus: { value: "#456990" },
+    disabled: { value: "#BDBDBD" },
+    disabledBg: { value: "#F5F5F5" },
+  },
+
+  // Utility
+  divider: { value: "#E0E0E0" },
+  overlay: { value: "rgba(0, 0, 0, 0.5)" },
+
+  // Buttons
+  buttons: {
+    primary: {
+      bg: { value: "#456990" },
+      color: { value: "#FFFFFF" },
+      hoverBg: { value: "#385574" },
+      activeBg: { value: "#114B5F" },
+      focusRing: { value: "#114B5F" },
     },
-    tokens: {
-      fonts: {
-        heading: { value: "Arial" },
-        body: { value: "'Inter', sans-serif" },
-      },
-      sizes: {
-        80: { value: "20rem" },
-        84: { value: "21rem" },
-        88: { value: "22rem" },
-        92: { value: "23rem" },
-        96: { value: "24rem" },
-        100: { value: "25rem" },
-        104: { value: "26rem" },
-        108: { value: "27rem" },
-        112: { value: "28rem" },
-        116: { value: "29rem" },
-        120: { value: "30rem" },
-        124: { value: "31rem" },
-        128: { value: "32rem" },
-        132: { value: "33rem" },
-        136: { value: "34rem" },
-        140: { value: "35rem" },
-        144: { value: "36rem" },
-        148: { value: "37rem" },
-        152: { value: "38rem" },
-        156: { value: "39rem" },
-        160: { value: "40rem" },
-        164: { value: "41rem" },
-        168: { value: "42rem" },
-        172: { value: "43rem" },
-        176: { value: "44rem" },
-        180: { value: "45rem" },
-        184: { value: "46rem" },
-        188: { value: "47rem" },
-        192: { value: "48rem" },
-        196: { value: "49rem" },
-        200: { value: "50rem" },
-        204: { value: "51rem" },
-        208: { value: "52rem" },
-        212: { value: "53rem" },
-        216: { value: "54rem" },
-        220: { value: "55rem" },
-        224: { value: "56rem" },
-        228: { value: "57rem" },
-        232: { value: "58rem" },
-        236: { value: "59rem" },
-        240: { value: "60rem" },
-        244: { value: "61rem" },
-      },
-      colors: {
-        // Primary (dark tech blues — backgrounds/surfaces)
-        primary: {
-          25: { value: "#849DB8" }, // air-superiority-blue (lightest surface)
-          50: { value: "#4F8BBB" }, // silver-lake-blue
-          100: { value: "#3D6899" }, // lapis-lazuli
-          200: { value: "#012555" }, // oxford-blue-3 (default section bg)
-          300: { value: "#01153D" }, // oxford-blue
-          350: { value: "#010728" },
-          400: { value: "#010A35" }, // oxford-blue-2 (deep)
-          500: { value: "#000323" }, // oxford-blue-4 (near-black)
-        },
-
-        // Accent (interactive: buttons/links/ctas)
-        accent: {
-          50: { value: "#4F8BBB" }, // silver-lake-blue (subtle hover)
-          100: { value: "#107CB5" }, // honolulu-blue (primary action)
-          200: { value: "#0D4880" }, // indigo-dye (hover)
-          300: { value: "#3D6899" }, // lapis-lazuli (active)
-          400: { value: "#012555" }, // oxford-blue-3 (pressed/outline)
-        },
-
-        // Text (optimized for dark backgrounds)
-        text: {
-          50: { value: "#F1F6F8" }, // light body/subtitles
-          100: { value: "#849DB8" }, // secondary text (cool gray-blue)
-          150: { value: "#4F8BBB" }, // muted info
-          200: { value: "#0D4880" }, // captions/timestamps
-          300: { value: "#F1F6F8" }, // default body
-          400: { value: "#FFFFFF" }, // high-contrast headings
-        },
-
-        // Borders/lines
-        border: {
-          50: { value: "#0D3458" }, // prussian-blue (soft line)
-          100: { value: "#012555" }, // stronger UI borders
-          150: { value: "#849DB8" }, // accent/selected outlines
-        },
-
-        // Utility palettes
-        highlight: {
-          50: { value: "#FFB020" },
-          100: { value: "#FF8C00" },
-          200: { value: "#E65100" },
-        },
-        success: {
-          50: { value: "#34D399" },
-          100: { value: "#22C55E" },
-        },
-        danger: {
-          50: { value: "#F87171" },
-          100: { value: "#EF4444" },
-        },
-        divider: { value: "#0D3458" },
-      },
+    secondary: {
+      bg: { value: "#FFFFFF" },
+      color: { value: "#456990" },
+      border: { value: "#E0E0E0" },
+      hoverBg: { value: "#F5F5F5" },
+      activeBg: { value: "#EEEEEE" },
+    },
+    destructive: {
+      bg: { value: "#F45B69" },
+      color: { value: "#FFFFFF" },
+      hoverBg: { value: "#D94C59" },
+      activeBg: { value: "#6B2737" },
+      focusRing: { value: "#6B2737" },
+    },
+    success: {
+      bg: { value: "#42F22E" },
+      color: { value: "#0D3D4C" },
+      hoverBg: { value: "#1CB40C" },
     },
   },
-});
+};
 
-const system = createSystem(defaultConfig, config);
+// Dark theme (deep neutral surfaces, bright accents)
+const darkColors = {
+  // Backgrounds
+  primary: {
+    25:  { value: "#000000" },
+    50:  { value: "#0A0A0A" },
+    100: { value: "#121212" },
+    200: { value: "#1E1E1E" },
+    300: { value: "#2A2A2A" },
+    400: { value: "#3C3C3C" },
+    500: { value: "#505050" },
+  },
 
-export default system;
+  // Accents
+  accent: {
+    50: { value: "#2A4057" },
+    100: { value: "#456990" },
+    200: { value: "#5F87B2" },
+    300: { value: "#78CBE7" },
+    400: { value: "#34B1DB" },
+  },
+
+  // Simplified text system (light on dark)
+  text: {
+    100: { value: "#777" },   // Muted
+    200: { value: "#AFAFAF" }, // Secondary
+    300: { value: "#E4E4E4" }, // Body
+    400: { value: "#FFFFFF" }, // Headings
+  },
+
+  // Borders
+  border: {
+    default: { value: "#2A2A2A" },
+    accent: { value: "#78CBE7" },
+  },
+
+  // Semantics
+  success: {
+    50: { value: "#0D3D4C" },
+    100: { value: "#E4FDE1" },
+    200: { value: "#93F788" },
+  },
+  warning: {
+    50: { value: "#0D3D4C" },
+    100: { value: "#FFB74D" },
+    200: { value: "#FFA726" },
+  },
+  danger: {
+    50: { value: "#411821" },
+    100: { value: "#F45B69" },
+    200: { value: "#F67D87" },
+  },
+  info: {
+    50: { value: "#0D3D4C" },
+    100: { value: "#78CBE7" },
+    200: { value: "#BBE5F3" },
+  },
+
+  // Interactions
+  interactive: {
+    hover: { value: "#114B5F" },
+    active: { value: "#1D81A3" },
+    focus: { value: "#78CBE7" },
+    disabled: { value: "#6B8695" },
+    disabledBg: { value: "#1E1E1E" },
+  },
+
+  // Utility
+  divider: { value: "#2A2A2A" },
+  overlay: { value: "rgba(0, 0, 0, 0.7)" },
+
+  // Buttons
+  buttons: {
+    primary: {
+      bg: { value: "#78CBE7" },
+      color: { value: "#0A0A0A" },
+      hoverBg: { value: "#5F87B2" },
+      activeBg: { value: "#456990" },
+      focusRing: { value: "#34B1DB" },
+    },
+    secondary: {
+      bg: { value: "#1E1E1E" },
+      color: { value: "#EAEAEA" },
+      border: { value: "#2A2A2A" },
+      hoverBg: { value: "#2A2A2A" },
+      activeBg: { value: "#3C3C3C" },
+    },
+    destructive: {
+      bg: { value: "#F45B69" },
+      color: { value: "#FFFFFF" },
+      hoverBg: { value: "#F67D87" },
+      activeBg: { value: "#6B2737" },
+      focusRing: { value: "#F67D87" },
+    },
+    success: {
+      bg: { value: "#93F788" },
+      color: { value: "#0D3D4C" },
+      hoverBg: { value: "#78CBE7" },
+    },
+  },
+};
+
+// Factory function to create theme config
+const createThemeConfig = (colors: typeof lightColors) =>
+  defineConfig({
+    theme: {
+      breakpoints: {
+        xs: "20em",
+        sm: "30em",
+        md: "48em",
+        lg: "62em",
+        xl: "80em",
+      },
+      tokens: {
+        fonts: {
+          heading: { value: "Arial" },
+          body: { value: "'Inter', sans-serif" },
+        },
+        colors,
+      },
+    },
+  });
+
+const lightConfig = createThemeConfig(lightColors);
+const darkConfig = createThemeConfig(darkColors);
+
+export const lightSystem = createSystem(defaultConfig, lightConfig);
+export const darkSystem = createSystem(defaultConfig, darkConfig);
+
+export const themeSystems = {
+  light: lightSystem,
+  dark: darkSystem,
+};
+
+export const getSystemTheme = (): "light" | "dark" => {
+  if (typeof window === "undefined") return "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
+
+export default darkSystem;

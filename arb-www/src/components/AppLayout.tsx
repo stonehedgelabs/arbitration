@@ -32,6 +32,7 @@ export function AppLayout({ children, className }: AppLayoutProps) {
       flexDirection="column"
       position="relative"
       overflow="hidden"
+      bg="primary.25"
       className={className}
     >
       {children}

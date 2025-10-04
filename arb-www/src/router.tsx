@@ -26,6 +26,7 @@ export default function Router() {
         <Route path="/fyp" element={<Main />} />
         <Route path="/scores/:league" element={<Main />} />
         <Route path="/scores/:league/:gameId" element={<Main />} />
+        <Route path="/scores/:league/:gameId/pbp" element={<Main />} />
         <Route path="/live/:league" element={<Main />} />
         <Route path="/social/:league" element={<Main />} />
         <Route path="/bet" element={<Main />} />

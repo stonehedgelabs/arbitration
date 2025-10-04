@@ -34,7 +34,7 @@ export function Splash({ onComplete }: SplashScreenProps) {
           <Box
             w="96px"
             h="96px"
-            bg="white"
+            bg="primary.200"
             borderRadius="24px"
             display="flex"
             alignItems="center"
@@ -50,7 +50,7 @@ export function Splash({ onComplete }: SplashScreenProps) {
               alignItems="center"
               justifyContent="center"
             >
-              <Text color="white" fontSize="2xl" fontWeight="bold">
+              <Text color="text.400" fontSize="2xl" fontWeight="bold">
                 A
               </Text>
             </Box>
@@ -63,7 +63,7 @@ export function Splash({ onComplete }: SplashScreenProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          <Text fontSize="3xl" fontWeight="bold" color="white" mb={2}>
+          <Text fontSize="3xl" fontWeight="bold" color="text.400" mb={2}>
             Arbitration
           </Text>
         </motion.div>

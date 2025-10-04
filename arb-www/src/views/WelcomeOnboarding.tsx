@@ -152,10 +152,6 @@ export function WelcomeOnboarding() {
               visibility={currentScreen === 0 ? "hidden" : "visible"}
               color="#717182"
               _dark={{ color: "oklch(0.708 0 0)" }}
-              _hover={{
-                color: "#030213",
-                _dark: { color: "oklch(0.985 0 0)" },
-              }}
               className="ios-button-press"
             >
               <svg
@@ -175,10 +171,6 @@ export function WelcomeOnboarding() {
               onClick={handleSkip}
               color="#717182"
               _dark={{ color: "oklch(0.708 0 0)" }}
-              _hover={{
-                color: "#030213",
-                _dark: { color: "oklch(0.985 0 0)" },
-              }}
               className="ios-button-press"
             >
               Skip
@@ -306,11 +298,6 @@ export function WelcomeOnboarding() {
             bg={
               currentScreen === onboardingScreens.length - 1
                 ? "linear-gradient(to right, #a855f7, #ec4899)"
-                : undefined
-            }
-            _hover={
-              currentScreen === onboardingScreens.length - 1
-                ? { bg: "linear-gradient(to right, #9333ea, #db2777)" }
                 : undefined
             }
             rightIcon={

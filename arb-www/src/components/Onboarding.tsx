@@ -1176,17 +1176,35 @@ export function Onboarding() {
   };
 
   return (
-    <Box minH="100vh" w="100vw" display="flex" flexDirection="column">
+    <Box
+      minH="100vh"
+      w="100vw"
+      display="flex"
+      flexDirection="column"
+      bg="primary.25"
+    >
       {/* Skip Button - Top Right */}
       <Box position="absolute" top="4" right="4" zIndex="10">
         <Button
           variant="ghost"
           onClick={handleSkip}
-          size="sm"
-          color="gray.600"
-          _hover={{ bg: "gray.100" }}
+          size="xs"
+          bg={"primary.300"}
+          color="text.400"
+          fontSize="xs"
+          px="2"
+          py="1"
         >
           Skip
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            style={{ marginLeft: "4px" }}
+          >
+            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+          </svg>
         </Button>
       </Box>
 
@@ -1210,7 +1228,7 @@ export function Onboarding() {
               justifyContent="center"
               mx="auto"
             >
-              <Heart className="w-8 h-8 text-white" />
+              <Heart className="w-8 h-8" color={"white"} />
             </Box>
             <VStack gap="2">
               <Text fontSize="2xl" fontWeight="bold">
@@ -1274,12 +1292,12 @@ export function Onboarding() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   pl="10"
                   pr="12"
-                  bg="white"
-                  borderColor="gray.300"
-                  _focus={{
-                    borderColor: "blue.500",
-                    boxShadow: "0 0 0 1px #3182ce",
-                  }}
+                  // bg="primary.25"
+                  // borderColor="gray.300"
+                  // _focus={{
+                  //   borderColor: "blue.500",
+                  //   boxShadow: "0 0 0 1px #3182ce",
+                  // }}
                 />
               </Box>
             </Box>
@@ -1321,18 +1339,17 @@ export function Onboarding() {
                         w="full"
                         cursor="pointer"
                         onClick={() => toggleTeam(team.name)}
-                        borderWidth="1px"
-                        borderColor={
-                          selectedTeams.includes(team.name)
-                            ? "blue.500"
-                            : "gray.200"
-                        }
+                        // borderWidth="1px"
+                        // borderColor={
+                        //   selectedTeams.includes(team.name)
+                        //     ? "blue.500"
+                        //     : "gray.200"
+                        // }
                         bg={
                           selectedTeams.includes(team.name)
                             ? "blue.50"
-                            : "white"
+                            : "primary.25"
                         }
-                        _hover={{ bg: "gray.50" }}
                         transition="all 0.2s"
                       >
                         <Card.Body p="3">
@@ -1345,7 +1362,7 @@ export function Onboarding() {
                                 display="flex"
                                 alignItems="center"
                                 justifyContent="center"
-                                color="white"
+                                color="text.100"
                                 fontSize="xs"
                                 fontWeight="medium"
                                 style={{ backgroundColor: team.leagueColor }}
@@ -1357,10 +1374,14 @@ export function Onboarding() {
                                   .join("")}
                               </Box>
                               <VStack align="start" gap="0">
-                                <Text fontSize="sm" fontWeight="medium">
+                                <Text
+                                  fontSize="sm"
+                                  fontWeight="medium"
+                                  color="text.400"
+                                >
                                   {team.name}
                                 </Text>
-                                <Text fontSize="xs" color="gray.600">
+                                <Text fontSize="xs" color="text.400">
                                   {team.city}
                                 </Text>
                               </VStack>
@@ -1382,20 +1403,24 @@ export function Onboarding() {
                                 <Box
                                   w="6"
                                   h="6"
-                                  bg="blue.500"
+                                  bg="accent.100"
                                   borderRadius="full"
                                   display="flex"
                                   alignItems="center"
                                   justifyContent="center"
                                 >
-                                  <Check className="w-4 h-4 text-white" />
+                                  <Check
+                                    height={"16"}
+                                    width="16"
+                                    color={"white"}
+                                  />
                                 </Box>
                               ) : (
                                 <Box
                                   w="6"
                                   h="6"
-                                  borderWidth="2px"
-                                  borderColor="gray.300"
+                                  // borderWidth="2px"
+                                  // borderColor="gray.300"
                                   borderRadius="full"
                                 />
                               )}
@@ -1418,7 +1443,7 @@ export function Onboarding() {
         bottom="0"
         left="0"
         right="0"
-        bg="white"
+        // bg="primary.400"
         borderTop="1px"
         borderColor="gray.200"
         p="4"
@@ -1429,9 +1454,8 @@ export function Onboarding() {
           w="full"
           h="12"
           disabled={selectedTeams.length === 0}
-          bg="blue.500"
-          color="white"
-          _hover={{ bg: "blue.600" }}
+          bg="buttons.primary.bg"
+          color="text.100"
           _disabled={{ bg: "gray.300", cursor: "not-allowed" }}
         >
           <HStack>
@@ -1439,7 +1463,7 @@ export function Onboarding() {
               Continue with {selectedTeams.length} team
               {selectedTeams.length !== 1 ? "s" : ""}
             </Text>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight color="accent.400" className="w-4 h-4" />
           </HStack>
         </Button>
       </Box>

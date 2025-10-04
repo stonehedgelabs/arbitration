@@ -17,6 +17,7 @@ import { Wifi } from "lucide-react";
 
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "./Skeleton";
+import { Bases } from "./Bases";
 
 // Internal imports - config
 import {
@@ -74,6 +75,10 @@ interface Game {
   division?: string;
   // Postseason flag
   isPostseason?: boolean;
+  // Base runners
+  runnerOnFirst?: boolean;
+  runnerOnSecond?: boolean;
+  runnerOnThird?: boolean;
   // Odds information
   odds?: {
     homeMoneyLine?: number;
@@ -124,33 +129,16 @@ const getGameOdds = (
   oddsData: any,
 ): Game["odds"] | undefined => {
   if (!oddsData?.data) {
-    console.log("No odds data available for gameId:", gameId);
     return undefined;
   }
-
-  console.log(
-    "Looking for odds for gameId:",
-    gameId,
-    "in odds data:",
-    oddsData.data.length,
-    "games",
-  );
 
   const gameOdds = oddsData.data.find(
     (odds: any) => odds.GameId?.toString() === gameId,
   );
 
   if (!gameOdds) {
-    console.log(
-      "No odds found for gameId:",
-      gameId,
-      "Available GameIds:",
-      oddsData.data.map((o: any) => o.GameId),
-    );
     return undefined;
   }
-
-  console.log("Found odds for gameId:", gameId, "odds:", gameOdds);
 
   // Get the first available odds (prefer pregame odds)
   const pregameOdds = gameOdds.PregameOdds?.[0];
@@ -158,11 +146,8 @@ const getGameOdds = (
   const odds = pregameOdds || liveOdds;
 
   if (!odds) {
-    console.log("No pregame or live odds found for gameId:", gameId);
     return undefined;
   }
-
-  console.log("Using odds for gameId:", gameId, "odds:", odds);
 
   return {
     homeMoneyLine: odds.HomeMoneyLine,
@@ -172,55 +157,6 @@ const getGameOdds = (
     overUnder: odds.OverUnder,
     sportsbook: odds.Sportsbook || "Unknown",
   };
-};
-
-// Bases Icon Component
-const BasesIcon = () => {
-  return (
-    <Box display="flex" flexDirection="column" alignItems="center" gap="1">
-      {/* Home Plate (bottom) */}
-      <Box
-        w="6px"
-        h="6px"
-        bg="gray.300"
-        border="1px solid"
-        borderColor="gray.400"
-        transform="rotate(45deg)"
-      />
-
-      {/* First and Third Base (middle row) */}
-      <Box display="flex" gap="3">
-        {/* First Base */}
-        <Box
-          w="6px"
-          h="6px"
-          bg="gray.300"
-          border="1px solid"
-          borderColor="gray.400"
-          transform="rotate(45deg)"
-        />
-        {/* Third Base */}
-        <Box
-          w="6px"
-          h="6px"
-          bg="gray.300"
-          border="1px solid"
-          borderColor="gray.400"
-          transform="rotate(45deg)"
-        />
-      </Box>
-
-      {/* Second Base (top) */}
-      <Box
-        w="6px"
-        h="6px"
-        bg="gray.300"
-        border="1px solid"
-        borderColor="gray.400"
-        transform="rotate(45deg)"
-      />
-    </Box>
-  );
 };
 
 // Team Odds Display Component
@@ -250,7 +186,15 @@ const TeamOddsDisplay = ({
     );
   }
 
-  if (!odds) return null;
+  if (!odds) {
+    return (
+      <VStack gap="1" align="stretch" fontSize="xs">
+        <Text color="gray.500" textAlign="center">
+          No odds yet
+        </Text>
+      </VStack>
+    );
+  }
 
   const moneyLine = isAway ? odds.awayMoneyLine : odds.homeMoneyLine;
   const pointSpread = isAway ? odds.awayPointSpread : odds.homePointSpread;
@@ -290,7 +234,6 @@ const GameCardSkeleton = () => {
     <Card.Root
       variant="outline"
       size="sm"
-      _hover={{ bg: "gray.50" }}
       transition="all 0.2s"
       cursor="pointer"
     >
@@ -370,7 +313,13 @@ const GameOddsDisplay = ({
     );
   }
 
-  if (!odds) return null;
+  if (!odds) {
+    return (
+      <HStack justify="space-between" align="center" fontSize="xs" w="full">
+        <Text color="gray.500">No odds yet</Text>
+      </HStack>
+    );
+  }
 
   return (
     <HStack justify="space-between" align="center" fontSize="xs">
@@ -479,6 +428,17 @@ const convertMLBGameToGame = (
     temperature: rawGame.Temperature || rawGame.TempF,
     stadiumId: rawGame.StadiumID, // Store stadium ID for potential future lookup
     division: homeTeamProfile?.Division, // Store division for display
+    // Postseason flag - determine based on the game date using config
+    isPostseason: isPostseasonDate(
+      League.MLB,
+      rawGame.DateTime
+        ? convertUtcToLocalDate(rawGame.DateTime)
+        : new Date().toISOString().split("T")[0],
+    ),
+    // Base runners
+    runnerOnFirst: rawGame.RunnerOnFirst || false,
+    runnerOnSecond: rawGame.RunnerOnSecond || false,
+    runnerOnThird: rawGame.RunnerOnThird || false,
     // Odds information
     odds: getGameOdds(gameId, oddsData),
   };
@@ -542,17 +502,6 @@ const convertScheduleGameToGame = (
   const convertedDate = scheduleGame.DateTime
     ? convertUtcToLocalDate(scheduleGame.DateTime)
     : new Date().toISOString().split("T")[0];
-
-  // Debug logging for 10/4 games
-  if (convertedDate === "2025-10-04") {
-    console.log("Converting 10/4 schedule game:", {
-      originalDateTime: scheduleGame.DateTime,
-      convertedDate,
-      homeTeam: scheduleGame.HomeTeam,
-      awayTeam: scheduleGame.AwayTeam,
-      gameId: gameId,
-    });
-  }
 
   const convertedGame = {
     id: gameId,
@@ -801,7 +750,6 @@ export function Live() {
               <Card.Root
                 key={game.id}
                 cursor="pointer"
-                _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
                 transition="all 0.2s"
                 onClick={() => {
                   navigate(`/scores/${selectedLeague}/${game.id}`);
@@ -811,7 +759,7 @@ export function Live() {
                   <VStack align="stretch" gap="3">
                     {/* Time and Status Header */}
                     <HStack justify="space-between" align="center">
-                      <Text fontSize="xxs" color="gray.500">
+                      <Text fontSize="xs" color="gray.500">
                         {formatTime(game.time)}
                       </Text>
                       <HStack gap="2" align="center">
@@ -862,8 +810,8 @@ export function Live() {
                                 {game.capacity.toLocaleString()} seats
                               </Text>
                             )}
-                            {game.surface && (
-                              <Text color="gray.500">{game.surface}</Text>
+                            {game.surface && game.surface !== "Grass" && (
+                              <Text color="text.400">{game.surface}</Text>
                             )}
                           </HStack>
                           {game.division && (
@@ -875,7 +823,14 @@ export function Live() {
 
                         {/* Bases Icon for MLB Live Games */}
                         {selectedLeague === League.MLB &&
-                          game.status === GameStatus.LIVE && <BasesIcon />}
+                          game.status === GameStatus.LIVE && (
+                            <Bases
+                              runnerOnFirst={game.runnerOnFirst || false}
+                              runnerOnSecond={game.runnerOnSecond || false}
+                              runnerOnThird={game.runnerOnThird || false}
+                              size="sm"
+                            />
+                          )}
                       </HStack>
                     )}
 
@@ -1026,6 +981,12 @@ export function Scores() {
   // Redux state
   const dispatch = useAppDispatch();
   const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
+  const navigate = useNavigate();
+
+  // Handle game click for box score navigation
+  const handleGameClick = (gameId: string, gameDate: string) => {
+    navigate(`/scores/${selectedLeague}/${gameId}`);
+  };
 
   // Fetch MLB scores and team profiles when component mounts or league changes
   useEffect(() => {
@@ -1088,7 +1049,6 @@ export function Scores() {
       const isPostseason = isPostseasonDate(League.MLB, selectedDate);
 
       if (isPostseason) {
-        console.log("Fetching schedule for postseason date:", selectedDate);
         setIsFetchingDateData(true);
         fetchMLBSchedule(selectedDate).finally(() => {
           setIsFetchingDateData(false);
@@ -1100,21 +1060,9 @@ export function Scores() {
   // Fetch odds data for the selected date
   useEffect(() => {
     if (selectedLeague === League.MLB && selectedDate) {
-      console.log("Fetching odds for date:", selectedDate);
       fetchMLBOddsByDate(selectedDate);
     }
   }, [selectedLeague, selectedDate, fetchMLBOddsByDate]);
-
-  // Debug odds data when it changes
-  useEffect(() => {
-    if (mlbOddsByDate) {
-      console.log("MLB Odds data received:", mlbOddsByDate);
-      if (mlbOddsByDate.data) {
-        console.log("Number of games with odds:", mlbOddsByDate.data.length);
-        console.log("Sample odds data:", mlbOddsByDate.data[0]);
-      }
-    }
-  }, [mlbOddsByDate]);
 
   // Fetch current-games data for the date picker range (7 days back + 7 days forward)
   useEffect(() => {
@@ -1129,12 +1077,6 @@ export function Scores() {
       const startDateStr = startDate.toISOString().split("T")[0];
       const endDateStr = endDate.toISOString().split("T")[0];
 
-      console.log(
-        "Fetching current-games for date range:",
-        startDateStr,
-        "to",
-        endDateStr,
-      );
       fetchCurrentGames(startDateStr, endDateStr);
     }
   }, [selectedLeague, fetchCurrentGames]);
@@ -1195,12 +1137,6 @@ export function Scores() {
     }
   };
 
-  // Handle game click for box score navigation
-  const handleGameClick = (gameId: string, gameDate: string) => {
-    setSelectedGameId(gameId);
-    setSelectedGameDate(gameDate);
-  };
-
   // Handle back from box score
   const handleBackFromBoxScore = () => {
     setSelectedGameId(null);
@@ -1227,13 +1163,6 @@ export function Scores() {
 
     // Add games from scores data (past and current games with actual scores)
     if (mlbScores?.data) {
-      console.log(
-        "Processing scores data for past games:",
-        mlbScores.data.length,
-        "games",
-      );
-      console.log("Sample scores game GameID:", mlbScores.data[0]?.GameID);
-
       const scoreGames = mlbScores.data
         .map((game) =>
           convertMLBGameToGame(
@@ -1245,7 +1174,6 @@ export function Scores() {
         )
         .filter((game): game is Game => game !== null);
       games.push(...scoreGames);
-      console.log("Added", scoreGames.length, "games from scores data");
     }
 
     // Add games from current-games data (future games and any missing past games)
@@ -1271,7 +1199,6 @@ export function Scores() {
       });
 
       games.push(...futureGames);
-      console.log("Added", futureGames.length, "games from current-games data");
     }
 
     // Add games from schedule data (only for postseason dates)
@@ -1280,11 +1207,6 @@ export function Scores() {
       selectedDate &&
       isPostseasonDate(League.MLB, selectedDate)
     ) {
-      console.log(
-        "Schedule data loaded for postseason:",
-        mlbSchedule.data.length,
-        "games",
-      );
       const scheduleGames = mlbSchedule.data
         .map((game) =>
           convertScheduleGameToGame(
@@ -1302,14 +1224,7 @@ export function Scores() {
         (game) => !existingGameIds.has(game.id),
       );
       games.push(...newPostseasonGames);
-      console.log(
-        "Added",
-        newPostseasonGames.length,
-        "postseason games from schedule data",
-      );
     }
-
-    console.log("Total games loaded before deduplication:", games.length);
 
     // Deduplicate games by ID, keeping the most recent/complete version
     const gameMap = new Map<string, Game>();
@@ -1330,7 +1245,6 @@ export function Scores() {
     });
 
     const deduplicatedGames = Array.from(gameMap.values());
-    console.log("Total games after deduplication:", deduplicatedGames.length);
     return deduplicatedGames;
   })();
 
@@ -1338,19 +1252,6 @@ export function Scores() {
   const filteredGames = allGames.filter((game) => {
     // Use the pre-converted game.date field instead of converting game.time
     const matches = game.date === selectedDate;
-
-    // Debug logging for 10/4
-    if (selectedDate === "2025-10-04") {
-      console.log("Game date check:", {
-        gameDate: game.date,
-        selectedDate,
-        matches,
-        gameId: game.id,
-        homeTeam: game.homeTeam.name,
-        awayTeam: game.awayTeam.name,
-        isPostseason: game.isPostseason,
-      });
-    }
 
     return matches;
   });
@@ -1385,8 +1286,8 @@ export function Scores() {
         return (
           <Badge
             variant="solid"
-            bg="red.500"
-            color="white"
+            bg="danger.100"
+            color="text.100"
             fontSize="xs"
             px="2"
             py="1"
@@ -1399,8 +1300,8 @@ export function Scores() {
         return (
           <Badge
             variant="solid"
-            bg="gray.300"
-            color="gray.700"
+            bg="danger.100"
+            color="text.100"
             fontSize="xs"
             px="2"
             py="1"
@@ -1413,8 +1314,8 @@ export function Scores() {
         return (
           <Badge
             variant="solid"
-            bg="gray.300"
-            color="gray.700"
+            bg="danger.100"
+            color="text.100"
             fontSize="xs"
             px="2"
             py="1"
@@ -1433,7 +1334,7 @@ export function Scores() {
     return (
       <Box
         minH="100vh"
-        bg="gray.50"
+        bg="primary.25"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -1453,7 +1354,7 @@ export function Scores() {
     !sortedGames.length
   ) {
     return (
-      <Box minH="100vh" bg="gray.50" p="4">
+      <Box minH="100vh" bg="primary.25" p="4">
         <VStack gap="3" align="stretch">
           {Array.from({ length: 3 }, (_, index) => (
             <GameCardSkeleton key={`skeleton-${index}`} />
@@ -1468,7 +1369,7 @@ export function Scores() {
     return (
       <Box
         minH="100vh"
-        bg="gray.50"
+        bg="primary.25"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -1486,7 +1387,7 @@ export function Scores() {
   }
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="primary.25">
       <VStack gap="4" align="stretch" p="4" pb="20">
         {/* Date Selector */}
         <DatePicker selectedLeague={selectedLeague} />
@@ -1499,7 +1400,7 @@ export function Scores() {
             mlbScoresLoading ||
             (selectedLeague === League.MLB && !mlbScores) ? (
               <Card.Root
-                bg="white"
+                bg="primary.25"
                 borderRadius="12px"
                 shadow="sm"
                 border="1px"
@@ -1514,7 +1415,7 @@ export function Scores() {
               </Card.Root>
             ) : (
               <Card.Root
-                bg="white"
+                bg="primary.25"
                 borderRadius="12px"
                 shadow="sm"
                 border="1px"
@@ -1569,7 +1470,7 @@ export function Scores() {
                     return (
                       <Card.Root
                         key={game.id}
-                        bg="white"
+                        bg="primary.25"
                         borderRadius="12px"
                         shadow="sm"
                         border="1px"
@@ -1583,7 +1484,7 @@ export function Scores() {
                           <VStack align="stretch" gap="3">
                             {/* Time and Status Header */}
                             <HStack justify="space-between" align="center">
-                              <Text fontSize="sm" color="gray.500">
+                              <Text fontSize="xs" color="gray.500">
                                 {formatTime(game.time)}
                               </Text>
                               <HStack gap="2" align="center">
@@ -1591,8 +1492,8 @@ export function Scores() {
                                 {game.isPostseason && (
                                   <Badge
                                     variant="solid"
-                                    bg="purple.500"
-                                    color="white"
+                                    bg="gold"
+                                    color="text.400"
                                     fontSize="xs"
                                     px="2"
                                     py="1"
@@ -1604,8 +1505,8 @@ export function Scores() {
                                 {game.status === GameStatus.LIVE && (
                                   <Badge
                                     variant="solid"
-                                    bg="red.500"
-                                    color="white"
+                                    bg="danger.100"
+                                    color="text.400"
                                     fontSize="xs"
                                     px="2"
                                     py="1"
@@ -1665,10 +1566,10 @@ export function Scores() {
                                       {game.capacity.toLocaleString()} seats
                                     </Badge>
                                   )}
-                                  {game.surface && (
+                                  {game.surface && game.surface !== "Grass" && (
                                     <Badge
                                       variant="outline"
-                                      colorScheme="purple"
+                                      color="text.400"
                                       fontSize="xs"
                                       px="2"
                                       py="1"
@@ -1694,7 +1595,18 @@ export function Scores() {
                                 {/* Bases Icon for MLB Live Games */}
                                 {selectedLeague === League.MLB &&
                                   game.status === GameStatus.LIVE && (
-                                    <BasesIcon />
+                                    <Bases
+                                      runnerOnFirst={
+                                        game.runnerOnFirst || false
+                                      }
+                                      runnerOnSecond={
+                                        game.runnerOnSecond || false
+                                      }
+                                      runnerOnThird={
+                                        game.runnerOnThird || false
+                                      }
+                                      size="sm"
+                                    />
                                   )}
                               </HStack>
                             )}
@@ -1757,10 +1669,16 @@ export function Scores() {
                                 >
                                   {game.awayTeam.score}
                                 </Text>
-                                {(game.odds || oddsLoading) && (
+                                {(game.odds ||
+                                  oddsLoading ||
+                                  (mlbOddsByDate?.data &&
+                                    mlbOddsByDate.data.some(
+                                      (odds: any) =>
+                                        odds.GameId?.toString() === game.id,
+                                    ))) && (
                                   <Box
                                     p="2"
-                                    bg="gray.50"
+                                    bg="primary.25"
                                     borderRadius="6px"
                                     border="1px solid"
                                     borderColor="gray.200"
@@ -1835,10 +1753,16 @@ export function Scores() {
                                 >
                                   {game.homeTeam.score}
                                 </Text>
-                                {(game.odds || oddsLoading) && (
+                                {(game.odds ||
+                                  oddsLoading ||
+                                  (mlbOddsByDate?.data &&
+                                    mlbOddsByDate.data.some(
+                                      (odds: any) =>
+                                        odds.GameId?.toString() === game.id,
+                                    ))) && (
                                   <Box
                                     p="2"
-                                    bg="gray.50"
+                                    bg="primary.25"
                                     borderRadius="6px"
                                     border="1px solid"
                                     borderColor="gray.200"
@@ -1856,7 +1780,13 @@ export function Scores() {
                             </HStack>
 
                             {/* Game-level odds (Total and Sportsbook) */}
-                            {(game.odds || oddsLoading) && (
+                            {(game.odds ||
+                              oddsLoading ||
+                              (mlbOddsByDate?.data &&
+                                mlbOddsByDate.data.some(
+                                  (odds: any) =>
+                                    odds.GameId?.toString() === game.id,
+                                ))) && (
                               <Box
                                 mt="2"
                                 pt="2"

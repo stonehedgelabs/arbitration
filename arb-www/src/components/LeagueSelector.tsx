@@ -39,22 +39,22 @@ export function LeagueSelector() {
     if (isSelected) {
       // Active state - red background with white text
       return {
-        bg: "red.500",
-        border: "red.500",
+        bg: "accent.400",
+        // border: "red.500",
         text: "white",
       };
     } else {
       // Default state - red outline with red text
       return {
-        bg: "white",
-        border: "red.500",
-        text: "red.500",
+        bg: "primary.500",
+        // border: "red.500",
+        text: "text.body",
       };
     }
   };
 
   return (
-    <Box bg="white" p="4">
+    <Box bg="primary.25" p="4">
       {/* League selector buttons */}
       <HStack gap="2" justify="space-between">
         {leagues.map((league) => {
@@ -68,18 +68,14 @@ export function LeagueSelector() {
               onClick={() => handleLeagueChange(league.id)}
               flex="1"
               h="10"
-              borderRadius="full"
+              borderRadius="xl"
               fontSize="sm"
               fontWeight="medium"
               whiteSpace="nowrap"
               bg={colors.bg}
-              borderColor={colors.border}
+              // borderColor={colors.border}
               color={colors.text}
               borderWidth="1px"
-              _hover={{
-                bg: isSelected ? colors.bg : "red.50",
-                transform: "scale(1.02)",
-              }}
               _active={{
                 transform: "scale(0.98)",
               }}

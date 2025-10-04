@@ -44,7 +44,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
     return (
       <Card.Root
         key={item.id}
-        bg="white"
+        bg="primary.200"
         borderRadius="12px"
         shadow="sm"
         border="1px"
@@ -88,8 +88,8 @@ export function ForYouSection({ items }: ForYouSectionProps) {
                   <HStack gap="2">
                     <Badge
                       variant="solid"
-                      bg="red.500"
-                      color="white"
+                      bg="danger.100"
+                      color="text.400"
                       fontSize="xs"
                       px="2"
                       py="1"
@@ -148,7 +148,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
     return (
       <Card.Root
         key={item.id}
-        bg="white"
+        bg="primary.200"
         borderRadius="12px"
         shadow="sm"
         border="1px"
@@ -180,7 +180,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
                 <Badge
                   variant="solid"
                   bg="blue.500"
-                  color="white"
+                  color="text.400"
                   fontSize="xs"
                   px="2"
                   py="1"
@@ -223,7 +223,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
     return (
       <Card.Root
         key={item.id}
-        bg="white"
+        bg="primary.200"
         borderRadius="12px"
         shadow="sm"
         border="1px"
@@ -253,8 +253,8 @@ export function ForYouSection({ items }: ForYouSectionProps) {
               top="3"
               left="3"
               variant="solid"
-              bg="black"
-              color="white"
+              bg="primary.25"
+              color="text.400"
               fontSize="xs"
               px="2"
               py="1"
@@ -275,7 +275,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
               alignItems="center"
               justifyContent="center"
             >
-              <Box w="8" h="8" color="white" ml="1">
+              <Box w="8" h="8" color="text.400" ml="1">
                 <Play size={32} />
               </Box>
             </Box>
@@ -284,7 +284,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
               bottom="3"
               right="3"
               fontSize="xs"
-              color="white"
+              color="text.400"
               bg="blackAlpha.600"
               px="2"
               py="1"
@@ -328,7 +328,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
     return (
       <Card.Root
         key={item.id}
-        bg="white"
+        bg="primary.200"
         borderRadius="12px"
         shadow="sm"
         border="1px"
@@ -344,8 +344,8 @@ export function ForYouSection({ items }: ForYouSectionProps) {
               <HStack gap="2">
                 <Badge
                   variant="solid"
-                  bg="red.500"
-                  color="white"
+                  bg="danger.100"
+                  color="text.400"
                   fontSize="xs"
                   px="2"
                   py="1"
@@ -405,7 +405,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
                   <Box
                     w="2"
                     h="2"
-                    bg="red.500"
+                    bg="danger.100"
                     borderRadius="full"
                     animation="pulse 2s infinite"
                   />

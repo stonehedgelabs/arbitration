@@ -77,16 +77,6 @@ export function Social({ selectedLeague }: SocialSectionProps) {
   // Generate team names from live games
   const getLiveGameTeamNames = () => {
     if (selectedLeague === League.MLB && mlbScores?.data) {
-      console.log("Social: Checking for live games...", {
-        totalGames: mlbScores.data.length,
-        gameStatuses: mlbScores.data.map((g) => ({
-          id: g.GameID,
-          status: g.Status,
-          home: g.HomeTeam,
-          away: g.AwayTeam,
-        })),
-      });
-
       // Use the same status detection logic as the Scores component
       const getStatus = (apiStatus: string): GameStatus => {
         return mapApiStatusToGameStatus(apiStatus);
@@ -123,12 +113,9 @@ export function Social({ selectedLeague }: SocialSectionProps) {
         };
       });
 
-      console.log("Social: All games processed:", allGames);
-
       const liveGames = allGames.filter(
         (game) => game.status === GameStatus.LIVE,
       );
-      console.log("Social: Live games found:", liveGames);
 
       // Extract team names from live games
       const teamNames: string[] = [];
@@ -137,7 +124,6 @@ export function Social({ selectedLeague }: SocialSectionProps) {
         if (game.awayTeam.name) teamNames.push(game.awayTeam.name);
       });
 
-      console.log("Social: Team names extracted:", teamNames);
       return teamNames;
     }
     return [];
@@ -151,7 +137,7 @@ export function Social({ selectedLeague }: SocialSectionProps) {
       setGeneratedQuery(query);
       return query;
     }
-    const query = teamNames.join(" OR ");
+    const query = teamNames.join(" AND ");
     setGeneratedQuery(query);
     return query;
   };
@@ -172,10 +158,6 @@ export function Social({ selectedLeague }: SocialSectionProps) {
         // Initial load - generate query from live games
         const teamNames = getLiveGameTeamNames();
         const sportsQuery = generateSportsQuery(teamNames);
-        console.log("Social: Generated query from live games:", {
-          teamNames,
-          sportsQuery,
-        });
         dispatch(setTwitterHasSearched(true));
         lastCursor.current = null; // Reset cursor for new search
         loadMoreAttempts.current = 0; // Reset attempts counter
@@ -209,13 +191,8 @@ export function Social({ selectedLeague }: SocialSectionProps) {
       mlbTeamProfiles?.data &&
       hasInitialized.current
     ) {
-      console.log("Social: Data loaded, regenerating query...");
       const teamNames = getLiveGameTeamNames();
       const sportsQuery = generateSportsQuery(teamNames);
-      console.log("Social: Regenerated query from live games:", {
-        teamNames,
-        sportsQuery,
-      });
       lastCursor.current = null; // Reset cursor for new search
       loadMoreAttempts.current = 0; // Reset attempts counter
       dispatch(fetchTwitterData({ query: sportsQuery, filter: tweetFilter }));
@@ -268,15 +245,11 @@ export function Social({ selectedLeague }: SocialSectionProps) {
     ) {
       // Check if cursor has actually changed
       if (lastCursor.current === twitterData.next_cursor) {
-        console.log("Social: Cursor hasn't changed, stopping infinite loop");
         return;
       }
 
       // Prevent too many attempts with same cursor
       if (loadMoreAttempts.current >= 3) {
-        console.log(
-          "Social: Too many load more attempts, stopping to prevent infinite loop",
-        );
         return;
       }
 
@@ -285,11 +258,6 @@ export function Social({ selectedLeague }: SocialSectionProps) {
         isLoadingMore.current = true;
         lastCursor.current = twitterData.next_cursor;
         loadMoreAttempts.current += 1;
-        console.log(
-          "Social: Loading more tweets with cursor:",
-          twitterData.next_cursor,
-          `(attempt ${loadMoreAttempts.current})`,
-        );
         dispatch(
           loadMoreTwitterData({
             query,
@@ -335,12 +303,12 @@ export function Social({ selectedLeague }: SocialSectionProps) {
   }, [twitterLoadingMore, twitterData?.tweets]);
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="primary.25">
       <VStack gap="3" align="stretch" p="4" pb="20">
         {/* Header */}
-        <Text fontSize="2xl" fontWeight="bold" color="gray.900">
+        {/* <Text fontSize="2xl" fontWeight="bold" color="gray.900">
           Social Feed
-        </Text>
+        </Text> */}
 
         {/* Search Bar */}
         <Box position="relative">
@@ -362,11 +330,11 @@ export function Social({ selectedLeague }: SocialSectionProps) {
             onChange={(e) => handleSearchChange(e.target.value)}
             pl="10"
             pr="12"
-            bg="white"
-            borderColor="gray.300"
+            bg="primary.200"
+            borderColor="border.100"
             _focus={{
-              borderColor: "blue.500",
-              boxShadow: "0 0 0 1px #3182ce",
+              borderColor: "accent.100",
+              boxShadow: "0 0 0 1px var(--chakra-colors-accent-100)",
             }}
           />
           {(twitterSearchQuery || generatedQuery) && (
@@ -405,7 +373,6 @@ export function Social({ selectedLeague }: SocialSectionProps) {
               fontWeight="medium"
               fontSize="xs"
               onClick={() => setTweetFilter("top")}
-              _hover={{ bg: tweetFilter === "top" ? "white" : "gray.200" }}
               boxShadow={tweetFilter === "top" ? "sm" : "none"}
               px="3"
             >
@@ -420,7 +387,6 @@ export function Social({ selectedLeague }: SocialSectionProps) {
               fontWeight="medium"
               fontSize="xs"
               onClick={() => setTweetFilter("latest")}
-              _hover={{ bg: tweetFilter === "latest" ? "white" : "gray.200" }}
               boxShadow={tweetFilter === "latest" ? "sm" : "none"}
               px="3"
             >
@@ -429,32 +395,15 @@ export function Social({ selectedLeague }: SocialSectionProps) {
           </Flex>
         </Box>
 
-        {/* Search Button */}
-        <Button
-          onClick={() => {
-            const query = twitterSearchQuery || generatedQuery;
-            if (query.trim()) {
-              dispatch(setTwitterHasSearched(true));
-              dispatch(fetchTwitterData({ query, filter: tweetFilter }));
-            }
-          }}
-          colorScheme="blue"
-          size="md"
-          disabled={
-            !(twitterSearchQuery || generatedQuery)?.trim() || twitterLoading
-          }
-        >
-          <Search size={16} style={{ marginRight: "8px" }} />
-          Search Tweets
-        </Button>
-
         {/* Loading State */}
         {twitterLoading && (
-          <VStack gap="0" align="stretch">
+          <VStack gap="4" align="stretch">
             <Text color="gray.600" fontSize="sm" mb="2">
               Searching for tweets...
             </Text>
-            <TwitterCardSkeleton />
+            {Array.from({ length: 4 }, (_, index) => (
+              <TwitterCardSkeleton key={`skeleton-${index}`} />
+            ))}
           </VStack>
         )}
 

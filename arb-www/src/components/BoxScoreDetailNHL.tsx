@@ -61,9 +61,15 @@ export function BoxScoreDetailNHL({ gameId, onBack }: BoxScoreDetailNHLProps) {
   }
 
   return (
-    <Box minH="100vh" bg="white">
+    <Box minH="100vh" bg="primary.25">
       {/* Header with Back Button */}
-      <Box bg="white" px="4" py="3" borderBottom="1px" borderColor="gray.200">
+      <Box
+        bg="primary.25"
+        px="4"
+        py="3"
+        borderBottom="1px"
+        borderColor="border.100"
+      >
         <HStack justify="space-between" align="center">
           <IconButton
             aria-label="Go back"

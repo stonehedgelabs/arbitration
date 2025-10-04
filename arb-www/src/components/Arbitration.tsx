@@ -12,6 +12,7 @@ import { League } from "../config";
 // Internal imports - components
 import { Bet } from "./Bet.tsx";
 import { BottomNav } from "./BottomNav.tsx";
+import { BoxScoreDetailMLB } from "./BoxScoreDetailMLB.tsx";
 import { FavoritesManager } from "./FavoritesManager.tsx";
 import { ForYouSection } from "./ForYouSection.tsx";
 import { LeagueSelector } from "./LeagueSelector.tsx";
@@ -43,13 +44,18 @@ export function Arbitration() {
   const { league, gameId } = useParams<{ league?: string; gameId?: string }>();
 
   // Determine current view and league from URL
-  const currentView = gameId ? "playbyplay" : "main";
+  const isPlayByPlayView = location.pathname.endsWith("/pbp");
+  const isBoxScoreView = gameId && !isPlayByPlayView;
+  const currentView = isPlayByPlayView
+    ? "playbyplay"
+    : isBoxScoreView
+      ? "boxscore"
+      : "main";
   const currentLeague = league || selectedLeague;
 
   // Update Redux state when URL league changes
   useEffect(() => {
     if (league && league !== selectedLeague) {
-      console.log("Updating selectedLeague from", selectedLeague, "to", league);
       dispatch(setSelectedLeague(league));
     }
   }, [league, selectedLeague, dispatch]);
@@ -122,6 +128,45 @@ export function Arbitration() {
     }
   };
 
+  // Show box score detail view if selected
+  if (currentView === "boxscore" && gameId) {
+    return (
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+      >
+        <Box minH="100vh" bg="gray.50">
+          {currentLeague === League.MLB ? (
+            <BoxScoreDetailMLB
+              gameId={gameId}
+              onBack={handleBackFromPlayByPlay}
+            />
+          ) : (
+            <Box
+              minH="100vh"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <VStack gap="4">
+                <Text color="red.500" fontSize="lg" fontWeight="semibold">
+                  Unsupported League
+                </Text>
+                <Text color="gray.600" textAlign="center">
+                  Box score detail for {selectedLeague?.toUpperCase()} is not
+                  yet supported.
+                </Text>
+                <Button onClick={handleBackFromPlayByPlay}>Go Back</Button>
+              </VStack>
+            </Box>
+          )}
+        </Box>
+      </motion.div>
+    );
+  }
+
   // Show play-by-play view if selected
   if (currentView === "playbyplay" && gameId) {
     return (
@@ -167,9 +212,9 @@ export function Arbitration() {
       <Box minH="100vh" bg="gray.50" display="flex" flexDirection="column">
         {/* Mobile Header */}
         <Box
-          bg="white"
+          bg="primary.25"
           borderBottom="1px"
-          borderColor="gray.200"
+          borderColor="border.100"
           position="sticky"
           top="0"
           zIndex="40"
@@ -187,7 +232,7 @@ export function Arbitration() {
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Text fontSize="xs" fontWeight="medium" color="white">
+                  <Text fontSize="xs" fontWeight="medium" color="text.400">
                     {userType === "apple" ? "🍎" : "🟢"}
                   </Text>
                 </Box>
@@ -221,15 +266,15 @@ export function Arbitration() {
           flex="1"
           minH={{ base: "calc(100vh - 140px)" }}
           overflowY="auto"
-          bg="gray.50"
+          bg="primary.25"
         >
           {/* Discover section for For You tab */}
           {activeTab === "for-you" && (
             <Box
               p="4"
               borderBottom="1px"
-              borderColor="gray.200"
-              bg="white"
+              borderColor="border.100"
+              bg="primary.25"
               shadow="sm"
             >
               <Text
@@ -258,9 +303,9 @@ export function Arbitration() {
           left="0"
           right="0"
           zIndex="50"
-          bg="white"
+          bg="primary.200"
           borderTop="1px"
-          borderColor="gray.200"
+          borderColor="border.100"
           shadow="lg"
         >
           <BottomNav />

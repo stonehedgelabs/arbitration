@@ -152,9 +152,6 @@ export function DatePicker({ selectedLeague }: DatePickerProps) {
             borderBottomColor={
               selectedDate === dateInfo.date ? "red.500" : "transparent"
             }
-            _hover={{
-              bg: selectedDate === dateInfo.date ? "red.50" : "gray.50",
-            }}
             minW="fit-content"
             whiteSpace="nowrap"
           >

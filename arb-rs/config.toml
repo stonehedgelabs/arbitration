@@ -16,7 +16,7 @@ schedule = 1800           # 30 minutes
 postseason_schedule = 1800 # 30 minutes
 scores = 120              # 2 minutes
 play_by_play = 20         # 20 seconds
-box_scores = 1800         # 30 minutes
+box_scores = 60           # 1 minute
 stadiums = 7200           # 2 hours
 twitter_search = 60       # 1 minute
 

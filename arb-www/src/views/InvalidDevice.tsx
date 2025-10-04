@@ -10,7 +10,7 @@ export function InvalidDevice() {
     <Box
       minH="100vh"
       minW={"100vw"}
-      bg="linear-gradient(to bottom right, blue.50, indigo.100)"
+      bg="primary.25"
       display="flex"
       alignItems="center"
       justifyContent="center"
@@ -31,59 +31,59 @@ export function InvalidDevice() {
             style={{
               width: "6rem",
               height: "6rem",
-              backgroundColor: "#2563eb",
+              backgroundColor: "var(--chakra-colors-accent-100)",
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Box w="12" h="12" color="white">
+            <Box w="12" h="12" color="text.400">
               <Smartphone size={48} />
             </Box>
           </motion.div>
 
           {/* Content */}
           <VStack gap="4">
-            <Text fontSize="3xl" fontWeight="bold" color="gray.900">
+            <Text fontSize="3xl" fontWeight="bold" color="text.400">
               Mobile Only
             </Text>
-            <Text fontSize="lg" color="gray.600" lineHeight="1.6">
+            <Text fontSize="lg" color="text.300" lineHeight="1.6">
               Arbitration is designed exclusively for mobile devices to provide
               the best experience.
             </Text>
-            <Text fontSize="md" color="gray.500">
+            <Text fontSize="md" color="text.100">
               Please access this app from your smartphone or tablet.
             </Text>
           </VStack>
 
           {/* Features */}
           <VStack gap="3" align="start" w="full">
-            <Text fontSize="md" fontWeight="semibold" color="gray.700">
+            <Text fontSize="md" fontWeight="semibold" color="text.300">
               Why mobile-only?
             </Text>
             <VStack gap="2" align="start" w="full">
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="blue.600" borderRadius="full" />
-                <Text fontSize="sm" color="gray.600">
+                <Box w="2" h="2" bg="accent.100" borderRadius="full" />
+                <Text fontSize="sm" color="text.200">
                   Optimized for touch interactions
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="blue.600" borderRadius="full" />
-                <Text fontSize="sm" color="gray.600">
+                <Box w="2" h="2" bg="accent.100" borderRadius="full" />
+                <Text fontSize="sm" color="text.200">
                   Real-time sports updates on the go
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="blue.600" borderRadius="full" />
-                <Text fontSize="sm" color="gray.600">
+                <Box w="2" h="2" bg="accent.100" borderRadius="full" />
+                <Text fontSize="sm" color="text.200">
                   Location-based features
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="blue.600" borderRadius="full" />
-                <Text fontSize="sm" color="gray.600">
+                <Box w="2" h="2" bg="accent.100" borderRadius="full" />
+                <Text fontSize="sm" color="text.200">
                   Push notifications for live events
                 </Text>
               </HStack>
@@ -91,7 +91,7 @@ export function InvalidDevice() {
           </VStack>
 
           {/* Footer */}
-          <Text fontSize="xs" color="gray.400" textAlign="center">
+          <Text fontSize="xs" color="text.50" textAlign="center">
             Need help? Contact our support team
           </Text>
         </VStack>

@@ -1139,7 +1139,7 @@ export function FavoritesManager({
           flexDirection="column"
         >
           <Dialog.Header textAlign="left" pb="4">
-            <Dialog.Title fontSize="lg" fontWeight="bold" color="white">
+            <Dialog.Title fontSize="lg" fontWeight="bold" color="text.400">
               Favorite Teams
             </Dialog.Title>
             <Dialog.Description fontSize="sm" color="gray.400" mt="1">
@@ -1182,10 +1182,6 @@ export function FavoritesManager({
                   bg={selectedLeague === league ? "white" : "transparent"}
                   color={selectedLeague === league ? "black" : "white"}
                   borderColor="white"
-                  _hover={{
-                    bg:
-                      selectedLeague === league ? "gray.100" : "whiteAlpha.200",
-                  }}
                 >
                   {league === "all" ? "All Leagues" : league}
                 </Button>
@@ -1213,7 +1209,7 @@ export function FavoritesManager({
                           variant="outline"
                           borderColor={leagueTeams[0]?.leagueColor}
                           fontSize="xs"
-                          color="white"
+                          color="text.400"
                           bg="transparent"
                         >
                           {league}
@@ -1280,7 +1276,6 @@ function TeamCard({
       border="1px solid rgba(255, 255, 255, 0.1)"
       cursor="pointer"
       transition="all 0.2s"
-      _hover={{ bg: "rgba(255, 255, 255, 0.08)" }}
       _active={{ transform: "scale(0.98)" }}
     >
       <Flex justify="space-between" align="center">
@@ -1292,7 +1287,7 @@ function TeamCard({
             align="center"
             justify="center"
             bg={team.leagueColor}
-            color="white"
+            color="text.400"
             fontSize="xs"
             fontWeight="medium"
           >
@@ -1303,7 +1298,7 @@ function TeamCard({
               .join("")}
           </Flex>
           <Box>
-            <Text fontSize="sm" fontWeight="medium" color="white">
+            <Text fontSize="sm" fontWeight="medium" color="text.400">
               {team.name}
             </Text>
             <Text fontSize="xs" color="gray.400">
@@ -1325,7 +1320,7 @@ function TeamCard({
               align="center"
               justify="center"
             >
-              <Box w="4" h="4" color="white">
+              <Box w="4" h="4" color="text.400">
                 <Star size={16} fill="currentColor" />
               </Box>
             </Flex>

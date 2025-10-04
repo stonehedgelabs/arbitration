@@ -65,7 +65,7 @@ export function Login({ onLogin }: LoginScreenProps) {
               justifyContent="center"
               shadow="lg"
             >
-              <Text color="white" fontSize="xl" fontWeight="bold">
+              <Text color="text.400" fontSize="xl" fontWeight="bold">
                 A
               </Text>
             </Box>
@@ -83,7 +83,7 @@ export function Login({ onLogin }: LoginScreenProps) {
           <Box
             borderRadius="16px"
             shadow="xl"
-            bg="white"
+            bg="primary.200"
             _dark={{ bg: "gray.800" }}
             w="full"
             p={6}
@@ -94,9 +94,8 @@ export function Login({ onLogin }: LoginScreenProps) {
                 onClick={() => onLogin("apple")}
                 w="full"
                 h="56px"
-                bg="black"
-                color="white"
-                _hover={{ bg: "blackAlpha.900" }}
+                bg="primary.25"
+                color="text.400"
                 borderRadius="12px"
                 fontSize="md"
                 fontWeight="medium"
