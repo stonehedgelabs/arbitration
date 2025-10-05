@@ -3,11 +3,11 @@ import { Badge } from "@chakra-ui/react";
 
 interface StadiumBadgeProps {
   stadium: string;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
 }
 
 export function StadiumBadge({ stadium, size = "sm" }: StadiumBadgeProps) {
-  const fontSize = size === "sm" ? "xs" : "sm";
+  const fontSize = size === "xs" ? "2xs" : size === "sm" ? "xs" : "sm";
 
   return (
     <Badge

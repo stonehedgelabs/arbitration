@@ -25,7 +25,7 @@ export function InningBadge({
   const getInningText = () => {
     if (league === League.MLB) {
       if (inningHalf) {
-        return `${inningHalf === "Top" ? "▲" : "▼"}${inningNumber}`;
+        return `${inningHalf === "Top" ? "▲ " : "▼ "}${inningNumber}`;
       }
       return `${inningNumber}`;
     }
@@ -37,9 +37,9 @@ export function InningBadge({
 
   return (
     <Badge
-      variant="solid"
-      bg="accent.400"
-      color="text.100"
+      variant="subtle"
+      bg="transparent"
+      color="label.100"
       fontSize={fontSize}
       px="2"
       py="1"

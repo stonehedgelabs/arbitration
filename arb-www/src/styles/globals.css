@@ -117,6 +117,28 @@
   display: none;
 }
 
+/* Global scrollbar hiding for iOS feel */
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure body and html also hide scrollbars */
+html,
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
 /* Line clamp utilities */
 .line-clamp-2 {
   display: -webkit-box;

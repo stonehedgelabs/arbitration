@@ -19,6 +19,9 @@ import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { Bases } from "../Bases.tsx";
 import { InningBadge } from "../badge";
 
+// Internal imports - containers
+import { HideVerticalScroll, HideHorizontalScroll } from "../containers";
+
 // Internal imports - utils
 import { orEmpty } from "../../utils.ts";
 
@@ -204,14 +207,10 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
 
   // Separate useEffect for supporting data to avoid dependency issues
   useEffect(() => {
-    // Fetch supporting data if not already available
-    if (!mlbTeamProfiles?.data || mlbTeamProfiles.data.length === 0) {
-      fetchMLBTeamProfiles();
-    }
-    if (!mlbStadiums?.data || mlbStadiums.data.length === 0) {
-      fetchMLBStadiums();
-    }
-  }, [mlbTeamProfiles, mlbStadiums, fetchMLBTeamProfiles, fetchMLBStadiums]);
+    // Fetch supporting data - service layer will handle duplicate prevention
+    fetchMLBTeamProfiles();
+    fetchMLBStadiums();
+  }, []);
 
   // Show loading state only if we don't have data in Redux and we're not currently fetching
   if (!reduxBoxScore && !mlbBoxScore?.data) {
@@ -251,7 +250,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   const homeTeamColor = homeTeamProfile?.PrimaryColor || "#1a365d";
 
   return (
-    <Box minH="100vh" bg="primary.25">
+    <HideVerticalScroll minH="100vh" bg="primary.25">
       {/* Header with Back Button */}
       <Box px="4" py="3" borderBottom="1px" borderColor="border.100">
         <HStack justify="space-between" align="center">
@@ -641,11 +640,11 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         </Text>
         {/* Innings Summary */}
         {game.Innings && game.Innings.length > 0 && (
-          <Box bg="text.200" p="4" borderRadius="lg" mb="6">
+          <Box bg="primary.25" p="4" borderRadius="lg" mb="6">
             <Text fontSize="sm" fontWeight="bold" mb="3">
               Innings Summary
             </Text>
-            <Box overflowX="auto">
+            <HideHorizontalScroll>
               <VStack gap="1" align="stretch">
                 {/* Inning Numbers Header */}
                 <HStack gap="1" minW="fit-content">
@@ -695,7 +694,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   ))}
                 </HStack>
               </VStack>
-            </Box>
+            </HideHorizontalScroll>
           </Box>
         )}
 
@@ -929,19 +928,11 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             <Text fontSize="md" fontWeight="bold" mb="3">
               Batters
             </Text>
-            <Box
-              overflowX="auto"
+            <HideHorizontalScroll
               bg="text.200"
               borderRadius="lg"
               border="1px"
               borderColor="border.100"
-              css={{
-                "&::-webkit-scrollbar": {
-                  display: "none",
-                },
-                "&::-ms-overflow-style": "none",
-                "&scrollbarWidth": "none",
-              }}
             >
               <Box as="table" w="full" minW="600px">
                 <Box as="thead" bg="text.200">
@@ -1129,7 +1120,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     ))}
                 </Box>
               </Box>
-            </Box>
+            </HideHorizontalScroll>
           </Box>
 
           {/* Pitchers */}
@@ -1137,19 +1128,11 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             <Text fontSize="md" fontWeight="bold" mb="3">
               Pitchers
             </Text>
-            <Box
-              overflowX="auto"
+            <HideHorizontalScroll
               bg="text.200"
               borderRadius="lg"
               border="1px"
               borderColor="border.100"
-              css={{
-                "&::-webkit-scrollbar": {
-                  display: "none",
-                },
-                "&::-ms-overflow-style": "none",
-                "&scrollbarWidth": "none",
-              }}
             >
               <Box as="table" w="full" minW="600px">
                 <Box as="thead" bg="text.200">
@@ -1339,10 +1322,10 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     ))}
                 </Box>
               </Box>
-            </Box>
+            </HideHorizontalScroll>
           </Box>
         </Box>
       </Box>
-    </Box>
+    </HideVerticalScroll>
   );
 }

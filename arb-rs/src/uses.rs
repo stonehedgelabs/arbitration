@@ -867,7 +867,10 @@ async fn handle_play_by_play_request(
             tracing::error!("Failed to get play-by-play data from cache: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })? {
-            tracing::debug!("Returning cached play-by-play data for game_id: {}", params.game_id);
+            tracing::debug!(
+                "Returning cached play-by-play data for game_id: {}",
+                params.game_id
+            );
             cached_data
         } else {
             tracing::info!(

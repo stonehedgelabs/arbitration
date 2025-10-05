@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Box, Button, Text, VStack } from "@chakra-ui/react";
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import { setUserType } from "../store/slices/authSlice.ts";
-import { AppLayout } from "../components/AppLayout.tsx";
+import { AppLayout } from "../components/containers";
 
 // Simple SVG icons as components
 const AppleIcon = () => (

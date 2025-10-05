@@ -44,7 +44,6 @@ async fn main() -> Result<()> {
     // Load configuration
     let config = ArbConfig::from_file(&args.config);
 
-
     let cache = Arc::new(Mutex::new(Cache::new(config.cache.clone()).await?));
 
     info!("Server config: {:?}", config);

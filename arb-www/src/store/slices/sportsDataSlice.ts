@@ -24,15 +24,23 @@ export const fetchBoxScore = createAsyncThunk(
 export const fetchTwitterData = createAsyncThunk(
   'sportsData/fetchTwitterData',
   async ({ query, filter = 'latest' }: { query: string; filter?: 'top' | 'latest' }) => {
+    console.log('🔍 fetchTwitterData thunk called with:', { query, filter });
+    
     const params: { query: string; queryType?: string } = { query };
     if (filter === 'top') {
       params.queryType = 'Top';
     } else {
       params.queryType = 'Latest';
     }
+    
     const apiUrl = buildApiUrl('/api/v1/twitter-search', params);
+    console.log('🌐 Making request to:', apiUrl);
+    
     const response = await fetch(apiUrl);
+    console.log('📡 Response status:', response.status);
+    
     if (!response.ok) {
+      console.error('❌ API request failed:', response.status, response.statusText);
       if (response.status === 429) {
         throw new Error('Twitter API rate limit exceeded. Please try again in a few minutes.');
       } else if (response.status === 401) {
@@ -41,7 +49,9 @@ export const fetchTwitterData = createAsyncThunk(
         throw new Error(`Twitter API error: ${response.status} ${response.statusText}`);
       }
     }
+    
     const data = await response.json();
+    console.log('✅ Twitter data received:', data);
     return data;
   }
 );

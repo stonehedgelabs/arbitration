@@ -3,20 +3,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Third-party library imports
-import {
-  Badge,
-  Box,
-  Card,
-  HStack,
-  Image,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
-import { Wifi } from "lucide-react";
+import { Box, Card, HStack, Text, VStack } from "@chakra-ui/react";
 
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../components/Skeleton";
-import { Bases } from "../components/Bases";
 import {
   MLBScoreCard,
   NBAScoreCard,
@@ -34,8 +24,10 @@ import {
 } from "../config";
 
 // Internal imports - components
-import { BoxScoreDetail } from "../components/boxscore/BoxScoreDetail.tsx";
 import { DatePicker } from "../components/DatePicker";
+
+// Internal imports - containers
+import { HideVerticalScroll } from "../components/containers";
 
 // Internal imports - schema
 import { MLBScheduleGame } from "../schema";
@@ -51,10 +43,6 @@ import { setSelectedDate } from "../store/slices/sportsDataSlice";
 import {
   convertUtcToLocalDate,
   getCurrentLocalDate,
-  formatDateForSlider,
-  toLocalTime,
-  orEmpty,
-  formatInningWithIcon,
   parseLocalDate,
 } from "../utils.ts";
 
@@ -72,6 +60,7 @@ interface Game {
   time: string;
   date: string; // Add date field for GameByDate API
   quarter?: string;
+  inningHalf?: string;
   // Location/Venue information
   stadium?: string;
   city?: string;
@@ -380,6 +369,7 @@ const convertMLBGameToGame = (
       ? convertUtcToLocalDate(rawGame.DateTime)
       : new Date().toISOString().split("T")[0],
     quarter: rawGame.Inning || undefined,
+    inningHalf: rawGame.InningHalf || undefined,
     // Location/Venue information
     stadium: stadium?.Name,
     city: stadium?.City,
@@ -470,6 +460,7 @@ const convertScheduleGameToGame = (
     time: scheduleGame.DateTime || "",
     date: convertedDate,
     quarter: scheduleGame.Inning?.toString() || undefined,
+    inningHalf: scheduleGame.InningHalf || undefined,
     // Location/Venue information
     stadium: stadium?.Name,
     city: stadium?.City,
@@ -564,21 +555,20 @@ export function Scores() {
     mlbTeamProfiles,
     mlbStadiums,
     mlbSchedule,
-    currentGames,
     mlbOddsByDate,
     mlbScoresLoading,
+    mlbTeamProfilesLoading,
+    mlbStadiumsLoading,
+    mlbScheduleLoading,
     mlbScoresError: mlbError,
     oddsLoading,
     fetchMLBScores,
     fetchMLBTeamProfiles,
     fetchMLBStadiums,
     fetchMLBSchedule,
-    fetchCurrentGames,
     fetchMLBOddsByDate,
   } = useArb();
 
-  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
-  const [selectedGameDate, setSelectedGameDate] = useState<string | null>(null);
   const [isFetchingDateData, setIsFetchingDateData] = useState(false);
 
   // Redux state
@@ -587,24 +577,9 @@ export function Scores() {
   const navigate = useNavigate();
 
   // Handle game click for box score navigation
-  const handleGameClick = (gameId: string, gameDate: string) => {
+  const handleGameClick = (gameId: string) => {
     navigate(`/scores/${selectedLeague}/${gameId}`);
   };
-
-  // Fetch MLB scores and team profiles when component mounts or league changes
-  useEffect(() => {
-    if (selectedLeague === League.MLB) {
-      fetchMLBScores(selectedDate);
-      fetchMLBTeamProfiles();
-      fetchMLBStadiums();
-    }
-  }, [
-    selectedLeague,
-    selectedDate,
-    fetchMLBScores,
-    fetchMLBTeamProfiles,
-    fetchMLBStadiums,
-  ]);
 
   // Initialize selected date to today only on first load (when selectedDate is empty)
   useEffect(() => {
@@ -614,19 +589,16 @@ export function Scores() {
     }
   }, [selectedDate, dispatch]);
 
-  // Fetch odds when component mounts or league changes
+  // Fetch all MLB data when component mounts or league/date changes
   useEffect(() => {
     if (selectedLeague === League.MLB && selectedDate) {
+      fetchMLBScores(selectedDate);
+      fetchMLBTeamProfiles();
+      fetchMLBStadiums();
       fetchMLBOddsByDate(selectedDate);
-    }
-  }, [selectedLeague, selectedDate, fetchMLBOddsByDate]);
 
-  // Fetch schedule data for postseason dates
-  useEffect(() => {
-    if (selectedLeague === League.MLB && selectedDate) {
-      // Check if this is a postseason date using config
+      // Check if this is a postseason date and fetch schedule if needed
       const isPostseason = isPostseasonDate(League.MLB, selectedDate);
-
       if (isPostseason) {
         setIsFetchingDateData(true);
         fetchMLBSchedule(selectedDate).finally(() => {
@@ -634,7 +606,7 @@ export function Scores() {
         });
       }
     }
-  }, [selectedLeague, selectedDate, fetchMLBSchedule]);
+  }, [selectedLeague, selectedDate]);
 
   // Get all games based on the selected date and league
   const getAllGames = (): Game[] => {
@@ -704,15 +676,10 @@ export function Scores() {
     return timeB - timeA; // Most recent first
   });
 
-  // Format time from DateTime (convert EST to local time)
-  const formatTime = (dateTime: string) => {
-    return toLocalTime(dateTime);
-  };
-
   // Show error state if there's an error
   if (mlbError) {
     return (
-      <Box minH="100vh" bg="primary.25" p="4">
+      <HideVerticalScroll minH="100vh" bg="primary.25" p="4">
         <VStack gap="4" align="center" justify="center" minH="50vh">
           <Text color="red.500" fontSize="lg" fontWeight="semibold">
             Error loading scores
@@ -721,12 +688,12 @@ export function Scores() {
             {mlbError}
           </Text>
         </VStack>
-      </Box>
+      </HideVerticalScroll>
     );
   }
 
   return (
-    <Box minH="100vh" bg="primary.25">
+    <HideVerticalScroll minH="100vh" bg="primary.25">
       <VStack gap="4" align="stretch" p="4" pb="20">
         {/* Date Selector */}
         <DatePicker selectedLeague={selectedLeague} />
@@ -810,6 +777,6 @@ export function Scores() {
           )}
         </VStack>
       </VStack>
-    </Box>
+    </HideVerticalScroll>
   );
 }

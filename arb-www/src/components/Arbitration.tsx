@@ -1,5 +1,5 @@
 // React imports
-import { useEffect } from "react";
+import { useEffect, useCallback, memo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 // Third-party library imports
@@ -10,6 +10,7 @@ import { motion } from "motion/react";
 import {
   League,
   GameStatus,
+  ViewType,
   mapApiStatusToGameStatus,
   isPostseasonDate,
 } from "../config";
@@ -30,7 +31,7 @@ import { Social } from "../views/Social.tsx";
 import useArb from "../services/Arb";
 
 // Internal imports - utils
-import { convertUtcToLocalDate } from "../utils";
+import { convertUtcToLocalDate, getCurrentLocalDate } from "../utils";
 
 // Internal imports - store
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
@@ -41,7 +42,7 @@ import {
 } from "../store/slices/favoritesSlice.ts";
 import { setSelectedLeague } from "../store/slices/sportsDataSlice";
 
-export function Arbitration() {
+export const Arbitration = memo(function Arbitration() {
   const dispatch = useAppDispatch();
   const userType = useAppSelector((state) => state.auth.userType);
   const selectedLeague = useAppSelector(
@@ -53,13 +54,15 @@ export function Arbitration() {
 
   // Data fetching for live games
   const {
-    fetchMLBScores,
-    fetchMLBTeamProfiles,
-    fetchMLBStadiums,
     mlbScores,
     mlbTeamProfiles,
     mlbStadiums,
-    mlbOddsByDate,
+    fetchMLBScores,
+    fetchMLBTeamProfiles,
+    fetchMLBStadiums,
+    mlbScoresLoading,
+    mlbTeamProfilesLoading,
+    mlbStadiumsLoading,
   } = useArb();
   // Router-based navigation
   const navigate = useNavigate();
@@ -70,10 +73,10 @@ export function Arbitration() {
   const isPlayByPlayView = location.pathname.endsWith("/pbp");
   const isBoxScoreView = gameId && !isPlayByPlayView;
   const currentView = isPlayByPlayView
-    ? "playbyplay"
+    ? ViewType.PLAYBYPLAY
     : isBoxScoreView
-      ? "boxscore"
-      : "main";
+      ? ViewType.BOXSCORE
+      : ViewType.MAIN;
   const currentLeague = league || selectedLeague;
 
   // Update Redux state when URL league changes
@@ -103,24 +106,31 @@ export function Arbitration() {
     }
   }, [userType, dispatch]);
 
-  // Fetch live games data
+  // Fetch live games data when on Live tab
   useEffect(() => {
-    if (selectedLeague === "MLB") {
-      fetchMLBScores();
+    if (activeTab === "live" && selectedLeague === League.MLB) {
+      // Fetch today's scores for live games
+      const today = getCurrentLocalDate();
+      fetchMLBScores(today);
       fetchMLBTeamProfiles();
       fetchMLBStadiums();
     }
-  }, [selectedLeague, fetchMLBScores, fetchMLBTeamProfiles, fetchMLBStadiums]);
+  }, [activeTab, selectedLeague]);
 
-  const handleToggleFavorite = (teamName: string) => {
-    if (!userType) return;
+  // Note: MLB data fetching is now handled by the Scores component to prevent duplicate requests
 
-    if (favoriteTeams.includes(teamName)) {
-      dispatch(removeFavoriteTeam({ team: teamName, userType }));
-    } else {
-      dispatch(addFavoriteTeam({ team: teamName, userType }));
-    }
-  };
+  const handleToggleFavorite = useCallback(
+    (teamName: string) => {
+      if (!userType) return;
+
+      if (favoriteTeams.includes(teamName)) {
+        dispatch(removeFavoriteTeam({ team: teamName, userType }));
+      } else {
+        dispatch(addFavoriteTeam({ team: teamName, userType }));
+      }
+    },
+    [userType, favoriteTeams, dispatch],
+  );
 
   const handleBackFromPlayByPlay = () => {
     // Navigate back to the previous page or to the live games tab
@@ -198,7 +208,7 @@ export function Arbitration() {
 
   const liveGames = getLiveGames();
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     switch (activeTab) {
       case "for-you":
         return (
@@ -217,7 +227,9 @@ export function Arbitration() {
             onGameClick={(gameId) =>
               navigate(`/scores/${selectedLeague}/${gameId}/pbp`)
             }
-            loading={!mlbScores || !mlbTeamProfiles || !mlbStadiums}
+            loading={
+              mlbScoresLoading || mlbTeamProfilesLoading || mlbStadiumsLoading
+            }
             selectedLeague={selectedLeague as League}
           />
         );
@@ -234,10 +246,23 @@ export function Arbitration() {
           />
         );
     }
-  };
+  }, [
+    activeTab,
+    forYouFeed,
+    favoriteTeams,
+    handleToggleFavorite,
+    liveGames,
+    navigate,
+    selectedLeague,
+    mlbScoresLoading,
+    mlbTeamProfilesLoading,
+    mlbStadiumsLoading,
+    currentLeague,
+    currentLeagueData?.betting,
+  ]);
 
   // Show box score detail view if selected
-  if (currentView === "boxscore" && gameId) {
+  if (currentView === ViewType.BOXSCORE && gameId) {
     return (
       <motion.div
         initial={{ x: "100%" }}
@@ -276,7 +301,7 @@ export function Arbitration() {
   }
 
   // Show play-by-play view if selected
-  if (currentView === "playbyplay" && gameId) {
+  if (currentView === ViewType.PLAYBYPLAY && gameId) {
     return (
       <motion.div
         initial={{ x: "100%" }}
@@ -330,21 +355,30 @@ export function Arbitration() {
         >
           <Box px="4" py="3">
             <HStack justify="space-between" align="center">
-              {userType !== "guest" && (
+              <Box
+                w="8"
+                h="8"
+                bg="primary.200"
+                borderRadius="8px"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                shadow="sm"
+              >
                 <Box
-                  w="8"
-                  h="8"
-                  bg="linear-gradient(to bottom right, #030213, #030213cc)"
-                  borderRadius="full"
+                  w="6"
+                  h="6"
+                  bg="primary.25"
+                  borderRadius="4px"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Text fontSize="xs" fontWeight="medium" color="text.400">
-                    {userType === "apple" ? "🍎" : "🟢"}
+                  <Text color="text.400" fontSize="xs" fontWeight="bold">
+                    A
                   </Text>
                 </Box>
-              )}
+              </Box>
               <Text
                 fontSize={{ base: "lg" }}
                 fontWeight="bold"
@@ -421,4 +455,4 @@ export function Arbitration() {
       </Box>
     </motion.div>
   );
-}
+});

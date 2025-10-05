@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Box, VStack, Text } from "@chakra-ui/react";
-import { AppLayout } from "../components/AppLayout.tsx";
+import { AppLayout } from "../components/containers";
 
 export function Splash() {
   const navigate = useNavigate();

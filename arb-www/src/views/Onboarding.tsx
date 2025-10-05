@@ -1,5 +1,5 @@
 import { Onboarding as OnboardingComponent } from "../components/Onboarding.tsx";
-import { AppLayout } from "../components/AppLayout.tsx";
+import { AppLayout } from "../components/containers";
 
 export default function Onboarding() {
   return (

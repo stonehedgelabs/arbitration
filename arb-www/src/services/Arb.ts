@@ -72,13 +72,21 @@ const useArb = () => {
       return;
     }
 
+    // Don't fetch if already loading
+    if (mlbScoresLoading) {
+      return;
+    }
+
+    // For scores, we need to fetch for each date since it's date-specific data
+    // The Redux thunk will handle caching at the API level if needed
+
     try {
       await dispatch(fetchMLBScoresThunk({ date })).unwrap();
     } catch (err) {
       // Error is handled by Redux state
       console.error('Failed to fetch MLB scores:', err);
     }
-  }, [selectedLeague, dispatch]);
+  }, [dispatch, selectedLeague, mlbScoresLoading]);
 
   /**
    * Fetch MLB team profiles
@@ -89,13 +97,18 @@ const useArb = () => {
         return;
     }
 
+    // Don't fetch if already loading or data exists
+    if (mlbTeamProfilesLoading || mlbTeamProfiles) {
+      return;
+    }
+
     try {
       await dispatch(fetchMLBTeamProfilesThunk()).unwrap();
     } catch (err) {
       // Error is handled by Redux state
       console.error('Failed to fetch MLB team profiles:', err);
     }
-  }, [selectedLeague, dispatch]);
+  }, [dispatch, selectedLeague, mlbTeamProfilesLoading, mlbTeamProfiles]);
 
   /**
    * Fetch MLB box score for a specific game ID
@@ -142,13 +155,18 @@ const useArb = () => {
         return;
     }
 
+    // Don't fetch if already loading or data exists
+    if (mlbStadiumsLoading || mlbStadiums) {
+      return;
+    }
+
     try {
       await dispatch(fetchMLBStadiumsThunk()).unwrap();
     } catch (err) {
       // Error is handled by Redux state
       console.error('Failed to fetch MLB stadiums:', err);
     }
-  }, [selectedLeague, dispatch]);
+  }, [dispatch, selectedLeague, mlbStadiumsLoading, mlbStadiums]);
 
   /**
    * Fetch MLB schedule for specific dates (both regular season and postseason)
@@ -159,6 +177,14 @@ const useArb = () => {
         return;
     }
 
+    // Don't fetch if already loading
+    if (mlbScheduleLoading) {
+      return;
+    }
+
+    // For schedule, we need to fetch for each date since it's date-specific data
+    // The Redux thunk will handle caching at the API level if needed
+
     try {
       // Determine if this is a postseason date using config
       const isPostseason = date ? isPostseasonDate(League.MLB, date) : false;
@@ -168,7 +194,7 @@ const useArb = () => {
       // Error is handled by Redux state
       console.error('Failed to fetch MLB schedule:', err);
     }
-  }, [selectedLeague, dispatch]);
+  }, [dispatch, selectedLeague, mlbScheduleLoading]);
 
   /**
    * Fetch MLB odds for a specific date
@@ -179,13 +205,21 @@ const useArb = () => {
       return;
     }
 
+    // Don't fetch if already loading
+    if (oddsLoading) {
+      return;
+    }
+
+    // For odds, we need to fetch for each date since it's date-specific data
+    // The Redux thunk will handle caching at the API level if needed
+
     try {
       await dispatch(fetchOddsByDate({ league: 'mlb', date })).unwrap();
     } catch (err) {
       // Error is handled by Redux state
       console.error('Failed to fetch odds by date:', err);
     }
-  }, [selectedLeague, dispatch]);
+  }, [dispatch, selectedLeague, oddsLoading]);
 
   /**
    * Fetch current games for a date range
@@ -202,7 +236,7 @@ const useArb = () => {
       // Error is handled by Redux state
       console.error('Failed to fetch current games:', err);
     }
-  }, [selectedLeague, dispatch]);
+  }, [dispatch]);
 
   return {
     // State

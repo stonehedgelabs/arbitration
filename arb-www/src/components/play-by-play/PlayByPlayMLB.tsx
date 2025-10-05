@@ -254,11 +254,8 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
 
     hasFetchedRef.current = true;
 
-    // Always fetch team profiles if needed (they might be lost on refresh)
-    if (
-      currentLeague === League.MLB &&
-      (!mlbTeamProfiles || mlbTeamProfiles.data.length === 0)
-    ) {
+    // Always fetch team profiles - service layer will handle duplicate prevention
+    if (currentLeague === League.MLB) {
       fetchMLBTeamProfiles();
     }
 

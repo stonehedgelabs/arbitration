@@ -47,6 +47,10 @@ const lightColors = {
     500: { value: "#1A1A1A" }, // Almost black (max contrast)
   },
 
+  label: { 
+    100: { value: "#5C5C5C" },
+  },
+
   // Borders
   border: {
     default: { value: "#E0E0E0" },
@@ -148,6 +152,11 @@ const darkColors = {
     350: { value: "#CFCFCF" }, // Mid-gray between 300 and 400
     400: { value: "#BDBDBD" }, // Secondary – captions, hints, disabled labels
     500: { value: "#999999" }, // Muted – lowest contrast, placeholders or subtle UI text
+  },
+
+
+  label: { 
+    100: { value: "#BDBDBD" },
   },
 
   // Borders

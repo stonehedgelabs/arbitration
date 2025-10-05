@@ -4,6 +4,9 @@ import { useEffect, useRef } from "react";
 // Third-party library imports
 import { Box, Text } from "@chakra-ui/react";
 
+// Internal imports - containers
+import { HideHorizontalScroll } from "./containers";
+
 // Internal imports - store
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { setSelectedDate } from "../store/slices/sportsDataSlice";
@@ -109,20 +112,12 @@ export function DatePicker({ selectedLeague }: DatePickerProps) {
 
   return (
     <Box>
-      <Box
+      <HideHorizontalScroll
         ref={dateSelectorRef}
         display="flex"
         gap="2"
-        overflowX="auto"
         pb="2"
         bg="primary.25"
-        css={{
-          "&::-webkit-scrollbar": {
-            display: "none",
-          },
-          "&::-ms-overflow-style": "none",
-          "&scrollbarWidth": "none",
-        }}
       >
         {getDateRange().map((dateInfo) => (
           <Box
@@ -158,7 +153,7 @@ export function DatePicker({ selectedLeague }: DatePickerProps) {
             </Text>
           </Box>
         ))}
-      </Box>
+      </HideHorizontalScroll>
     </Box>
   );
 }

@@ -11,10 +11,11 @@ import {
   LocationBadge,
   DivisionBadge,
   StatusBadge,
+  InningBadge,
 } from "../../badge";
 
 // Internal imports - config
-import { GameStatus } from "../../../config";
+import { GameStatus, League } from "../../../config";
 
 // Internal imports - utils
 import { orEmpty, toLocalTime } from "../../../utils";
@@ -33,6 +34,7 @@ interface Game {
   time: string;
   date: string;
   quarter?: string;
+  inningHalf?: string;
   stadium?: string;
   city?: string;
   state?: string;
@@ -159,7 +161,26 @@ const GameOddsDisplay = ({
 };
 
 // Helper function to get status badge
-const getStatusBadge = (status: GameStatus, quarter?: string) => {
+const getStatusBadge = (
+  status: GameStatus,
+  quarter?: string,
+  inningHalf?: string,
+) => {
+  // For MLB games with quarter information, use InningBadge
+  if (
+    quarter &&
+    (status === GameStatus.LIVE || status === GameStatus.UPCOMING)
+  ) {
+    return (
+      <InningBadge
+        inningNumber={parseInt(quarter) || 1}
+        inningHalf={inningHalf}
+        league={League.MLB}
+        size="sm"
+      />
+    );
+  }
+  // For other cases, use StatusBadge
   return <StatusBadge status={status} quarter={quarter} />;
 };
 
@@ -195,7 +216,7 @@ export function MLBScoreCard({
               {formatTime(game.time)}
             </Text>
             <HStack gap="2" align="center">
-              {getStatusBadge(game.status, game.quarter, formatTime(game.time))}
+              {getStatusBadge(game.status, game.quarter, game.inningHalf)}
               {game.isPostseason && <PostseasonBadge />}
               {game.status === GameStatus.LIVE && <LiveBadge />}
             </HStack>
@@ -206,16 +227,17 @@ export function MLBScoreCard({
             <HStack justify="space-between" align="center" gap="3">
               <HStack gap="2" align="center" flexWrap="wrap">
                 {game.stadium && (
-                  <StadiumBadge stadium={orEmpty(game.stadium)} />
+                  <StadiumBadge stadium={orEmpty(game.stadium)} size="xs" />
                 )}
                 {game.city && game.state && (
                   <LocationBadge
                     city={orEmpty(game.city)}
                     state={orEmpty(game.state)}
+                    size="xs"
                   />
                 )}
                 {game.division && (
-                  <DivisionBadge division={orEmpty(game.division)} />
+                  <DivisionBadge division={orEmpty(game.division)} size="xs" />
                 )}
               </HStack>
 

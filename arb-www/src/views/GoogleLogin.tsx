@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import { setUserType } from "../store/slices/authSlice.ts";
-import { AppLayout } from "../components/AppLayout.tsx";
+import { AppLayout } from "../components/containers";
 
 export default function GoogleLogin() {
   const navigate = useNavigate();

@@ -5,7 +5,7 @@ interface LocationBadgeProps {
   city: string;
   state?: string;
   country?: string;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
 }
 
 export function LocationBadge({
@@ -14,7 +14,7 @@ export function LocationBadge({
   country,
   size = "sm",
 }: LocationBadgeProps) {
-  const fontSize = size === "sm" ? "xs" : "sm";
+  const fontSize = size === "xs" ? "2xs" : size === "sm" ? "xs" : "sm";
 
   const locationText = [city, state, country].filter(Boolean).join(", ");
 

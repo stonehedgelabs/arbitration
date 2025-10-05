@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { Box } from "@chakra-ui/react";
-import useDevice from "../services/Device.ts";
+import useDevice from "../../services/Device.ts";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -31,7 +31,7 @@ export function AppLayout({ children, className }: AppLayoutProps) {
       display="flex"
       flexDirection="column"
       position="relative"
-      overflow="hidden"
+      overflowY="auto"
       bg="primary.25"
       className={className}
     >

@@ -25,6 +25,11 @@ export enum League {
 export type LeagueType = `${League}`;
 
 /**
+ * Cache data types for type safety
+ */
+export type CacheDataType = keyof typeof CACHE_CONFIG.ttlValues;
+
+/**
  * Game status enum
  */
 export enum GameStatus {
@@ -63,10 +68,26 @@ export enum QuarterType {
 export type QuarterTypeType = `${QuarterType}`;
 
 /**
+ * View types enum
+ */
+export enum ViewType {
+  MAIN = 'main',
+  BOXSCORE = 'boxscore',
+  PLAYBYPLAY = 'playbyplay',
+}
+
+/**
+ * View type for type safety
+ */
+export type ViewTypeType = `${ViewType}`;
+
+/**
  * Environment Variables
  */
 export const ENV = {
   TWITTERAPIIO_API_KEY: (import.meta as any).env?.VITE_TWITTERAPIIO_API_KEY,
+  REDDIT_CLIENT_ID: (import.meta as any).env?.VITE_REDDIT_CLIENT_ID,
+  REDDIT_CLIENT_SECRET: (import.meta as any).env?.VITE_REDDIT_CLIENT_SECRET,
 } as const;
 
 /**
@@ -129,8 +150,23 @@ export const POSTSEASON_CONFIG = {
  * Cache Configuration
  */
 export const CACHE_CONFIG = {
+  // Default TTL in milliseconds
   ttl: 5 * 60 * 1000, // 5 minutes in milliseconds
   maxRetries: 3,
+  
+  // Specific TTL values matching backend config (in milliseconds)
+  ttlValues: {
+    team_profiles: 3600 * 1000,      // 1 hour
+    schedule: 1800 * 1000,           // 30 minutes
+    postseason_schedule: 1800 * 1000, // 30 minutes
+    scores: 120 * 1000,              // 2 minutes
+    play_by_play: 20 * 1000,         // 20 seconds
+    box_scores: 60 * 1000,           // 1 minute
+    stadiums: 7200 * 1000,           // 2 hours
+    twitter_search: 60 * 1000,       // 1 minute
+    odds: 86400 * 1000,              // 24 hours
+    user_auth: 604800 * 1000,        // 1 week (7 days)
+  },
 } as const;
 
 /**
@@ -154,6 +190,23 @@ export const PLAY_BY_PLAY_CONFIG = {
   
   // Supported leagues for play-by-play
   supportedLeagues: ['mlb'] as const,
+} as const;
+
+/**
+ * Twitter Configuration
+ */
+export const TWITTER_CONFIG = {
+  // Default number of tweets to fetch
+  defaultTweetLimit: 10,
+  
+  // Maximum number of tweets to fetch in a single request
+  maxTweetLimit: 100,
+  
+  // Default search filter
+  defaultFilter: 'latest' as const,
+  
+  // Supported search filters
+  supportedFilters: ['latest', 'top'] as const,
 } as const;
 
 /**
@@ -270,4 +323,18 @@ export const getStatusDisplayText = (status: GameStatus): string => {
     default:
       return 'Unknown';
   }
+};
+
+/**
+ * Get cache TTL for a specific data type
+ */
+export const getCacheTTL = (dataType: CacheDataType): number => {
+  return CACHE_CONFIG.ttlValues[dataType];
+};
+
+/**
+ * Get cache TTL in seconds (for API calls)
+ */
+export const getCacheTTLSeconds = (dataType: CacheDataType): number => {
+  return CACHE_CONFIG.ttlValues[dataType] / 1000;
 };

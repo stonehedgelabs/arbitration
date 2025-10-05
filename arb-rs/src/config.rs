@@ -117,6 +117,9 @@ pub struct ApiConfig {
     /// Apple OAuth configuration (loaded from environment)
     #[serde(default)]
     pub apple_oauth: AppleOAuthConfig,
+    /// Reddit OAuth configuration (loaded from environment)
+    #[serde(default)]
+    pub reddit_oauth: RedditOAuthConfig,
 }
 
 /// Google OAuth configuration
@@ -153,6 +156,20 @@ pub struct AppleOAuthConfig {
     pub secret_key_path: String,
     /// JWT expiration time in seconds
     pub jwt_expire_seconds: u64,
+}
+
+/// Reddit OAuth configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct RedditOAuthConfig {
+    /// Reddit OAuth client ID (loaded from environment)
+    #[serde(default)]
+    pub client_id: String,
+    /// Reddit OAuth client secret (loaded from environment)
+    #[serde(default)]
+    pub client_secret: String,
+    /// Reddit OAuth redirect URI (loaded from environment)
+    #[serde(default)]
+    pub redirect_uri: String,
 }
 
 impl Default for ArbConfig {
@@ -244,6 +261,11 @@ impl Default for ArbConfig {
                     secret_key_path: "".to_string(),
                     jwt_expire_seconds: 3600, // 1 hour
                 },
+                reddit_oauth: RedditOAuthConfig {
+                    client_id: "".to_string(),
+                    client_secret: "".to_string(),
+                    redirect_uri: "".to_string(),
+                },
             },
         }
     }
@@ -254,23 +276,21 @@ impl ArbConfig {
     /// This method will panic if the config file cannot be read or parsed
     pub fn from_file(config_path: &str) -> Self {
         // Try to load from the specified config file
-        let toml_content = std::fs::read_to_string(config_path)
-            .unwrap_or_else(|e| {
-                tracing::error!("Could not read config file at: {}", config_path);
-                tracing::error!("Error: {}", e);
-                std::process::exit(1);
-            });
+        let toml_content = std::fs::read_to_string(config_path).unwrap_or_else(|e| {
+            tracing::error!("Could not read config file at: {}", config_path);
+            tracing::error!("Error: {}", e);
+            std::process::exit(1);
+        });
 
         tracing::info!("Found config file at: {}", config_path);
         tracing::debug!("Config file content: {}", toml_content);
-        
-        let mut config = toml::from_str::<ArbConfig>(&toml_content)
-            .unwrap_or_else(|e| {
-                tracing::error!("Failed to parse config file: {}", e);
-                tracing::error!("Parse error details: {:?}", e);
-                tracing::error!("Please check your config file syntax and required fields");
-                std::process::exit(1);
-            });
+
+        let mut config = toml::from_str::<ArbConfig>(&toml_content).unwrap_or_else(|e| {
+            tracing::error!("Failed to parse config file: {}", e);
+            tracing::error!("Parse error details: {:?}", e);
+            tracing::error!("Please check your config file syntax and required fields");
+            std::process::exit(1);
+        });
 
         tracing::info!("Successfully parsed config file");
 
@@ -287,7 +307,7 @@ impl ArbConfig {
         // Try to load from config.toml first (try multiple possible locations)
         let config_paths = ["config.toml", "./config.toml", "../config.toml"];
         let mut toml_content = None;
-        
+
         for path in &config_paths {
             if let Ok(content) = std::fs::read_to_string(path) {
                 toml_content = Some(content);
@@ -295,7 +315,7 @@ impl ArbConfig {
                 break;
             }
         }
-        
+
         if let Some(toml_content) = toml_content {
             tracing::info!("Found config.toml file, attempting to parse...");
             if let Ok(toml_config) = toml::from_str::<ArbConfig>(&toml_content) {
@@ -389,6 +409,19 @@ impl ArbConfig {
         // Load SportsData.io API key from environment
         if let Ok(api_key) = std::env::var("SPORTSDATAIO_API_KEY") {
             config.api.sportsdata_api_key = api_key;
+        }
+
+        // Load Reddit OAuth configuration from environment variables
+        if let Ok(client_id) = std::env::var("REDDIT_CLIENT_ID") {
+            config.api.reddit_oauth.client_id = client_id;
+        }
+
+        if let Ok(client_secret) = std::env::var("REDDIT_CLIENT_SECRET") {
+            config.api.reddit_oauth.client_secret = client_secret;
+        }
+
+        if let Ok(redirect_uri) = std::env::var("REDDIT_REDIRECT_URI") {
+            config.api.reddit_oauth.redirect_uri = redirect_uri;
         }
 
         // Override seasons from environment variables

@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { useAppDispatch } from "../store/hooks.ts";
 import { setHasSeenWelcome } from "../store/slices/authSlice.ts";
-import { AppLayout } from "../components/AppLayout.tsx";
+import { AppLayout } from "../components/containers";
 
 // Simple SVG icon components
 const TrophyIcon = () => (

@@ -148,7 +148,7 @@ export function Live({
     <Box minH="100vh" bg="primary.25">
       <VStack gap="4" align="stretch" p="4" pb="20">
         {/* Header */}
-        <HStack justify="space-between" align="center">
+        {/* <HStack justify="space-between" align="center">
           <Badge
             variant="solid"
             bg="danger.100"
@@ -160,7 +160,7 @@ export function Live({
           >
             {liveGames.length} Live
           </Badge>
-        </HStack>
+        </HStack> */}
 
         {/* Games List */}
         <VStack gap="4" align="stretch">
