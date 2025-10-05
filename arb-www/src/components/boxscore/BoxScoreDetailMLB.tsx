@@ -17,14 +17,16 @@ import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { Bases } from "../Bases.tsx";
+import { InningBadge } from "../badge";
 
 // Internal imports - utils
-import { orEmpty, formatInningWithIcon } from "../../utils.ts";
+import { orEmpty } from "../../utils.ts";
 
 // Internal imports - config
 import {
   mapApiStatusToGameStatus,
   getStatusDisplayText,
+  League,
 } from "../../config.ts";
 
 interface BoxScoreDetailMLBProps {
@@ -36,15 +38,15 @@ interface BoxScoreDetailMLBProps {
 const BoxScoreHeaderSkeleton = () => {
   return (
     <Box
-      bg="primary.25"
+      bg="text.200"
       px="4"
       py="3"
       borderBottom="1px"
       borderColor="border.100"
     >
       <HStack justify="space-between" align="center">
-        <Skeleton w="8" h="8" borderRadius="md" />
-        <Skeleton w="16" h="4" />
+        <Skeleton w="8" h="8" borderRadius="md" bg="text.200" />
+        <Skeleton w="16" h="4" bg="text.200" />
       </HStack>
     </Box>
   );
@@ -52,54 +54,54 @@ const BoxScoreHeaderSkeleton = () => {
 
 const BoxScoreMainSkeleton = () => {
   return (
-    <Box px="4" py="6">
+    <Box px="8" py="4">
       {/* Game Title Skeleton */}
-      <Skeleton w="80%" h="4" mx="auto" mb="6" />
+      <Skeleton w="80%" h="4" mx="auto" mb="4" bg="text.200" />
 
       {/* Scoreboard Skeleton */}
-      <Flex justify="space-between" align="center" mb="6">
+      <Flex justify="space-between" align="center" mb="4">
         {/* Away Team */}
         <VStack gap="3" align="center" flex="1">
-          <SkeletonCircle size="12" />
+          <SkeletonCircle size="12" bg="text.200" />
           <VStack gap="1" align="center">
-            <Skeleton w="20" h="3" />
-            <Skeleton w="16" h="3" />
+            <Skeleton w="20" h="3" bg="text.200" />
+            <Skeleton w="16" h="3" bg="text.200" />
           </VStack>
-          <Skeleton w="16" h="12" />
+          <Skeleton w="16" h="12" bg="text.200" />
           {/* Strikes */}
           <VStack gap="1" align="center">
             <HStack gap="0.5">
-              <Skeleton w="2" h="2" borderRadius="full" />
-              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" bg="text.200" />
+              <Skeleton w="2" h="2" borderRadius="full" bg="text.200" />
             </HStack>
-            <Skeleton w="12" h="3" />
+            <Skeleton w="12" h="3" bg="text.200" />
           </VStack>
         </VStack>
 
         {/* Center - Game State */}
         <VStack gap="4" align="center" flex="1">
-          <Skeleton w="24" h="4" />
+          <Skeleton w="24" h="4" bg="text.200" />
           {/* Baseball Diamond */}
-          <Skeleton w="12" h="12" borderRadius="md" />
+          <Skeleton w="12" h="12" borderRadius="md" bg="text.200" />
         </VStack>
 
         {/* Home Team */}
         <VStack gap="3" align="center" flex="1">
-          <SkeletonCircle size="12" />
+          <SkeletonCircle size="12" bg="text.200" />
           <VStack gap="1" align="center">
-            <Skeleton w="20" h="3" />
-            <Skeleton w="16" h="3" />
+            <Skeleton w="20" h="3" bg="text.200" />
+            <Skeleton w="16" h="3" bg="text.200" />
           </VStack>
-          <Skeleton w="16" h="12" />
+          <Skeleton w="16" h="12" bg="text.200" />
           {/* Balls */}
           <VStack gap="1" align="center">
             <HStack gap="0.5">
-              <Skeleton w="2" h="2" borderRadius="full" />
-              <Skeleton w="2" h="2" borderRadius="full" />
-              <Skeleton w="2" h="2" borderRadius="full" />
-              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" bg="text.200" />
+              <Skeleton w="2" h="2" borderRadius="full" bg="text.200" />
+              <Skeleton w="2" h="2" borderRadius="full" bg="text.200" />
+              <Skeleton w="2" h="2" borderRadius="full" bg="text.200" />
             </HStack>
-            <Skeleton w="12" h="3" />
+            <Skeleton w="12" h="3" bg="text.200" />
           </VStack>
         </VStack>
       </Flex>
@@ -109,28 +111,28 @@ const BoxScoreMainSkeleton = () => {
 
 const BoxScoreStatsSkeleton = () => {
   return (
-    <Box px="4" py="4">
+    <Box px="8" py="4">
       {/* Team Tabs */}
       <VStack gap="2" mb="4">
-        <Skeleton w="100%" h="16" borderRadius="md" />
-        <Skeleton w="100%" h="8" borderRadius="md" />
+        <Skeleton w="100%" h="16" borderRadius="md" bg="text.200" />
+        <Skeleton w="100%" h="8" borderRadius="md" bg="text.200" />
       </VStack>
 
       {/* Stats Table */}
       <VStack gap="2" align="stretch">
         {Array.from({ length: 6 }, (_, index) => (
           <HStack key={index} justify="space-between" align="center" py="2">
-            <Skeleton w="16" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
-            <Skeleton w="8" h="4" />
+            <Skeleton w="16" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
+            <Skeleton w="8" h="4" bg="text.200" />
           </HStack>
         ))}
       </VStack>
@@ -140,8 +142,8 @@ const BoxScoreStatsSkeleton = () => {
 
 const BoxScoreGameInfoSkeleton = () => {
   return (
-    <Box px="4" py="4">
-      <Skeleton w="full" h="32" borderRadius="lg" />
+    <Box px="8" py="4">
+      <Skeleton w="full" h="32" borderRadius="lg" bg="text.200" />
     </Box>
   );
 };
@@ -214,7 +216,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   // Show loading state only if we don't have data in Redux and we're not currently fetching
   if (!reduxBoxScore && !mlbBoxScore?.data) {
     return (
-      <Box minH="100vh" bg="primary.25">
+      <Box minH="100vh" bg="text.200">
         <BoxScoreHeaderSkeleton />
         <BoxScoreMainSkeleton />
         <BoxScoreStatsSkeleton />
@@ -251,31 +253,26 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   return (
     <Box minH="100vh" bg="primary.25">
       {/* Header with Back Button */}
-      <Box
-        bg="primary.25"
-        px="4"
-        py="3"
-        borderBottom="1px"
-        borderColor="border.100"
-      >
+      <Box px="4" py="3" borderBottom="1px" borderColor="border.100">
         <HStack justify="space-between" align="center">
           <IconButton
             aria-label="Go back"
             variant="ghost"
             size="sm"
             onClick={onBack}
+            color="text.500"
           >
             <ArrowLeft size={20} />
           </IconButton>
-          <Text fontSize="sm" color="gray.600"></Text>
+          <Text fontSize="sm"></Text>
         </HStack>
       </Box>
 
       {/* Main Game Information */}
-      <Box px="4" py="6">
+      <Box px="8" py="4">
         {/* Game Title */}
         {game.SeriesInfo && (
-          <Text textAlign="center" fontSize="sm" color="gray.600" mb="6">
+          <Text textAlign="center" fontSize="sm" color="text.400" mb="4">
             {(() => {
               const series = game.SeriesInfo;
               const awayWins = series.AwayTeamWins || 0;
@@ -299,7 +296,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         )}
 
         {/* Scoreboard */}
-        <Flex justify="space-between" align="center" mb="6">
+        <Flex justify="space-between" align="center" mb="4">
           {/* Away Team */}
           <VStack gap="2" align="center" flex="1">
             {awayTeamProfile?.WikipediaLogoUrl ? (
@@ -309,17 +306,17 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 boxSize="12"
               />
             ) : (
-              <Box boxSize="12" bg="gray.200" borderRadius="full" />
+              <Box boxSize="12" bg="primary.25" borderRadius="full" />
             )}
             <VStack gap="0" align="center">
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 5 {game.AwayTeam}
               </Text>
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 90-72
               </Text>
             </VStack>
-            <Text fontSize="4xl" fontWeight="bold" color="gray.800">
+            <Text fontSize="4xl" fontWeight="bold" color="text.400">
               {game.AwayTeamRuns || 0}
             </Text>
             {/* Strikes for Away Team (left side) */}
@@ -332,12 +329,12 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     h="2"
                     borderRadius="full"
                     bg={
-                      game.Strikes && game.Strikes >= i ? "red.500" : "gray.300"
+                      game.Strikes && game.Strikes >= i ? "red.500" : "text.300"
                     }
                   />
                 ))}
               </HStack>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color="text.500">
                 Strikes
               </Text>
             </VStack>
@@ -345,16 +342,25 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
 
           {/* Center - Game State */}
           <VStack gap="3" align="center" flex="1">
-            <Text fontSize="sm" color="gray.600" fontWeight="medium">
-              {game.Status === "Final"
-                ? "Final"
-                : game.Inning && game.InningHalf
-                  ? formatInningWithIcon(game.Inning, game.InningHalf)
-                  : game.InningDescription ||
-                    getStatusDisplayText(
-                      mapApiStatusToGameStatus(game.Status || ""),
-                    )}
-            </Text>
+            {game.Status === "Final" ? (
+              <Text fontSize="sm" color="text.400" fontWeight="medium">
+                Final
+              </Text>
+            ) : game.Inning && game.InningHalf ? (
+              <InningBadge
+                inningNumber={game.Inning}
+                inningHalf={game.InningHalf}
+                league={League.MLB}
+                size="md"
+              />
+            ) : (
+              <Text fontSize="sm" color="text.400" fontWeight="medium">
+                {game.InningDescription ||
+                  getStatusDisplayText(
+                    mapApiStatusToGameStatus(game.Status || ""),
+                  )}
+              </Text>
+            )}
             {/* Baseball Diamond with Base Runners */}
             <Bases
               runnerOnFirst={game.RunnerOnFirst}
@@ -373,17 +379,17 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 boxSize="12"
               />
             ) : (
-              <Box boxSize="12" bg="gray.200" borderRadius="full" />
+              <Box boxSize="12" bg="text.200" borderRadius="full" />
             )}
             <VStack gap="0" align="center">
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 4 {game.HomeTeam}
               </Text>
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 92-70
               </Text>
             </VStack>
-            <Text fontSize="4xl" fontWeight="bold" color="gray.800">
+            <Text fontSize="4xl" fontWeight="bold" color="text.400">
               {game.HomeTeamRuns || 0}
             </Text>
             {/* Balls for Home Team (right side) */}
@@ -395,11 +401,11 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     w="2"
                     h="2"
                     borderRadius="full"
-                    bg={game.Balls && game.Balls >= i ? "blue.500" : "gray.300"}
+                    bg={game.Balls && game.Balls >= i ? "blue.500" : "text.300"}
                   />
                 ))}
               </HStack>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color="text.500">
                 Balls
               </Text>
             </VStack>
@@ -407,38 +413,42 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         </Flex>
 
         {/* Game Metadata - 3 Sections */}
-        <VStack gap="3" mb="6">
+        <VStack gap="2" mb="6">
           {/* 1. TV Station */}
           <Box textAlign="center">
-            <Text fontSize="xs" color="gray.600">
+            <Text fontSize="xs" color="text.400" lineHeight="1.2">
               TV: {orEmpty(game.Channel)}
             </Text>
           </Box>
 
           {/* 2. Weather and Venue */}
           <Box textAlign="center">
-            <VStack gap="1" fontSize="xs" color="gray.600">
+            <VStack gap="0.5" fontSize="xs" color="text.400" lineHeight="1.2">
               {/* Weather */}
-              <HStack justify="center" gap="2">
-                <HStack gap="1">
-                  <Text>☀️</Text>
-                  <Text>
+              <HStack justify="center" gap="1.5">
+                <HStack gap="0.5">
+                  <Text lineHeight="1.2">☀️</Text>
+                  <Text lineHeight="1.2">
                     {game.ForecastTempHigh
                       ? `${game.ForecastTempHigh}° F`
                       : "72° F"}
                   </Text>
-                  <Text>({orEmpty(game.ForecastDescription)})</Text>
+                  <Text lineHeight="1.2">
+                    ({orEmpty(game.ForecastDescription)})
+                  </Text>
                 </HStack>
                 {game.ForecastWindSpeed && (
                   <>
-                    <Text>•</Text>
-                    <Text>Wind: {game.ForecastWindSpeed} mph</Text>
+                    <Text lineHeight="1.2">•</Text>
+                    <Text lineHeight="1.2">
+                      Wind: {game.ForecastWindSpeed} mph
+                    </Text>
                   </>
                 )}
               </HStack>
               {/* Venue */}
               {stadium && (
-                <Text>
+                <Text lineHeight="1.2">
                   {stadium.Name &&
                     orEmpty(stadium.Name) !== "--" &&
                     orEmpty(stadium.Name)}
@@ -456,11 +466,11 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
           {/* 3. Odds */}
           {gameOdds && (
             <Box textAlign="center">
-              <VStack gap="1" fontSize="xs" color="gray.600">
-                <HStack gap="3">
+              <VStack gap="0.5" fontSize="xs" color="text.400" lineHeight="1.2">
+                <HStack gap="2">
                   {gameOdds.awayMoneyLine !== null &&
                     gameOdds.awayMoneyLine !== undefined && (
-                      <Text>
+                      <Text lineHeight="1.2">
                         {game.AwayTeam}{" "}
                         {gameOdds.awayMoneyLine > 0
                           ? `+${gameOdds.awayMoneyLine}`
@@ -469,7 +479,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     )}
                   {gameOdds.homeMoneyLine !== null &&
                     gameOdds.homeMoneyLine !== undefined && (
-                      <Text>
+                      <Text lineHeight="1.2">
                         {game.HomeTeam}{" "}
                         {gameOdds.homeMoneyLine > 0
                           ? `+${gameOdds.homeMoneyLine}`
@@ -478,10 +488,10 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     )}
                 </HStack>
                 {gameOdds.overUnder !== null && (
-                  <Text>O/U {gameOdds.overUnder}</Text>
+                  <Text lineHeight="1.2">O/U {gameOdds.overUnder}</Text>
                 )}
                 {gameOdds.sportsbook && (
-                  <Text fontSize="2xs" color="gray.500">
+                  <Text fontSize="2xs" color="text.500" lineHeight="1.2">
                     via {orEmpty(gameOdds.sportsbook)}
                   </Text>
                 )}
@@ -490,15 +500,15 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
           )}
         </VStack>
 
-        {(game.CurrentPitcher || game.CurrentHitter) && (
-          <Box mb="6" p="4" bg="gray.50" borderRadius="md">
-            <Text fontSize="sm" fontWeight="semibold" mb="3" color="gray.700">
+        {/* {(game.CurrentPitcher || game.CurrentHitter) && (
+          <Box mb="6" p="4" bg="text.200" borderRadius="md">
+            <Text fontSize="sm" fontWeight="semibold" mb="3" color="text.400">
               Current At-Bat
             </Text>
             <HStack justify="space-between" gap="4">
               {game.CurrentPitcher && (
                 <VStack align="center" gap="1">
-                  <Text fontSize="xs" color="gray.600">
+                  <Text fontSize="xs" color="text.400">
                     Pitcher
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
@@ -508,7 +518,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               )}
               {game.CurrentHitter && (
                 <VStack align="center" gap="1">
-                  <Text fontSize="xs" color="gray.600">
+                  <Text fontSize="xs" color="text.400">
                     Batter
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
@@ -518,18 +528,18 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               )}
             </HStack>
           </Box>
-        )}
+        )} */}
 
         {/* Starting Pitchers */}
-        {(game.AwayTeamStartingPitcher || game.HomeTeamStartingPitcher) && (
-          <Box mb="6" p="4" bg="gray.50" borderRadius="md">
-            <Text fontSize="sm" fontWeight="semibold" mb="3" color="gray.700">
+        {/* {(game.AwayTeamStartingPitcher || game.HomeTeamStartingPitcher) && (
+          <Box mb="6" p="4" bg="text.200" borderRadius="md">
+            <Text fontSize="sm" fontWeight="semibold" mb="3" color="text.400">
               Starting Pitchers
             </Text>
             <HStack justify="space-between" gap="4">
               {game.AwayTeamStartingPitcher && (
                 <VStack align="center" gap="1">
-                  <Text fontSize="xs" color="gray.600">
+                  <Text fontSize="xs" color="text.400">
                     {game.AwayTeam}
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
@@ -539,7 +549,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               )}
               {game.HomeTeamStartingPitcher && (
                 <VStack align="center" gap="1">
-                  <Text fontSize="xs" color="gray.600">
+                  <Text fontSize="xs" color="text.400">
                     {game.HomeTeam}
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
@@ -549,7 +559,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               )}
             </HStack>
           </Box>
-        )}
+        )} */}
 
         {/* <Box mt="8">
           <Text fontSize="lg" fontWeight="bold" mb="4">
@@ -558,13 +568,13 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
 
           <VStack gap="3" align="stretch">
             {/* Starting Pitchers */}
-        {/* <Box bg="gray.50" p="4" borderRadius="lg">
+        {/* <Box bg="text.200" p="4" borderRadius="lg">
               <Text fontSize="md" fontWeight="bold" mb="3">
                 Starting Pitchers
               </Text>
               <VStack gap="2" align="stretch">
                 <HStack justify="space-between">
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.400">
                     {game.AwayTeam}:
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
@@ -572,7 +582,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   </Text>
                 </HStack>
                 <HStack justify="space-between">
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.400">
                     {game.HomeTeam}:
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
@@ -585,37 +595,37 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         {/* {(game.WinningPitcher ||
               game.LosingPitcher ||
               game.SavingPitcher) && (
-              <Box bg="gray.50" p="4" borderRadius="lg">
-                <Text fontSize="md" fontWeight="bold" mb="3" color="gray.600">
+              <Box bg="text.200" p="4" borderRadius="lg">
+                <Text fontSize="md" fontWeight="bold" mb="3" color="text.400">
                   Game Results
                 </Text>
                 <VStack gap="2" align="stretch">
                   {game.WinningPitcher && (
                     <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontSize="sm" color="text.400">
                         Winning Pitcher:
                       </Text>
-                      <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                      <Text fontSize="sm" fontWeight="medium" color="text.400">
                         {game.WinningPitcher}
                       </Text>
                     </HStack>
                   )}
                   {game.LosingPitcher && (
                     <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontSize="sm" color="text.400">
                         Losing Pitcher:
                       </Text>
-                      <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                      <Text fontSize="sm" fontWeight="medium" color="text.400">
                         {game.LosingPitcher}
                       </Text>
                     </HStack>
                   )}
                   {game.SavingPitcher && (
                     <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontSize="sm" color="text.400">
                         Save:
                       </Text>
-                      <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                      <Text fontSize="sm" fontWeight="medium" color="text.400">
                         {game.SavingPitcher}
                       </Text>
                     </HStack>
@@ -631,7 +641,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         </Text>
         {/* Innings Summary */}
         {game.Innings && game.Innings.length > 0 && (
-          <Box bg="gray.50" p="4" borderRadius="lg" mb="6">
+          <Box bg="text.200" p="4" borderRadius="lg" mb="6">
             <Text fontSize="sm" fontWeight="bold" mb="3">
               Innings Summary
             </Text>
@@ -640,13 +650,13 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 {/* Inning Numbers Header */}
                 <HStack gap="1" minW="fit-content">
                   <Box minW="8" p="1">
-                    <Text fontSize="2xs" color="gray.600">
+                    <Text fontSize="2xs" color="text.400">
                       Inning
                     </Text>
                   </Box>
                   {game.Innings.slice(0, 9).map((inning, index) => (
                     <Box key={index} minW="8" p="1">
-                      <Text fontSize="2xs" color="gray.600">
+                      <Text fontSize="2xs" color="text.400">
                         {inning.InningNumber}
                       </Text>
                     </Box>
@@ -656,7 +666,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 {/* Away Team Scores */}
                 <HStack gap="1" minW="fit-content">
                   <Box minW="8" p="1">
-                    <Text fontSize="2xs" color="gray.600" fontWeight="medium">
+                    <Text fontSize="2xs" color="text.400" fontWeight="medium">
                       {game.AwayTeam}
                     </Text>
                   </Box>
@@ -672,7 +682,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 {/* Home Team Scores */}
                 <HStack gap="1" minW="fit-content">
                   <Box minW="8" p="1">
-                    <Text fontSize="2xs" color="gray.600" fontWeight="medium">
+                    <Text fontSize="2xs" color="text.400" fontWeight="medium">
                       {game.HomeTeam}
                     </Text>
                   </Box>
@@ -692,7 +702,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         {/* Team Selection Toggle */}
         <Box mb="6">
           <Flex
-            bg="gray.100"
+            bg="primary.400"
             borderRadius="xl"
             p="1"
             position="relative"
@@ -711,7 +721,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   ? "linear-gradient(145deg, #ffffff, #f7f7f7)"
                   : "linear-gradient(145deg, #e5e7eb, #d1d5db)"
               }
-              color="gray.800"
+              color="text.400"
               fontWeight="bold"
               fontSize="lg"
               onClick={() => setSelectedTeam("away")}
@@ -721,7 +731,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   : "0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.1)"
               }
               borderRight="1px solid"
-              borderColor="gray.300"
+              borderColor="text.300"
             >
               <HStack gap="2">
                 {awayTeamProfile?.WikipediaLogoUrl && (
@@ -745,7 +755,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   ? "linear-gradient(145deg, #ffffff, #f7f7f7)"
                   : "linear-gradient(145deg, #e5e7eb, #d1d5db)"
               }
-              color="gray.800"
+              color="text.400"
               fontWeight="bold"
               fontSize="lg"
               onClick={() => setSelectedTeam("home")}
@@ -773,14 +783,14 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         <Box>
           <VStack gap="3" align="stretch">
             {/* Team Stats */}
-            <Box bg="gray.50" p="4" borderRadius="lg">
+            <Box bg="primary.25" p="4" borderRadius="lg">
               <Text fontSize="md" fontWeight="bold" mb="3">
                 {selectedTeam === "away" ? game.AwayTeam : game.HomeTeam} Team
                 Stats
               </Text>
               <HStack justify="space-between" wrap="wrap" gap="4">
                 <VStack gap="1" align="center">
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.400">
                     Runs
                   </Text>
                   <Text fontSize="lg" fontWeight="bold">
@@ -790,7 +800,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   </Text>
                 </VStack>
                 <VStack gap="1" align="center">
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.400">
                     Hits
                   </Text>
                   <Text fontSize="lg" fontWeight="bold">
@@ -800,7 +810,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   </Text>
                 </VStack>
                 <VStack gap="1" align="center">
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.400">
                     Errors
                   </Text>
                   <Text fontSize="lg" fontWeight="bold">
@@ -813,10 +823,10 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             </Box>
 
             {/* Pitcher Information */}
-            {(selectedTeam === "away"
+            {/* {(selectedTeam === "away"
               ? game.AwayTeamStartingPitcher
               : game.HomeTeamStartingPitcher) && (
-              <Box bg="gray.50" p="4" borderRadius="lg">
+              <Box bg="text.200" p="4" borderRadius="lg">
                 <Text fontSize="md" fontWeight="bold" mb="3">
                   Starting Pitcher
                 </Text>
@@ -826,26 +836,26 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     : orEmpty(game.HomeTeamStartingPitcher)}
                 </Text>
               </Box>
-            )}
+            )} */}
 
             {/* Current Game State */}
-            {game.CurrentPitcher && (
-              <Box bg="gray.50" p="4" borderRadius="lg">
+            {/* {game.CurrentPitcher && (
+              <Box bg="text.200" p="4" borderRadius="lg">
                 <Text fontSize="md" fontWeight="bold" mb="3">
                   Current Pitcher
                 </Text>
                 <Text fontSize="sm">{orEmpty(game.CurrentPitcher)}</Text>
               </Box>
-            )}
+            )} */}
 
             {/* Game Status */}
-            <Box bg="gray.50" p="4" borderRadius="lg">
+            <Box bg="primary.25" p="4" borderRadius="lg">
               <Text fontSize="md" fontWeight="bold" mb="3">
                 Game Status
               </Text>
               <VStack gap="2" align="stretch">
                 <HStack justify="space-between">
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.400">
                     Status:
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
@@ -856,19 +866,26 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 </HStack>
                 {game.Inning && (
                   <HStack justify="space-between">
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="text.400">
                       Inning:
                     </Text>
-                    <Text fontSize="sm" fontWeight="medium">
-                      {game.InningHalf
-                        ? formatInningWithIcon(game.Inning, game.InningHalf)
-                        : game.Inning}
-                    </Text>
+                    {game.InningHalf ? (
+                      <InningBadge
+                        inningNumber={game.Inning}
+                        inningHalf={game.InningHalf}
+                        league={League.MLB}
+                        size="sm"
+                      />
+                    ) : (
+                      <Text fontSize="sm" fontWeight="medium">
+                        {game.Inning}
+                      </Text>
+                    )}
                   </HStack>
                 )}
                 {game.Outs !== undefined && game.Outs !== null && (
                   <HStack justify="space-between">
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="text.400">
                       Outs:
                     </Text>
                     <Text fontSize="sm" fontWeight="medium">
@@ -878,7 +895,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 )}
                 {game.Balls !== undefined && game.Balls !== null && (
                   <HStack justify="space-between">
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="text.400">
                       Balls:
                     </Text>
                     <Text fontSize="sm" fontWeight="medium">
@@ -888,7 +905,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 )}
                 {game.Strikes !== undefined && game.Strikes !== null && (
                   <HStack justify="space-between">
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="text.400">
                       Strikes:
                     </Text>
                     <Text fontSize="sm" fontWeight="medium">
@@ -914,7 +931,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             </Text>
             <Box
               overflowX="auto"
-              bg="primary.25"
+              bg="text.200"
               borderRadius="lg"
               border="1px"
               borderColor="border.100"
@@ -927,7 +944,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               }}
             >
               <Box as="table" w="full" minW="600px">
-                <Box as="thead" bg="gray.50">
+                <Box as="thead" bg="text.200">
                   <Box as="tr">
                     <Box
                       as="th"
@@ -936,7 +953,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="left"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       Player
                     </Box>
@@ -947,7 +964,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       AB
                     </Box>
@@ -958,7 +975,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       R
                     </Box>
@@ -969,7 +986,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       H
                     </Box>
@@ -980,7 +997,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       RBI
                     </Box>
@@ -991,7 +1008,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       BB
                     </Box>
@@ -1002,7 +1019,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       SO
                     </Box>
@@ -1013,7 +1030,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       AVG
                     </Box>
@@ -1033,11 +1050,11 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       <Box
                         as="tr"
                         key={player.PlayerID}
-                        bg={index % 2 === 0 ? "white" : "gray.50"}
+                        bg={index % 2 === 0 ? "primary.25" : "primary.200"}
                       >
                         <Box as="td" px="2" py="1" fontSize="xs">
                           <HStack align="center" gap="1">
-                            <Text fontSize="2xs" color="gray.600">
+                            <Text fontSize="2xs" color="text.400">
                               {player.Position}
                             </Text>
                             <Text fontWeight="medium">{player.Name}</Text>
@@ -1122,7 +1139,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             </Text>
             <Box
               overflowX="auto"
-              bg="primary.25"
+              bg="text.200"
               borderRadius="lg"
               border="1px"
               borderColor="border.100"
@@ -1135,7 +1152,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               }}
             >
               <Box as="table" w="full" minW="600px">
-                <Box as="thead" bg="gray.50">
+                <Box as="thead" bg="text.200">
                   <Box as="tr">
                     <Box
                       as="th"
@@ -1144,7 +1161,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="left"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       Player
                     </Box>
@@ -1155,7 +1172,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       IP
                     </Box>
@@ -1166,7 +1183,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       H
                     </Box>
@@ -1177,7 +1194,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       R
                     </Box>
@@ -1188,7 +1205,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       ER
                     </Box>
@@ -1199,7 +1216,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       BB
                     </Box>
@@ -1210,7 +1227,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       SO
                     </Box>
@@ -1221,7 +1238,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       textAlign="center"
                       fontSize="xs"
                       fontWeight="bold"
-                      color="gray.700"
+                      color="text.400"
                     >
                       ERA
                     </Box>
@@ -1241,11 +1258,11 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       <Box
                         as="tr"
                         key={player.PlayerID}
-                        bg={index % 2 === 0 ? "white" : "gray.50"}
+                        bg={index % 2 === 0 ? "primary.25" : "text.200"}
                       >
                         <Box as="td" px="2" py="1" fontSize="xs">
                           <HStack align="center" gap="1">
-                            <Text fontSize="2xs" color="gray.600">
+                            <Text fontSize="2xs" color="text.400">
                               {player.Position}
                             </Text>
                             <Text fontWeight="medium">{player.Name}</Text>

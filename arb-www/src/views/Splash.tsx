@@ -75,7 +75,7 @@ export function Splash() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
           >
-            <Text color="text.100" fontSize="lg">
+            <Text color="text.400" fontSize="lg">
               Your Sports Universe
             </Text>
           </motion.div>

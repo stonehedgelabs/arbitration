@@ -220,6 +220,16 @@ export const toLocalTime = (estDateTime: string): string => {
 };
 
 /**
+ * Safely parses a YYYY-MM-DD date string to a Date object in local time
+ * @param dateString - Date string in YYYY-MM-DD format
+ * @returns {Date} Date object in local time
+ */
+export const parseLocalDate = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day); // month is 0-indexed
+};
+
+/**
  * Check if a date string is in the future
  * @param dateString - Date string in YYYY-MM-DD format
  * @returns {boolean} True if the date is in the future
@@ -227,7 +237,7 @@ export const toLocalTime = (estDateTime: string): string => {
 export const isFutureDate = (dateString: string): boolean => {
   try {
     const today = new Date();
-    const targetDate = new Date(dateString);
+    const targetDate = parseLocalDate(dateString);
 
     // Reset time to start of day for accurate comparison
     today.setHours(0, 0, 0, 0);

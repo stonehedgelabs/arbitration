@@ -19,6 +19,7 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { Bases } from "../Bases.tsx";
+import { InningBadge } from "../badge";
 
 // Internal imports - config
 import {
@@ -173,33 +174,33 @@ const GameStatusSkeleton = () => {
           <Text fontSize="sm" fontWeight="medium" color="gray.400">
             Live Game
           </Text>
-          <Text fontSize="xs" color="gray.500">
+          <Text fontSize="xs" color="text.400">
             Play-by-Play Events
           </Text>
           <VStack align="start" gap="2" mt="1">
             <HStack gap="4">
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color="text.400">
                 Hits: -- - --
               </Text>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color="text.400">
                 Errors: -- - --
               </Text>
             </HStack>
             <HStack gap="4">
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 Pitcher: --
               </Text>
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 Batter: --
               </Text>
             </HStack>
           </VStack>
         </VStack>
         <VStack align="end" gap="1">
-          <Text fontSize="xs" color="gray.500">
+          <Text fontSize="xs" color="text.400">
             0 events
           </Text>
-          <Text fontSize="xs" color="gray.500">
+          <Text fontSize="xs" color="text.400">
             Live
           </Text>
         </VStack>
@@ -294,7 +295,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
           <Text color="red.500" fontSize="lg" fontWeight="semibold">
             No Game Selected
           </Text>
-          <Text color="gray.600" textAlign="center">
+          <Text color="text.400" textAlign="center">
             Please select a game to view play-by-play data.
           </Text>
           <Button onClick={onBack}>Go Back</Button>
@@ -311,11 +312,6 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   // Format event description using the utility function
   const formatEventDescription = (play: Play): string => {
     return getPlayLabel(play);
-  };
-
-  // Format inning display with chevron icons (▲ 9, ▼ 9, etc.)
-  const formatInning = (inningNumber: number, inningHalf: string): string => {
-    return formatInningWithIcon(inningNumber, inningHalf);
   };
 
   // Format timestamp for display as relative time using centralized utility
@@ -389,7 +385,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
           <Text color="red.500" fontSize="lg" fontWeight="semibold">
             Error loading play-by-play
           </Text>
-          <Text color="gray.600" textAlign="center">
+          <Text color="text.400" textAlign="center">
             {error}
           </Text>
           <Button onClick={handleRefresh} colorScheme="red">
@@ -415,10 +411,10 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
         justifyContent="center"
       >
         <VStack gap="4">
-          <Text color="gray.600" fontSize="lg" fontWeight="semibold">
+          <Text color="text.400" fontSize="lg" fontWeight="semibold">
             No play-by-play data available for this game.
           </Text>
-          <Text color="gray.600">The game data is missing or incomplete.</Text>
+          <Text color="text.400">The game data is missing or incomplete.</Text>
           <Button onClick={onBack}>Go Back</Button>
         </VStack>
       </Box>
@@ -473,7 +469,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
               aria-label="Go back"
               variant="ghost"
               onClick={onBack}
-              colorScheme="gray"
+              color="text.400"
               size="md"
             >
               <ArrowLeft size={20} />
@@ -515,14 +511,14 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
               <Box boxSize="12" bg="gray.200" borderRadius="full" />
             )}
             <VStack gap="0.5" align="center">
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 {orEmpty(currentGame?.AwayTeam)}
               </Text>
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 --
               </Text>
             </VStack>
-            <Text fontSize="4xl" fontWeight="bold" color="gray.800">
+            <Text fontSize="4xl" fontWeight="bold" color="text.400">
               {currentGame?.AwayTeamRuns || 0}
             </Text>
             {/* Strikes for Away Team */}
@@ -537,12 +533,12 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                     bg={
                       currentGame?.Strikes && currentGame.Strikes >= i
                         ? "red.500"
-                        : "gray.300"
+                        : "text.400"
                     }
                   />
                 ))}
               </HStack>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color="text.400">
                 Strikes
               </Text>
             </VStack>
@@ -550,7 +546,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
 
           {/* Center - Game State */}
           <VStack gap="3" align="center" flex="1">
-            <Text fontSize="sm" color="gray.600" fontWeight="medium">
+            <Text fontSize="sm" color="text.400" fontWeight="medium">
               {currentGame?.Status === "Final"
                 ? "Final"
                 : currentGame?.InningDescription ||
@@ -579,14 +575,14 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
               <Box boxSize="12" bg="gray.200" borderRadius="full" />
             )}
             <VStack gap="0.5" align="center">
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 {orEmpty(currentGame?.HomeTeam)}
               </Text>
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text.400">
                 --
               </Text>
             </VStack>
-            <Text fontSize="4xl" fontWeight="bold" color="gray.800">
+            <Text fontSize="4xl" fontWeight="bold" color="text.400">
               {currentGame?.HomeTeamRuns || 0}
             </Text>
             {/* Balls for Home Team */}
@@ -600,13 +596,13 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                     borderRadius="full"
                     bg={
                       currentGame?.Balls && currentGame.Balls >= i
-                        ? "blue.500"
-                        : "gray.300"
+                        ? "accent.400"
+                        : "text.400"
                     }
                   />
                 ))}
               </HStack>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color="text.400">
                 Balls
               </Text>
             </VStack>
@@ -629,17 +625,17 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                 mapApiStatusToGameStatus(currentGame?.Status || ""),
               )}
             </Text>
-            <Text fontSize="xs" color="gray.600">
+            <Text fontSize="xs" color="text.400">
               Play-by-Play Events
             </Text>
             {currentGame && (
               <VStack align="start" gap="2" mt="1">
                 <HStack gap="4">
-                  <Text fontSize="xs" color="gray.500">
+                  <Text fontSize="xs" color="text.400">
                     Hits: {currentGame.AwayTeamHits || 0} -{" "}
                     {currentGame.HomeTeamHits || 0}
                   </Text>
-                  <Text fontSize="xs" color="gray.500">
+                  <Text fontSize="xs" color="text.400">
                     Errors: {currentGame.AwayTeamErrors || 0} -{" "}
                     {currentGame.HomeTeamErrors || 0}
                   </Text>
@@ -648,12 +644,12 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                   orEmpty(currentGame.CurrentHitter) !== "--") && (
                   <HStack gap="4">
                     {orEmpty(currentGame.CurrentPitcher) !== "--" && (
-                      <Text fontSize="xs" color="gray.600">
+                      <Text fontSize="xs" color="text.400">
                         Pitcher: {orEmpty(currentGame.CurrentPitcher)}
                       </Text>
                     )}
                     {orEmpty(currentGame.CurrentHitter) !== "--" && (
-                      <Text fontSize="xs" color="gray.600">
+                      <Text fontSize="xs" color="text.400">
                         Batter: {orEmpty(currentGame.CurrentHitter)}
                       </Text>
                     )}
@@ -664,10 +660,10 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
           </VStack>
 
           <VStack align="end" gap="1">
-            <Text fontSize="xs" color="gray.600">
+            <Text fontSize="xs" color="text.400">
               {plays.length} events
             </Text>
-            <Text fontSize="xs" color="gray.600">
+            <Text fontSize="xs" color="text.400">
               Live
             </Text>
           </VStack>
@@ -686,8 +682,8 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
             <Card.Root>
               <Card.Body p="6">
                 <VStack gap="2">
-                  <Text color="gray.600">No events yet</Text>
-                  <Text fontSize="sm" color="gray.500" textAlign="center">
+                  <Text color="text.400">No events yet</Text>
+                  <Text fontSize="sm" color="text.400" textAlign="center">
                     Play-by-play events will appear here as they happen
                   </Text>
                 </VStack>
@@ -698,7 +694,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
             plays.map((play) => {
               const teamLogo = getTeamLogoForPlay(play);
               return (
-                <Card.Root key={play.PlayID} bg="primary.100" shadow="sm">
+                <Card.Root key={play.PlayID} bg="primary.50" shadow="sm">
                   <Card.Body p="3">
                     <HStack justify="space-between" align="start" gap="3">
                       {/* Team logo */}
@@ -719,23 +715,26 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                         <Text fontSize="sm" fontWeight="medium">
                           {getPlayTitle(play)}
                         </Text>
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color="text.400">
                           {formatEventDescription(play)}
                         </Text>
                       </VStack>
 
                       {/* Right side info */}
                       <VStack align="end" gap="1">
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color="text.400">
                           {formatTimestamp(play.Updated)}
                         </Text>
-                        <Text fontSize="xs" color="gray.500">
-                          {formatInning(play.InningNumber, play.InningHalf)}
-                        </Text>
+                        <InningBadge
+                          inningNumber={play.InningNumber}
+                          inningHalf={play.InningHalf}
+                          league={League.MLB}
+                          size="sm"
+                        />
                         {currentGame && (
                           <Text
                             fontSize="xs"
-                            color="gray.600"
+                            color="text.400"
                             fontWeight="medium"
                           >
                             {orEmpty(currentGame.AwayTeam)}{" "}

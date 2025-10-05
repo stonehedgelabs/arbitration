@@ -38,7 +38,7 @@ export const Skeleton = ({
   gap = "4px",
   duration = 1.5,
   animate = true,
-  bg = "gray.200",
+  bg = "text.200",
   borderRadius = "sm",
   ...props
 }: SkeletonProps) => {

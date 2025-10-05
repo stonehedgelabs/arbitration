@@ -95,7 +95,7 @@ export function Login() {
             <Box
               borderRadius="16px"
               shadow="2xl"
-              bg="white"
+              bg="primary.25"
               w="full"
               p={6}
               border="1px"
@@ -108,14 +108,14 @@ export function Login() {
                   onClick={() => handleLogin("apple")}
                   w="full"
                   h="56px"
-                  bg="white"
-                  color="black"
+                  bg="primary.25"
+                  color="text.400"
+                  borderColor="text.400"
                   borderRadius="12px"
                   fontSize="md"
                   fontWeight="medium"
                   className="ios-button-press"
                   border="1px"
-                  borderColor="gray.200"
                   shadow="md"
                 >
                   <AppleIcon />
@@ -132,9 +132,9 @@ export function Login() {
                   fontSize="md"
                   fontWeight="medium"
                   className="ios-button-press"
-                  bg="white"
-                  color="black"
-                  borderColor="gray.200"
+                  bg="primary.25"
+                  color="text.400"
+                  borderColor="text.400"
                   shadow="md"
                 >
                   <GoogleIcon />
@@ -150,11 +150,11 @@ export function Login() {
                   borderRadius="12px"
                   fontSize="md"
                   fontWeight="medium"
-                  bg="white"
-                  color="black"
+                  bg="primary.25"
+                  color="text.400"
+                  borderColor="text.400"
                   className="ios-button-press"
                   border="1px"
-                  borderColor="gray.200"
                   shadow="md"
                 >
                   Continue as Guest

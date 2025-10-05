@@ -28,16 +28,28 @@ pub struct ServerConfig {
     pub client_url: String,
 }
 
+/// Cache mode configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub enum CacheMode {
+    /// Use custom TTLs for each data type
+    TtlBased,
+    /// Cache everything indefinitely (no expiration)
+    Infinite,
+}
+
 /// Redis cache configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheConfig {
     /// Whether caching is enabled globally
     pub enabled: bool,
+    /// Cache mode - either TTL-based or infinite caching
+    pub mode: CacheMode,
     /// Redis connection URL
     pub redis_url: String,
-    /// Default cache TTL in seconds
+    /// Default cache TTL in seconds (used when mode is TtlBased)
     pub default_ttl: u64,
-    /// Cache TTL for different data types
+    /// Cache TTL for different data types (used when mode is TtlBased)
     pub ttl: CacheTtlConfig,
 }
 
@@ -60,6 +72,8 @@ pub struct CacheTtlConfig {
     pub stadiums: u64,
     /// TTL for Twitter search results (in seconds)
     pub twitter_search: u64,
+    /// TTL for odds data (in seconds)
+    pub odds: u64,
     /// TTL for user authentication data (in seconds)
     pub user_auth: u64,
 }
@@ -87,43 +101,55 @@ pub struct SeasonInfo {
 pub struct ApiConfig {
     /// SportsData.io API base URL
     pub sportsdata_base_url: String,
-    /// SportsData.io API key
+    /// SportsData.io API key (loaded from environment)
+    #[serde(default)]
     pub sportsdata_api_key: String,
     /// Twitter API base URL
     pub twitter_base_url: String,
     /// Request timeout in seconds
     pub request_timeout: u64,
-    /// JWT secret for signing tokens
+    /// JWT secret for signing tokens (loaded from environment)
+    #[serde(default)]
     pub jwt_secret: String,
-    /// Google OAuth configuration
+    /// Google OAuth configuration (loaded from environment)
+    #[serde(default)]
     pub google_oauth: GoogleOAuthConfig,
-    /// Apple OAuth configuration
+    /// Apple OAuth configuration (loaded from environment)
+    #[serde(default)]
     pub apple_oauth: AppleOAuthConfig,
 }
 
 /// Google OAuth configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GoogleOAuthConfig {
-    /// Google OAuth client ID
+    /// Google OAuth client ID (loaded from environment)
+    #[serde(default)]
     pub client_id: String,
-    /// Google OAuth client secret
+    /// Google OAuth client secret (loaded from environment)
+    #[serde(default)]
     pub client_secret: String,
-    /// Google OAuth redirect URI
+    /// Google OAuth redirect URI (loaded from environment)
+    #[serde(default)]
     pub redirect_uri: String,
 }
 
 /// Apple OAuth configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AppleOAuthConfig {
-    /// Apple OAuth client ID
+    /// Apple OAuth client ID (loaded from environment)
+    #[serde(default)]
     pub client_id: String,
-    /// Apple OAuth redirect URI
+    /// Apple OAuth redirect URI (loaded from environment)
+    #[serde(default)]
     pub redirect_uri: String,
-    /// Apple Team ID
+    /// Apple Team ID (loaded from environment)
+    #[serde(default)]
     pub team_id: String,
-    /// Apple Key ID
+    /// Apple Key ID (loaded from environment)
+    #[serde(default)]
     pub key_id: String,
-    /// Path to Apple private key file
+    /// Path to Apple private key file (loaded from environment)
+    #[serde(default)]
     pub secret_key_path: String,
     /// JWT expiration time in seconds
     pub jwt_expire_seconds: u64,
@@ -182,6 +208,7 @@ impl Default for ArbConfig {
             },
             cache: CacheConfig {
                 enabled: true,
+                mode: CacheMode::TtlBased,
                 redis_url: "redis://localhost:6379".to_string(),
                 default_ttl: 3600, // 1 hour
                 ttl: CacheTtlConfig {
@@ -193,6 +220,7 @@ impl Default for ArbConfig {
                     box_scores: 1800,          // 30 minutes
                     stadiums: 7200,            // 2 hours
                     twitter_search: 60,        // 1 minute
+                    odds: 86400,               // 24 hours
                     user_auth: 604800,         // 1 week (7 days)
                 },
             },
@@ -222,18 +250,71 @@ impl Default for ArbConfig {
 }
 
 impl ArbConfig {
+    /// Load configuration from a specific TOML file and environment variables
+    /// This method will panic if the config file cannot be read or parsed
+    pub fn from_file(config_path: &str) -> Self {
+        // Try to load from the specified config file
+        let toml_content = std::fs::read_to_string(config_path)
+            .unwrap_or_else(|e| {
+                tracing::error!("Could not read config file at: {}", config_path);
+                tracing::error!("Error: {}", e);
+                std::process::exit(1);
+            });
+
+        tracing::info!("Found config file at: {}", config_path);
+        tracing::debug!("Config file content: {}", toml_content);
+        
+        let mut config = toml::from_str::<ArbConfig>(&toml_content)
+            .unwrap_or_else(|e| {
+                tracing::error!("Failed to parse config file: {}", e);
+                tracing::error!("Parse error details: {:?}", e);
+                tracing::error!("Please check your config file syntax and required fields");
+                std::process::exit(1);
+            });
+
+        tracing::info!("Successfully parsed config file");
+
+        // Override with environment variables if present
+        Self::apply_env_overrides(&mut config);
+        config
+    }
+
     /// Load configuration from TOML file and environment variables with fallback to defaults
+    /// This method tries multiple common locations for config.toml
     pub fn from_env() -> Self {
         let mut config = Self::default();
 
-        // Try to load from config.toml first
-        if let Ok(toml_content) = std::fs::read_to_string("config.toml") {
-            if let Ok(toml_config) = toml::from_str::<ArbConfig>(&toml_content) {
-                config = toml_config;
+        // Try to load from config.toml first (try multiple possible locations)
+        let config_paths = ["config.toml", "./config.toml", "../config.toml"];
+        let mut toml_content = None;
+        
+        for path in &config_paths {
+            if let Ok(content) = std::fs::read_to_string(path) {
+                toml_content = Some(content);
+                tracing::info!("Found config.toml at: {}", path);
+                break;
             }
+        }
+        
+        if let Some(toml_content) = toml_content {
+            tracing::info!("Found config.toml file, attempting to parse...");
+            if let Ok(toml_config) = toml::from_str::<ArbConfig>(&toml_content) {
+                tracing::info!("Successfully parsed config.toml");
+                config = toml_config;
+            } else {
+                tracing::warn!("Failed to parse config.toml, using defaults");
+            }
+        } else {
+            tracing::info!("No config.toml file found in any of the expected locations, using defaults");
         }
 
         // Override with environment variables if present
+        Self::apply_env_overrides(&mut config);
+        config
+    }
+
+    /// Apply environment variable overrides to the configuration
+    fn apply_env_overrides(config: &mut Self) {
         if let Ok(host) = std::env::var("ARB_HOST") {
             config.server.host = host;
         }
@@ -327,8 +408,6 @@ impl ArbConfig {
                 season_info.postseason_start = postseason_start;
             }
         }
-
-        config
     }
 
     /// Get season information for a specific sport

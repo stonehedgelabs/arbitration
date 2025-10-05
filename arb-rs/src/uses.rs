@@ -72,7 +72,7 @@ impl CacheKey {
     }
 
     pub fn play_by_play(league: &League, game_id: &str) -> Self {
-        CacheKey::new(format!("playbyplay:{}:{}", league, game_id))
+        CacheKey::new(format!("play_by_play:{}:{}", league, game_id))
     }
 
     pub fn play_by_play_delta(
@@ -81,7 +81,7 @@ impl CacheKey {
         last_timestamp: &str,
     ) -> Self {
         CacheKey::new(format!(
-            "playbyplay_delta:{}:{}:{}",
+            "play_by_play__delta:{}:{}:{}",
             league, game_id, last_timestamp
         ))
     }
@@ -270,6 +270,7 @@ pub async fn team_profile(
             tracing::error!("Failed to get team profile data from cache: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })? {
+            tracing::debug!("Returning cached team profile data for league: {}", league);
             cached_data
         } else {
             tracing::info!(
@@ -476,6 +477,7 @@ async fn handle_schedule_request(
             tracing::error!("Failed to get schedule data from cache: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })? {
+            tracing::debug!("Returning cached schedule data for league: {}", league);
             cached_data
         } else {
             tracing::info!(
@@ -630,6 +632,7 @@ async fn handle_current_games_request(
                 );
                 StatusCode::INTERNAL_SERVER_ERROR
             })? {
+                tracing::debug!("Returning cached games data for date: {}", date_str);
                 cached_data
             } else {
                 tracing::info!(
@@ -727,6 +730,7 @@ async fn handle_data_request(
             tracing::error!("Failed to get {} data from cache: {}", data_type, e);
             StatusCode::INTERNAL_SERVER_ERROR
         })? {
+            tracing::debug!("Returning cached {} data for league: {}", data_type, league);
             cached_data
         } else {
             tracing::info!(
@@ -863,6 +867,7 @@ async fn handle_play_by_play_request(
             tracing::error!("Failed to get play-by-play data from cache: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })? {
+            tracing::debug!("Returning cached play-by-play data for game_id: {}", params.game_id);
             cached_data
         } else {
             tracing::info!(
@@ -957,6 +962,7 @@ async fn handle_scores_request(
                 );
                 StatusCode::INTERNAL_SERVER_ERROR
             })? {
+                tracing::debug!("Returning cached scores data for date: {}", date_str);
                 cached_data
             } else {
                 tracing::info!(
@@ -1541,7 +1547,7 @@ pub async fn handle_game_by_date_request(
     {
         let mut cache = use_case_state.cache.lock().await;
         if let Some(cached_data) = cache.get(&cache_key).await? {
-            tracing::info!(
+            tracing::debug!(
                 "Returning cached game by date data for game_id: {}",
                 params.game_id
             );
@@ -1676,7 +1682,7 @@ pub async fn handle_box_score_request(
     {
         let mut cache = use_case_state.cache.lock().await;
         if let Some(cached_data) = cache.get(&cache_key).await? {
-            tracing::info!("Returning cached box score for game_id: {}", params.game_id);
+            tracing::debug!("Returning cached box score for game_id: {}", params.game_id);
             let response: BoxScoreResponse =
                 serde_json::from_str(&cached_data).map_err(|e| {
                     tracing::error!("Failed to deserialize cached data: {}", e);
@@ -1779,7 +1785,7 @@ pub async fn handle_stadiums_request(
     {
         let mut cache = use_case_state.cache.lock().await;
         if let Some(cached_data) = cache.get(&cache_key).await? {
-            tracing::info!("Returning cached stadiums data for league: {}", league);
+            tracing::debug!("Returning cached stadiums data for league: {}", league);
             let response: StadiumsResponse =
                 serde_json::from_str(&cached_data).map_err(|e| {
                     tracing::error!("Failed to deserialize cached data: {}", e);
@@ -1883,7 +1889,7 @@ pub async fn handle_twitter_search_request(
         if let Ok(twitter_response) =
             serde_json::from_str::<TwitterSearchResponse>(&cached_data)
         {
-            tracing::info!("Returning cached Twitter search result");
+            tracing::debug!("Returning cached Twitter search result");
             return Ok(Json(twitter_response));
         }
     }
@@ -2024,7 +2030,7 @@ pub async fn handle_odds_by_date_request(
     {
         let mut cache = use_case_state.cache.lock().await;
         if let Some(cached_data) = cache.get(&cache_key).await? {
-            tracing::info!("Returning cached odds data for date: {}", params.date);
+            tracing::debug!("Returning cached odds data for date: {}", params.date);
             let response: OddsByDateResponse = serde_json::from_str(&cached_data)
                 .map_err(|e| {
                     tracing::error!("Failed to deserialize cached data: {}", e);
@@ -2067,7 +2073,7 @@ pub async fn handle_odds_by_date_request(
             .setx(
                 &cache_key,
                 &serialized,
-                use_case_state.config.cache.default_ttl,
+                use_case_state.config.cache.ttl.odds,
             )
             .await?;
     }

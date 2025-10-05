@@ -215,7 +215,7 @@ interface SportsDataState {
 
 const initialState: SportsDataState = {
   leagues,
-  selectedLeague: 'nfl',
+  selectedLeague: 'mlb',
   activeTab: 'for-you',
   selectedDate: getCurrentLocalDate(), // Today's date in YYYY-MM-DD format using centralized function
   leagueData: mockData,

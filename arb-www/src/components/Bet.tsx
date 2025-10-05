@@ -44,7 +44,7 @@ export function Bet({ bettingLines }: BetSectionProps) {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="primary.25">
       <VStack gap="4" align="stretch" p="4" pb="20">
         {/* Header */}
         <HStack justify="space-between" align="center">
@@ -176,7 +176,7 @@ export function Bet({ bettingLines }: BetSectionProps) {
                     </Text>
 
                     {/* Betting Line */}
-                    <Box bg="gray.50" borderRadius="8px" p="3">
+                    <Box bg="primary.25" borderRadius="8px" p="3">
                       <HStack justify="space-between" align="center" mb="2">
                         <Text
                           fontSize="sm"

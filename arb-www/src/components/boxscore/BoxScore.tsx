@@ -112,7 +112,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
       align="center"
       py="2"
       borderBottom="1px"
-      borderColor="gray.100"
+      borderColor="text.200"
       _last={{ borderBottom: "none" }}
     >
       <Text fontSize="sm" textAlign="center" w="1/4">
@@ -128,7 +128,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
   );
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="primary.25">
       {/* Header */}
       <Box
         bg="primary.25"
@@ -149,7 +149,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
               fontSize="lg"
               fontWeight="bold"
               textAlign="center"
-              color="gray.900"
+              color="text.400"
             >
               Box Score
             </Text>
@@ -158,7 +158,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
         </HStack>
       </Box>
 
-      <VStack gap="4" align="stretch" p="4" pb="20">
+      <VStack gap="4" align="stretch" px="8" py="4" pb="20">
         {/* Game Overview Card */}
         <Card.Root
           bg="primary.25"
@@ -176,15 +176,15 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                     <Box
                       w="8"
                       h="8"
-                      bg="gray.300"
+                      bg="text.300"
                       borderRadius="full"
                       flexShrink="0"
                     />
                     <VStack align="start" gap="0">
-                      <Text fontSize="sm" fontWeight="medium" color="gray.900">
+                      <Text fontSize="sm" fontWeight="medium" color="text.400">
                         {game.awayTeam.city}
                       </Text>
-                      <Text fontSize="xs" color="gray.500">
+                      <Text fontSize="xs" color="text.500">
                         {game.awayTeam.name}
                       </Text>
                     </VStack>
@@ -192,7 +192,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                   <Text
                     fontSize="2xl"
                     fontWeight="bold"
-                    color="gray.900"
+                    color="text.400"
                     fontFamily="mono"
                   >
                     {game.awayTeam.score}
@@ -204,15 +204,15 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                     <Box
                       w="8"
                       h="8"
-                      bg="gray.300"
+                      bg="text.300"
                       borderRadius="full"
                       flexShrink="0"
                     />
                     <VStack align="start" gap="0">
-                      <Text fontSize="sm" fontWeight="medium" color="gray.900">
+                      <Text fontSize="sm" fontWeight="medium" color="text.400">
                         {game.homeTeam.city}
                       </Text>
-                      <Text fontSize="xs" color="gray.500">
+                      <Text fontSize="xs" color="text.500">
                         {game.homeTeam.name}
                       </Text>
                     </VStack>
@@ -220,7 +220,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                   <Text
                     fontSize="2xl"
                     fontWeight="bold"
-                    color="gray.900"
+                    color="text.400"
                     fontFamily="mono"
                   >
                     {game.homeTeam.score}
@@ -235,21 +235,21 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                   gap="4"
                   pt="3"
                   borderTop="1px"
-                  borderColor="gray.100"
+                  borderColor="text.200"
                 >
                   <HStack gap="1" align="center">
-                    <Box w="3" h="3" color="gray.500">
+                    <Box w="3" h="3" color="text.500">
                       <Clock size={12} />
                     </Box>
-                    <Text fontSize="xs" color="gray.500">
+                    <Text fontSize="xs" color="text.500">
                       {game.gameInfo.status}
                     </Text>
                   </HStack>
                   <HStack gap="1" align="center">
-                    <Box w="3" h="3" color="gray.500">
+                    <Box w="3" h="3" color="text.500">
                       <MapPin size={12} />
                     </Box>
-                    <Text fontSize="xs" color="gray.500">
+                    <Text fontSize="xs" color="text.500">
                       {game.gameInfo.venue}
                     </Text>
                   </HStack>
@@ -268,7 +268,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
           borderColor="border.100"
         >
           <Card.Header pb="2">
-            <Card.Title fontSize="lg" fontWeight="semibold" color="gray.900">
+            <Card.Title fontSize="lg" fontWeight="semibold" color="text.400">
               Scoring Summary
             </Card.Title>
           </Card.Header>
@@ -282,7 +282,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                       py="2"
                       fontSize="xs"
                       fontWeight="medium"
-                      color="gray.600"
+                      color="text.400"
                     >
                       Team
                     </Table.ColumnHeader>
@@ -294,7 +294,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                         w="12"
                         fontSize="xs"
                         fontWeight="medium"
-                        color="gray.600"
+                        color="text.400"
                       >
                         {quarter}
                       </Table.ColumnHeader>
@@ -305,19 +305,19 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                       w="12"
                       fontSize="xs"
                       fontWeight="medium"
-                      color="gray.600"
+                      color="text.400"
                     >
                       Total
                     </Table.ColumnHeader>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                  <Table.Row borderBottom="1px" borderColor="gray.100">
+                  <Table.Row borderBottom="1px" borderColor="text.200">
                     <Table.Cell
                       py="2"
                       fontSize="sm"
                       fontWeight="medium"
-                      color="gray.900"
+                      color="text.400"
                     >
                       {game.awayTeam.abbreviation}
                     </Table.Cell>
@@ -327,7 +327,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                         textAlign="center"
                         py="2"
                         fontSize="sm"
-                        color="gray.700"
+                        color="text.400"
                       >
                         {score}
                       </Table.Cell>
@@ -337,7 +337,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                       py="2"
                       fontSize="sm"
                       fontWeight="medium"
-                      color="gray.900"
+                      color="text.400"
                     >
                       {game.awayTeam.score}
                     </Table.Cell>
@@ -347,7 +347,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                       py="2"
                       fontSize="sm"
                       fontWeight="medium"
-                      color="gray.900"
+                      color="text.400"
                     >
                       {game.homeTeam.abbreviation}
                     </Table.Cell>
@@ -357,7 +357,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                         textAlign="center"
                         py="2"
                         fontSize="sm"
-                        color="gray.700"
+                        color="text.400"
                       >
                         {score}
                       </Table.Cell>
@@ -367,7 +367,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                       py="2"
                       fontSize="sm"
                       fontWeight="medium"
-                      color="gray.900"
+                      color="text.400"
                     >
                       {game.homeTeam.score}
                     </Table.Cell>
@@ -387,7 +387,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
           borderColor="border.100"
         >
           <Card.Header pb="2">
-            <Card.Title fontSize="lg" fontWeight="semibold" color="gray.900">
+            <Card.Title fontSize="lg" fontWeight="semibold" color="text.400">
               Team Statistics
             </Card.Title>
           </Card.Header>
@@ -399,7 +399,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                   fontWeight="medium"
                   textAlign="center"
                   w="1/4"
-                  color="gray.600"
+                  color="text.400"
                 >
                   {game.awayTeam.abbreviation}
                 </Text>
@@ -408,7 +408,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                   fontWeight="medium"
                   textAlign="center"
                   flex="1"
-                  color="gray.600"
+                  color="text.400"
                 >
                   Statistic
                 </Text>
@@ -417,7 +417,7 @@ export function BoxScore({ game, sport, onBack }: BoxScoreViewProps) {
                   fontWeight="medium"
                   textAlign="center"
                   w="1/4"
-                  color="gray.600"
+                  color="text.400"
                 >
                   {game.homeTeam.abbreviation}
                 </Text>

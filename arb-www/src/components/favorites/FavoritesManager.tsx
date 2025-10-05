@@ -1120,7 +1120,13 @@ export function FavoritesManager({
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
-        <IconButton variant="ghost" size="sm" aria-label="Manage favorites">
+        <IconButton
+          color="text.400"
+          bg="primary.200"
+          variant="ghost"
+          size="sm"
+          aria-label="Manage favorites"
+        >
           <Box w="5" h="5">
             <Settings size={20} />
           </Box>

@@ -50,7 +50,7 @@ export function BoxScoreDetail({
         <Text color="red.500" fontSize="lg" fontWeight="semibold">
           Unsupported Sport
         </Text>
-        <Text color="gray.600" textAlign="center">
+        <Text color="text.400" textAlign="center">
           Box score details for {sport?.toUpperCase()} are not yet supported.
         </Text>
         <Button onClick={onBack}>Go Back</Button>

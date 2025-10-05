@@ -19,7 +19,7 @@ export function BottomNav() {
       case "scores":
         navigate(`/scores/${selectedLeague}`);
         break;
-      case "play-by-play":
+      case "live":
         navigate(`/live/${selectedLeague}`);
         break;
       case "social":
@@ -36,7 +36,7 @@ export function BottomNav() {
     const path = location.pathname;
     // if (path === "/fyp") return "for-you"; // Commented out - For You tab is hidden
     if (path.startsWith("/scores")) return "scores";
-    if (path.startsWith("/live")) return "play-by-play";
+    if (path.startsWith("/live")) return "live";
     if (path.startsWith("/social")) return "social";
     // if (path === "/bet") return "bet"; // Commented out - Bet tab is hidden
     return "scores"; // default to scores since for-you is hidden
@@ -46,7 +46,7 @@ export function BottomNav() {
   const tabs = [
     // { id: "for-you", label: "For You", icon: User },
     { id: "scores", label: "Scores", icon: Trophy },
-    { id: "play-by-play", label: "Live", icon: Play },
+    { id: "live", label: "Live", icon: Play },
     { id: "social", label: "Social", icon: Users },
     // { id: "bet", label: "Bet", icon: DollarSign },
   ];
@@ -87,13 +87,13 @@ export function BottomNav() {
                   bg="transparent"
                   transition="all 0.2s"
                 >
-                  <Box w="5" h="5" color={isActive ? "accent.100" : "text.300"}>
+                  <Box w="5" h="5" color={isActive ? "accent.400" : "text.300"}>
                     <Icon size={20} />
                   </Box>
                 </Box>
                 <Text
                   fontSize="xs"
-                  color={isActive ? "accent.100" : "text.300"}
+                  color={isActive ? "accent.400" : "text.300"}
                   fontWeight="normal"
                   transition="all 0.2s"
                 >

@@ -1,0 +1,6 @@
+---
+alwaysApply: false
+allowReasoning: true
+requireUserApprovalBeforeExecution: true
+allowFileEditsAfterApproval: true
+---

@@ -46,9 +46,9 @@ export function LeagueSelector() {
     } else {
       // Default state - red outline with red text
       return {
-        bg: "primary.500",
-        // border: "red.500",
-        text: "text.body",
+        bg: "primary.25",
+        border: "text.400",
+        text: "text.400",
       };
     }
   };
@@ -73,7 +73,7 @@ export function LeagueSelector() {
               fontWeight="medium"
               whiteSpace="nowrap"
               bg={colors.bg}
-              // borderColor={colors.border}
+              borderColor={colors.border}
               color={colors.text}
               borderWidth="1px"
               _active={{

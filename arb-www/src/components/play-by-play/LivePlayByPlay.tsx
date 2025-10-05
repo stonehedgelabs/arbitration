@@ -1,5 +1,15 @@
 import { ArrowLeft, Clock, Wifi } from "lucide-react";
-import { Badge, Button, Card } from "@chakra-ui/react";
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  HStack,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import { InningBadge } from "../badge";
+import { League } from "../../config";
 
 interface PlayEvent {
   id: string;
@@ -65,150 +75,230 @@ export function LivePlayByPlay({
   const getEventBadge = (type: string) => {
     switch (type) {
       case "touchdown":
-        return <Badge className="bg-green-600">TD</Badge>;
+        return (
+          <Badge bg="green.500" color="white" fontSize="xs">
+            TD
+          </Badge>
+        );
       case "field_goal":
-        return <Badge className="bg-blue-600">FG</Badge>;
+        return (
+          <Badge bg="blue.500" color="white" fontSize="xs">
+            FG
+          </Badge>
+        );
       case "turnover":
-        return <Badge className="bg-orange-600">TO</Badge>;
+        return (
+          <Badge bg="orange.500" color="white" fontSize="xs">
+            TO
+          </Badge>
+        );
       case "penalty":
-        return <Badge className="bg-yellow-600">PEN</Badge>;
+        return (
+          <Badge bg="yellow.500" color="white" fontSize="xs">
+            PEN
+          </Badge>
+        );
       default:
         return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <Box minH="100vh" bg="primary.25">
       {/* Header */}
-      <header className="bg-card border-b sticky top-0 z-40">
-        <div className="flex items-center gap-3 px-4 py-3">
+      <Box
+        bg="primary.25"
+        borderBottom="1px"
+        borderColor="border.100"
+        position="sticky"
+        top="0"
+        zIndex="40"
+      >
+        <HStack gap="3" px="4" py="3">
           <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="w-4 h-4" />
+            <Box w="4" h="4">
+              <ArrowLeft size={16} />
+            </Box>
           </Button>
-          <div className="flex-1">
-            <h1 className="text-center">Live Play-by-Play</h1>
-          </div>
-          <div className="w-8"></div>
-        </div>
-      </header>
+          <Box flex="1">
+            <Text fontSize="lg" fontWeight="bold" textAlign="center">
+              Live Play-by-Play
+            </Text>
+          </Box>
+          <Box w="8" />
+        </HStack>
+      </Box>
 
-      <div className="pb-4">
-        {/* Game Status Card.Root */}
-        <Card.Root className="m-4 mb-3 border-l-4 border-l-red-500">
-          <Card.Body className="p-4">
+      <Box pb="4">
+        {/* Game Status Card */}
+        <Card.Root m="4" mb="3" borderLeft="4px" borderLeftColor="danger.500">
+          <Card.Body p="4">
             {/* Live indicator */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-red-600 uppercase tracking-wide">
+            <HStack justify="space-between" mb="3">
+              <HStack gap="2">
+                <Box w="2" h="2" bg="danger.500" borderRadius="full" />
+                <Text
+                  fontSize="xs"
+                  fontWeight="medium"
+                  color="danger.500"
+                  textTransform="uppercase"
+                  letterSpacing="wide"
+                >
                   Live
-                </span>
-                <Wifi className="w-3 h-3 text-red-600" />
-              </div>
+                </Text>
+                <Box w="3" h="3">
+                  <Wifi size={12} color="var(--chakra-colors-danger-500)" />
+                </Box>
+              </HStack>
               {game.quarter && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" fontSize="xs">
                   {game.quarter}
                 </Badge>
               )}
-            </div>
+            </HStack>
 
             {/* Teams and Score */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0"></div>
-                  <div>
-                    <div className="font-medium">{game.awayTeam.name}</div>
-                    <div className="text-xs text-muted-foreground">Away</div>
-                  </div>
-                </div>
-                <div className="font-mono text-2xl font-medium">
+            <VStack gap="3">
+              <HStack justify="space-between" w="full">
+                <HStack gap="3">
+                  <Box
+                    w="8"
+                    h="8"
+                    bg="text.200"
+                    borderRadius="full"
+                    flexShrink="0"
+                  />
+                  <VStack gap="0" align="start">
+                    <Text fontWeight="medium">{game.awayTeam.name}</Text>
+                    <Text fontSize="xs" color="text.500">
+                      Away
+                    </Text>
+                  </VStack>
+                </HStack>
+                <Text fontFamily="mono" fontSize="2xl" fontWeight="medium">
                   {game.awayTeam.score}
-                </div>
-              </div>
+                </Text>
+              </HStack>
 
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0"></div>
-                  <div>
-                    <div className="font-medium">{game.homeTeam.name}</div>
-                    <div className="text-xs text-muted-foreground">Home</div>
-                  </div>
-                </div>
-                <div className="font-mono text-2xl font-medium">
+              <HStack justify="space-between" w="full">
+                <HStack gap="3">
+                  <Box
+                    w="8"
+                    h="8"
+                    bg="text.200"
+                    borderRadius="full"
+                    flexShrink="0"
+                  />
+                  <VStack gap="0" align="start">
+                    <Text fontWeight="medium">{game.homeTeam.name}</Text>
+                    <Text fontSize="xs" color="text.500">
+                      Home
+                    </Text>
+                  </VStack>
+                </HStack>
+                <Text fontFamily="mono" fontSize="2xl" fontWeight="medium">
                   {game.homeTeam.score}
-                </div>
-              </div>
-            </div>
+                </Text>
+              </HStack>
+            </VStack>
           </Card.Body>
         </Card.Root>
 
         {/* Auto-refresh indicator */}
-        <div className="mx-4 mb-3 p-2 bg-muted/50 rounded-lg">
-          <div className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-            Auto-refreshing every 30 seconds
-          </div>
-        </div>
+        <Box mx="4" mb="3" p="2" bg="text.200" borderRadius="lg">
+          <HStack justify="center" gap="2">
+            <Box w="1.5" h="1.5" bg="green.500" borderRadius="full" />
+            <Text fontSize="xs" color="text.500" textAlign="center">
+              Auto-refreshing every 30 seconds
+            </Text>
+          </HStack>
+        </Box>
 
         {/* Play by Play */}
-        <div className="space-y-3 px-4 pb-20">
-          <h3 className="font-medium">Recent Plays</h3>
+        <VStack gap="3" px="4" pb="20">
+          <Text fontWeight="medium">Recent Plays</Text>
 
           {plays.length === 0 ? (
-            <Card.Root className="border-dashed">
-              <Card.Body className="p-6 text-center">
-                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Clock className="w-6 h-6 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground">
+            <Card.Root borderStyle="dashed">
+              <Card.Body p="6" textAlign="center">
+                <Box
+                  w="12"
+                  h="12"
+                  bg="text.200"
+                  borderRadius="full"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  mx="auto"
+                  mb="3"
+                >
+                  <Box w="6" h="6">
+                    <Clock size={24} color="var(--chakra-colors-text-500)" />
+                  </Box>
+                </Box>
+                <Text fontSize="sm" color="text.500">
                   Waiting for live updates...
-                </p>
+                </Text>
               </Card.Body>
             </Card.Root>
           ) : (
-            <div className="space-y-2">
+            <VStack gap="2" w="full">
               {plays.map((play, index) => (
                 <Card.Root
                   key={play.id}
-                  className={`border-l-4 border-l-primary ${index === 0 ? "bg-accent/30" : ""}`}
+                  borderLeft="4px"
+                  borderLeftColor="primary.500"
+                  bg={index === 0 ? "accent.100" : undefined}
                 >
-                  <Card.Body className="p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Badge variant="outline" className="text-xs">
-                            {play.quarter}
-                          </Badge>
-                          <div className="flex items-center gap-1 text-muted-foreground text-xs">
-                            <Clock className="w-3 h-3" />
-                            <span>{play.time}</span>
-                          </div>
+                  <Card.Body p="3">
+                    <HStack align="start" gap="3">
+                      <Box flex="1" minW="0">
+                        <HStack gap="2" mb="2" flexWrap="wrap">
+                          <InningBadge
+                            inningNumber={parseInt(play.quarter) || 1}
+                            league={League.MLB}
+                            size="sm"
+                          />
+                          <HStack gap="1">
+                            <Box w="3" h="3">
+                              <Clock
+                                size={12}
+                                color="var(--chakra-colors-text-500)"
+                              />
+                            </Box>
+                            <Text fontSize="xs" color="text.400">
+                              {play.time}
+                            </Text>
+                          </HStack>
                           {getEventBadge(play.type)}
                           {index === 0 && (
-                            <Badge className="bg-green-600 text-xs">
+                            <Badge bg="green.500" color="white" fontSize="xs">
                               Latest
                             </Badge>
                           )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-1 truncate">
+                        </HStack>
+                        <Text fontSize="xs" color="text.500" mb="1" truncate>
                           {play.team}
-                        </p>
-                        <p className="text-sm font-medium leading-tight">
+                        </Text>
+                        <Text
+                          fontSize="sm"
+                          fontWeight="medium"
+                          lineHeight="tight"
+                        >
                           {getPlayTitle(play.description)}
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-tight">
+                        </Text>
+                        <Text fontSize="xs" color="text.500" lineHeight="tight">
                           {play.description}
-                        </p>
-                      </div>
-                    </div>
+                        </Text>
+                      </Box>
+                    </HStack>
                   </Card.Body>
                 </Card.Root>
               ))}
-            </div>
+            </VStack>
           )}
-        </div>
-      </div>
-    </div>
+        </VStack>
+      </Box>
+    </Box>
   );
 }

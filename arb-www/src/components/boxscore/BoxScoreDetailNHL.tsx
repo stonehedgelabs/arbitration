@@ -79,51 +79,51 @@ export function BoxScoreDetailNHL({ gameId, onBack }: BoxScoreDetailNHLProps) {
           >
             <ArrowLeft size={20} />
           </IconButton>
-          <Text fontSize="sm" color="gray.600">
+          <Text fontSize="sm" color="text.400">
             NHL Box Score
           </Text>
         </HStack>
       </Box>
 
       {/* Main Content */}
-      <Box px="4" py="6">
+      <Box px="8" py="6">
         <VStack gap="6" align="stretch">
           {/* Game Info */}
-          <Box bg="gray.50" p="4" borderRadius="lg">
-            <Text fontSize="lg" fontWeight="bold" mb="3" color="gray.600">
+          <Box bg="primary.25" p="4" borderRadius="lg">
+            <Text fontSize="lg" fontWeight="bold" mb="3" color="text.400">
               Game Information
             </Text>
             <VStack gap="2" align="stretch">
               <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color="text.400">
                   Game ID:
                 </Text>
-                <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                <Text fontSize="sm" fontWeight="medium" color="text.400">
                   {gameId}
                 </Text>
               </HStack>
-              <Text fontSize="sm" color="gray.500" textAlign="center">
+              <Text fontSize="sm" color="text.500" textAlign="center">
                 NHL box score details coming soon...
               </Text>
             </VStack>
           </Box>
 
           {/* Team Stats Placeholder */}
-          <Box bg="gray.50" p="4" borderRadius="lg">
-            <Text fontSize="md" fontWeight="bold" mb="3" color="gray.600">
+          <Box bg="primary.25" p="4" borderRadius="lg">
+            <Text fontSize="md" fontWeight="bold" mb="3" color="text.400">
               Team Statistics
             </Text>
-            <Text fontSize="sm" color="gray.500" textAlign="center">
+            <Text fontSize="sm" color="text.500" textAlign="center">
               Detailed NHL statistics will be displayed here
             </Text>
           </Box>
 
           {/* Player Stats Placeholder */}
-          <Box bg="gray.50" p="4" borderRadius="lg">
-            <Text fontSize="md" fontWeight="bold" mb="3" color="gray.600">
+          <Box bg="primary.25" p="4" borderRadius="lg">
+            <Text fontSize="md" fontWeight="bold" mb="3" color="text.400">
               Player Statistics
             </Text>
-            <Text fontSize="sm" color="gray.500" textAlign="center">
+            <Text fontSize="sm" color="text.500" textAlign="center">
               Individual player stats will be shown here
             </Text>
           </Box>

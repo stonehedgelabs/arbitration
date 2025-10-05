@@ -461,7 +461,7 @@ export function ForYouSection({ items }: ForYouSectionProps) {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="primary.25">
       <Box p="4">
         <VStack gap="6" align="stretch">
           <VStack gap="2" align="start">

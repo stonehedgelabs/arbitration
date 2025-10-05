@@ -4,9 +4,11 @@
 host = "0.0.0.0"
 port = 3000
 cors_origins = "http://localhost:5173,http://localhost:3000"
+client_url = "http://localhost:3000"
 
 [cache]
 enabled = true
+mode = "Infinite"
 redis_url = "redis://localhost:6379"
 default_ttl = 60
 
@@ -19,6 +21,8 @@ play_by_play = 20         # 20 seconds
 box_scores = 60           # 1 minute
 stadiums = 7200           # 2 hours
 twitter_search = 60       # 1 minute
+odds = 86400              # 24 hours
+user_auth = 604800        # 1 week (7 days)
 
 [seasons.current_seasons.mlb]
 regular = "2025"

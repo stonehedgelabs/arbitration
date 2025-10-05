@@ -115,21 +115,13 @@ export function DatePicker({ selectedLeague }: DatePickerProps) {
         gap="2"
         overflowX="auto"
         pb="2"
+        bg="primary.25"
         css={{
           "&::-webkit-scrollbar": {
-            height: "4px",
+            display: "none",
           },
-          "&::-webkit-scrollbar-track": {
-            background: "#f1f1f1",
-            borderRadius: "2px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: "#c1c1c1",
-            borderRadius: "2px",
-          },
-          "&::-webkit-scrollbar-thumb:hover": {
-            background: "#a8a8a8",
-          },
+          "&::-ms-overflow-style": "none",
+          "&scrollbarWidth": "none",
         }}
       >
         {getDateRange().map((dateInfo) => (
@@ -150,7 +142,7 @@ export function DatePicker({ selectedLeague }: DatePickerProps) {
                 : "2px solid transparent"
             }
             borderBottomColor={
-              selectedDate === dateInfo.date ? "red.500" : "transparent"
+              selectedDate === dateInfo.date ? "danger.100" : "transparent"
             }
             minW="fit-content"
             whiteSpace="nowrap"
@@ -160,7 +152,7 @@ export function DatePicker({ selectedLeague }: DatePickerProps) {
               fontWeight={
                 selectedDate === dateInfo.date ? "semibold" : "normal"
               }
-              color={selectedDate === dateInfo.date ? "red.600" : "gray.600"}
+              color={selectedDate === dateInfo.date ? "danger.100" : "text.400"}
             >
               {dateInfo.display}
             </Text>

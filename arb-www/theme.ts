@@ -22,12 +22,19 @@ const lightColors = {
   },
 
   // Accent colors for interactivity
+  // accent: {
+  //   50: { value: "#87A5C5" },
+  //   100: { value: "#456990" },
+  //   200: { value: "#385574" },
+  //   300: { value: "#E4E4E4" },
+  //   400: { value: "#0D3D4C" },
+  // },
   accent: {
-    50: { value: "#87A5C5" },
+    50: { value: "#2A4057" },
     100: { value: "#456990" },
-    200: { value: "#385574" },
-    300: { value: "#E4E4E4" },
-    400: { value: "#0D3D4C" },
+    200: { value: "#5F87B2" },
+    300: { value: "#78CBE7" },
+    400: { value: "#34B1DB" },
   },
 
   // Simplified neutral text hierarchy
@@ -35,6 +42,7 @@ const lightColors = {
     100: { value: "#FFFFFF" }, // Almost white (use sparingly)
     200: { value: "#E6E6E6" }, // Slightly muted light gray
     300: { value: "#BDBDBD" }, // Very muted mid-gray
+    350: { value: "#8E8E8E" }, // Mid-gray between 300 and 400
     400: { value: "#5C5C5C" }, // Dark gray (main body)
     500: { value: "#1A1A1A" }, // Almost black (max contrast)
   },
@@ -133,12 +141,13 @@ const darkColors = {
     400: { value: "#34B1DB" },
   },
 
-  // Simplified text system (light on dark)
   text: {
-    100: { value: "#777" },   // Muted
-    200: { value: "#AFAFAF" }, // Secondary
-    300: { value: "#E4E4E4" }, // Body
-    400: { value: "#FFFFFF" }, // Headings
+    100: { value: "#FFFFFF" }, // Brightest (use sparingly, highlights or on darkest backgrounds)
+    200: { value: "#FAFAFA" }, // Headings – high contrast but softer than pure white
+    300: { value: "#E0E0E0" }, // Body text – comfortable contrast, readable on dark bg
+    350: { value: "#CFCFCF" }, // Mid-gray between 300 and 400
+    400: { value: "#BDBDBD" }, // Secondary – captions, hints, disabled labels
+    500: { value: "#999999" }, // Muted – lowest contrast, placeholders or subtle UI text
   },
 
   // Borders

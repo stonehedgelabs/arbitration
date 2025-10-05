@@ -23,7 +23,7 @@ impl Cache {
         })
     }
 
-    /// Basic Redis SETEX with expiry argument
+    /// Basic Redis SETEX with expiry argument, or SET for infinite caching
     pub async fn setx(
         &mut self,
         key: impl AsRef<str>,
@@ -34,12 +34,25 @@ impl Cache {
             return Ok(());
         }
 
-        redis::cmd("SETEX")
-            .arg(key.as_ref())
-            .arg(expiry_seconds)
-            .arg(value)
-            .exec_async(&mut self.connection)
-            .await?;
+        match self.config.mode {
+            crate::config::CacheMode::Infinite => {
+                // Cache indefinitely - use SET without expiration
+                redis::cmd("SET")
+                    .arg(key.as_ref())
+                    .arg(value)
+                    .exec_async(&mut self.connection)
+                    .await?;
+            }
+            crate::config::CacheMode::TtlBased => {
+                // Use custom TTL - use SETEX with expiration
+                redis::cmd("SETEX")
+                    .arg(key.as_ref())
+                    .arg(expiry_seconds)
+                    .arg(value)
+                    .exec_async(&mut self.connection)
+                    .await?;
+            }
+        }
         Ok(())
     }
 
@@ -49,24 +62,37 @@ impl Cache {
             return Ok(());
         }
 
-        let script = r#"
-        local val = redis.call("GET", KEYS[1])
-        if val then
-            redis.call("EXPIRE", KEYS[1], ARGV[2])
-        else
-            redis.call("SETEX", KEYS[1], ARGV[2], ARGV[1])
-        end
-        return val
-        "#;
+        match self.config.mode {
+            crate::config::CacheMode::Infinite => {
+                // Cache indefinitely - just use SET
+                redis::cmd("SET")
+                    .arg(key.as_ref())
+                    .arg(value)
+                    .exec_async(&mut self.connection)
+                    .await?;
+            }
+            crate::config::CacheMode::TtlBased => {
+                // Use sliding TTL logic
+                let script = r#"
+                local val = redis.call("GET", KEYS[1])
+                if val then
+                    redis.call("EXPIRE", KEYS[1], ARGV[2])
+                else
+                    redis.call("SETEX", KEYS[1], ARGV[2], ARGV[1])
+                end
+                return val
+                "#;
 
-        redis::cmd("EVAL")
-            .arg(script)
-            .arg(1)
-            .arg(key.as_ref())
-            .arg(value)
-            .arg(self.config.default_ttl)
-            .exec_async(&mut self.connection)
-            .await?;
+                redis::cmd("EVAL")
+                    .arg(script)
+                    .arg(1)
+                    .arg(key.as_ref())
+                    .arg(value)
+                    .arg(self.config.default_ttl)
+                    .exec_async(&mut self.connection)
+                    .await?;
+            }
+        }
 
         Ok(())
     }
