@@ -5,40 +5,162 @@ import {
   HStack,
   Text,
   Button,
-  Spinner,
   IconButton,
   Image,
   Flex,
 } from "@chakra-ui/react";
 import { ArrowLeft } from "lucide-react";
 import useArb from "../../services/Arb.ts";
-import { useAppSelector } from "../../store/hooks.ts";
+import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
+import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { Bases } from "../Bases.tsx";
 
 // Internal imports - utils
-import { orEmpty } from "../../utils.ts";
+import { orEmpty, formatInningWithIcon } from "../../utils.ts";
+
+// Internal imports - config
+import {
+  mapApiStatusToGameStatus,
+  getStatusDisplayText,
+} from "../../config.ts";
 
 interface BoxScoreDetailMLBProps {
   gameId: string;
   onBack: () => void;
 }
 
+// Box Score Skeleton Components
+const BoxScoreHeaderSkeleton = () => {
+  return (
+    <Box
+      bg="primary.25"
+      px="4"
+      py="3"
+      borderBottom="1px"
+      borderColor="border.100"
+    >
+      <HStack justify="space-between" align="center">
+        <Skeleton w="8" h="8" borderRadius="md" />
+        <Skeleton w="16" h="4" />
+      </HStack>
+    </Box>
+  );
+};
+
+const BoxScoreMainSkeleton = () => {
+  return (
+    <Box px="4" py="6">
+      {/* Game Title Skeleton */}
+      <Skeleton w="80%" h="4" mx="auto" mb="6" />
+
+      {/* Scoreboard Skeleton */}
+      <Flex justify="space-between" align="center" mb="6">
+        {/* Away Team */}
+        <VStack gap="3" align="center" flex="1">
+          <SkeletonCircle size="12" />
+          <VStack gap="1" align="center">
+            <Skeleton w="20" h="3" />
+            <Skeleton w="16" h="3" />
+          </VStack>
+          <Skeleton w="16" h="12" />
+          {/* Strikes */}
+          <VStack gap="1" align="center">
+            <HStack gap="0.5">
+              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" />
+            </HStack>
+            <Skeleton w="12" h="3" />
+          </VStack>
+        </VStack>
+
+        {/* Center - Game State */}
+        <VStack gap="4" align="center" flex="1">
+          <Skeleton w="24" h="4" />
+          {/* Baseball Diamond */}
+          <Skeleton w="12" h="12" borderRadius="md" />
+        </VStack>
+
+        {/* Home Team */}
+        <VStack gap="3" align="center" flex="1">
+          <SkeletonCircle size="12" />
+          <VStack gap="1" align="center">
+            <Skeleton w="20" h="3" />
+            <Skeleton w="16" h="3" />
+          </VStack>
+          <Skeleton w="16" h="12" />
+          {/* Balls */}
+          <VStack gap="1" align="center">
+            <HStack gap="0.5">
+              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" />
+            </HStack>
+            <Skeleton w="12" h="3" />
+          </VStack>
+        </VStack>
+      </Flex>
+    </Box>
+  );
+};
+
+const BoxScoreStatsSkeleton = () => {
+  return (
+    <Box px="4" py="4">
+      {/* Team Tabs */}
+      <VStack gap="2" mb="4">
+        <Skeleton w="100%" h="16" borderRadius="md" />
+        <Skeleton w="100%" h="8" borderRadius="md" />
+      </VStack>
+
+      {/* Stats Table */}
+      <VStack gap="2" align="stretch">
+        {Array.from({ length: 6 }, (_, index) => (
+          <HStack key={index} justify="space-between" align="center" py="2">
+            <Skeleton w="16" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+            <Skeleton w="8" h="4" />
+          </HStack>
+        ))}
+      </VStack>
+    </Box>
+  );
+};
+
+const BoxScoreGameInfoSkeleton = () => {
+  return (
+    <Box px="4" py="4">
+      <Skeleton w="full" h="32" borderRadius="lg" />
+    </Box>
+  );
+};
+
 export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   const {
     mlbBoxScore,
     mlbTeamProfiles,
     mlbStadiums,
-    fetchMLBBoxScore,
+    mlbOddsByDate,
     fetchMLBTeamProfiles,
     fetchMLBStadiums,
   } = useArb();
-  const [selectedTeam, setSelectedTeam] = useState<"away" | "home">("away");
 
-  // Get odds data from Redux store
-  const mlbOddsByDate = useAppSelector((state) => state.sportsData.oddsByDate);
+  // Get box score data from Redux state (persists across navigation)
+  const dispatch = useAppDispatch();
+  const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
+  const reduxBoxScore = boxScoreData[gameId as keyof typeof boxScoreData];
+  const [selectedTeam, setSelectedTeam] = useState<"away" | "home">("away");
 
   // Helper function to get odds for this specific game
   const getGameOdds = () => {
@@ -69,29 +191,41 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   const gameOdds = getGameOdds();
 
   useEffect(() => {
-    fetchMLBBoxScore(gameId);
-    fetchMLBTeamProfiles();
-    fetchMLBStadiums();
-  }, [gameId]); // Removed function dependencies to prevent loops
+    // Only fetch if we don't have the data
+    if (reduxBoxScore) {
+      return;
+    }
 
-  // Show loading state while data is being fetched
-  if (!mlbBoxScore?.data) {
+    // Use Redux thunk to fetch box score data
+    dispatch(fetchBoxScore({ league: "mlb", gameId }));
+  }, [gameId, dispatch, reduxBoxScore]);
+
+  // Separate useEffect for supporting data to avoid dependency issues
+  useEffect(() => {
+    // Fetch supporting data if not already available
+    if (!mlbTeamProfiles?.data || mlbTeamProfiles.data.length === 0) {
+      fetchMLBTeamProfiles();
+    }
+    if (!mlbStadiums?.data || mlbStadiums.data.length === 0) {
+      fetchMLBStadiums();
+    }
+  }, [mlbTeamProfiles, mlbStadiums, fetchMLBTeamProfiles, fetchMLBStadiums]);
+
+  // Show loading state only if we don't have data in Redux and we're not currently fetching
+  if (!reduxBoxScore && !mlbBoxScore?.data) {
     return (
-      <Box
-        minH="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap="4">
-          <Spinner size="lg" />
-          <Text>Loading box score...</Text>
-        </VStack>
+      <Box minH="100vh" bg="primary.25">
+        <BoxScoreHeaderSkeleton />
+        <BoxScoreMainSkeleton />
+        <BoxScoreStatsSkeleton />
+        <BoxScoreGameInfoSkeleton />
       </Box>
     );
   }
 
-  const game = mlbBoxScore.data.Game;
+  // Use Redux data if available, otherwise use local data
+  const gameData = reduxBoxScore || mlbBoxScore;
+  const game = gameData?.data?.Game;
 
   // Helper function to get stadium information
   const getStadiumInfo = () => {
@@ -214,7 +348,12 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             <Text fontSize="sm" color="gray.600" fontWeight="medium">
               {game.Status === "Final"
                 ? "Final"
-                : game.InningDescription || "Not started"}
+                : game.Inning && game.InningHalf
+                  ? formatInningWithIcon(game.Inning, game.InningHalf)
+                  : game.InningDescription ||
+                    getStatusDisplayText(
+                      mapApiStatusToGameStatus(game.Status || ""),
+                    )}
             </Text>
             {/* Baseball Diamond with Base Runners */}
             <Bases
@@ -497,21 +636,55 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               Innings Summary
             </Text>
             <Box overflowX="auto">
-              <HStack gap="1" minW="fit-content">
-                {game.Innings.slice(0, 9).map((inning, index) => (
-                  <VStack key={index} gap="0.5" minW="8" align="center" p="1">
+              <VStack gap="1" align="stretch">
+                {/* Inning Numbers Header */}
+                <HStack gap="1" minW="fit-content">
+                  <Box minW="8" p="1">
                     <Text fontSize="2xs" color="gray.600">
-                      {inning.InningNumber}
+                      Inning
                     </Text>
-                    <Text fontSize="xs" fontWeight="medium">
-                      {inning.AwayTeamRuns}
+                  </Box>
+                  {game.Innings.slice(0, 9).map((inning, index) => (
+                    <Box key={index} minW="8" p="1">
+                      <Text fontSize="2xs" color="gray.600">
+                        {inning.InningNumber}
+                      </Text>
+                    </Box>
+                  ))}
+                </HStack>
+
+                {/* Away Team Scores */}
+                <HStack gap="1" minW="fit-content">
+                  <Box minW="8" p="1">
+                    <Text fontSize="2xs" color="gray.600" fontWeight="medium">
+                      {game.AwayTeam}
                     </Text>
-                    <Text fontSize="xs" fontWeight="medium">
-                      {inning.HomeTeamRuns}
+                  </Box>
+                  {game.Innings.slice(0, 9).map((inning, index) => (
+                    <Box key={index} minW="8" p="1">
+                      <Text fontSize="xs" fontWeight="medium">
+                        {inning.AwayTeamRuns}
+                      </Text>
+                    </Box>
+                  ))}
+                </HStack>
+
+                {/* Home Team Scores */}
+                <HStack gap="1" minW="fit-content">
+                  <Box minW="8" p="1">
+                    <Text fontSize="2xs" color="gray.600" fontWeight="medium">
+                      {game.HomeTeam}
                     </Text>
-                  </VStack>
-                ))}
-              </HStack>
+                  </Box>
+                  {game.Innings.slice(0, 9).map((inning, index) => (
+                    <Box key={index} minW="8" p="1">
+                      <Text fontSize="xs" fontWeight="medium">
+                        {inning.HomeTeamRuns}
+                      </Text>
+                    </Box>
+                  ))}
+                </HStack>
+              </VStack>
             </Box>
           </Box>
         )}
@@ -676,7 +849,9 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                     Status:
                   </Text>
                   <Text fontSize="sm" fontWeight="medium">
-                    {game.Status || "TBD"}
+                    {getStatusDisplayText(
+                      mapApiStatusToGameStatus(game.Status || ""),
+                    )}
                   </Text>
                 </HStack>
                 {game.Inning && (
@@ -685,8 +860,9 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                       Inning:
                     </Text>
                     <Text fontSize="sm" fontWeight="medium">
-                      {game.Inning}
-                      {game.InningHalf || ""}
+                      {game.InningHalf
+                        ? formatInningWithIcon(game.Inning, game.InningHalf)
+                        : game.Inning}
                     </Text>
                   </HStack>
                 )}
@@ -844,7 +1020,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   </Box>
                 </Box>
                 <Box as="tbody">
-                  {mlbBoxScore.data.PlayerGames.filter(
+                  {gameData?.data?.PlayerGames.filter(
                     (player) =>
                       player.TeamID ===
                       (selectedTeam === "away"
@@ -860,12 +1036,12 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                         bg={index % 2 === 0 ? "white" : "gray.50"}
                       >
                         <Box as="td" px="2" py="1" fontSize="xs">
-                          <VStack align="start" gap="0">
-                            <Text fontWeight="medium">{player.Name}</Text>
+                          <HStack align="center" gap="1">
                             <Text fontSize="2xs" color="gray.600">
                               {player.Position}
                             </Text>
-                          </VStack>
+                            <Text fontWeight="medium">{player.Name}</Text>
+                          </HStack>
                         </Box>
                         <Box
                           as="td"
@@ -1052,7 +1228,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   </Box>
                 </Box>
                 <Box as="tbody">
-                  {mlbBoxScore.data.PlayerGames.filter(
+                  {gameData?.data?.PlayerGames.filter(
                     (player) =>
                       player.TeamID ===
                       (selectedTeam === "away"
@@ -1068,12 +1244,12 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                         bg={index % 2 === 0 ? "white" : "gray.50"}
                       >
                         <Box as="td" px="2" py="1" fontSize="xs">
-                          <VStack align="start" gap="0">
-                            <Text fontWeight="medium">{player.Name}</Text>
+                          <HStack align="center" gap="1">
                             <Text fontSize="2xs" color="gray.600">
                               {player.Position}
                             </Text>
-                          </VStack>
+                            <Text fontWeight="medium">{player.Name}</Text>
+                          </HStack>
                         </Box>
                         <Box
                           as="td"

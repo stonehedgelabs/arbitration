@@ -7,29 +7,27 @@ import {
   Box,
   Button,
   Card,
+  Flex,
   HStack,
   IconButton,
   Image,
-  Spinner,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Circle,
-  RefreshCw,
-  Target,
-  TrendingUp,
-  X,
-  Zap,
-} from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
+import { Bases } from "../Bases.tsx";
 
 // Internal imports - config
-import { buildApiUrl, League } from "../../config.ts";
+import {
+  buildApiUrl,
+  League,
+  PLAY_BY_PLAY_CONFIG,
+  mapApiStatusToGameStatus,
+  getStatusDisplayText,
+} from "../../config.ts";
 
 // Internal imports - schema
 import { Play } from "../../schema/mlb/playbyplay.ts";
@@ -42,7 +40,13 @@ import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - utils
-import { formatRelativeTime, getPlayIcon, getPlayLabel } from "../../utils.ts";
+import {
+  formatRelativeTime,
+  getPlayLabel,
+  getPlayTitle,
+  orEmpty,
+  formatInningWithIcon,
+} from "../../utils.ts";
 
 // Interface for the actual API response structure
 interface ActualPlayByPlayResponse {
@@ -56,8 +60,153 @@ interface PlayByPlayMLBProps {
   onBack: () => void;
 }
 
-// Maximum number of play-by-play events to keep in memory
-const MAX_EVENTS = 50;
+// PBP Card Skeleton Component
+const PBPCardSkeleton = () => {
+  return (
+    <Card.Root bg="primary.100" shadow="sm">
+      <Card.Body p="3">
+        <HStack justify="space-between" align="start" gap="3">
+          {/* Team logo skeleton */}
+          <HStack gap="2" align="center">
+            <SkeletonCircle size="6" />
+          </HStack>
+
+          {/* Main content skeleton */}
+          <VStack align="start" gap="1" flex="1">
+            <Skeleton w="60%" h="4" />
+            <Skeleton w="90%" h="3" />
+          </VStack>
+
+          {/* Right side info skeleton */}
+          <VStack align="end" gap="1">
+            <Skeleton w="12" h="3" />
+            <Skeleton w="16" h="3" />
+            <Skeleton w="20" h="3" />
+            <Skeleton w="8" h="3" />
+          </VStack>
+        </HStack>
+      </Card.Body>
+    </Card.Root>
+  );
+};
+
+// Header Skeleton Component
+const HeaderSkeleton = () => {
+  return (
+    <Box
+      bg="primary.25"
+      borderBottom="1px"
+      borderColor="border.100"
+      px="8"
+      py="4"
+    >
+      <HStack justify="space-between" align="center" mb="4">
+        <HStack gap="3">
+          <Skeleton w="8" h="8" borderRadius="md" />
+          <VStack align="start" gap="0">
+            {/* <Skeleton w="48" h="5" mb="2" /> */}
+          </VStack>
+        </HStack>
+        <HStack gap="2">
+          <Skeleton w="12" h="6" borderRadius="md" />
+          <Skeleton w="8" h="8" borderRadius="md" />
+        </HStack>
+      </HStack>
+
+      {/* Team vs Team Layout */}
+      <Flex justify="space-between" align="center" gap="4">
+        {/* Away Team */}
+        <VStack gap="2" align="center" flex="1">
+          <SkeletonCircle size="12" />
+          <VStack gap="0.5" align="center">
+            <Skeleton w="20" h="3" />
+            <Skeleton w="16" h="3" />
+          </VStack>
+          <Skeleton w="8" h="8" />
+          {/* Strikes */}
+          <VStack gap="0.5" align="center">
+            <HStack gap="0.5">
+              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" />
+            </HStack>
+            <Skeleton w="12" h="3" />
+          </VStack>
+        </VStack>
+
+        {/* Center - Game State */}
+        <VStack gap="3" align="center" flex="1">
+          <Skeleton w="24" h="4" />
+          {/* Baseball Diamond */}
+          <Skeleton w="12" h="12" borderRadius="md" />
+        </VStack>
+
+        {/* Home Team */}
+        <VStack gap="2" align="center" flex="1">
+          <SkeletonCircle size="12" />
+          <VStack gap="0.5" align="center">
+            <Skeleton w="20" h="3" />
+            <Skeleton w="16" h="3" />
+          </VStack>
+          <Skeleton w="8" h="8" />
+          {/* Balls */}
+          <VStack gap="0.5" align="center">
+            <HStack gap="0.5">
+              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" />
+              <Skeleton w="2" h="2" borderRadius="full" />
+            </HStack>
+            <Skeleton w="12" h="3" />
+          </VStack>
+        </VStack>
+      </Flex>
+    </Box>
+  );
+};
+
+// Game Status Skeleton Component
+const GameStatusSkeleton = () => {
+  return (
+    <Box bg="primary.25" p="4" borderBottom="1px" borderColor="border.100">
+      <HStack justify="space-between" align="center">
+        <VStack align="start" gap="1">
+          <Text fontSize="sm" fontWeight="medium" color="gray.400">
+            Live Game
+          </Text>
+          <Text fontSize="xs" color="gray.500">
+            Play-by-Play Events
+          </Text>
+          <VStack align="start" gap="2" mt="1">
+            <HStack gap="4">
+              <Text fontSize="xs" color="gray.500">
+                Hits: -- - --
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                Errors: -- - --
+              </Text>
+            </HStack>
+            <HStack gap="4">
+              <Text fontSize="xs" color="gray.600">
+                Pitcher: --
+              </Text>
+              <Text fontSize="xs" color="gray.600">
+                Batter: --
+              </Text>
+            </HStack>
+          </VStack>
+        </VStack>
+        <VStack align="end" gap="1">
+          <Text fontSize="xs" color="gray.500">
+            0 events
+          </Text>
+          <Text fontSize="xs" color="gray.500">
+            Live
+          </Text>
+        </VStack>
+      </HStack>
+    </Box>
+  );
+};
 
 export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   // Get gameId from URL params if not provided as prop
@@ -72,6 +221,9 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   // Get box-score data from Redux state
   const dispatch = useAppDispatch();
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
+  const boxScoreRequests = useAppSelector(
+    (state) => state.sportsData.boxScoreRequests,
+  );
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
   );
@@ -84,8 +236,11 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
 
   // Get current game data from box-score
   const currentGame = actualGameId
-    ? boxScoreData[actualGameId as keyof typeof boxScoreData]
+    ? boxScoreData[actualGameId as keyof typeof boxScoreData]?.data?.Game
     : null;
+
+  // Use currentGame as the game data
+  const gameData = currentGame;
 
   // Reset fetch ref when game ID changes
   useEffect(() => {
@@ -106,24 +261,14 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       fetchMLBTeamProfiles();
     }
 
-    // Fetch box score if it doesn't exist
-    if (!currentGame) {
+    // Fetch box score if it doesn't exist and not currently being requested
+    if (!currentGame && !boxScoreRequests.includes(actualGameId)) {
       dispatch(fetchBoxScore({ league: currentLeague, gameId: actualGameId }));
     }
 
     // Fetch play-by-play data
     fetchPlayByPlay();
   }, [actualGameId]); // Only depend on actualGameId to prevent multiple triggers
-
-  // Ensure team profiles are always available (for refresh scenarios)
-  useEffect(() => {
-    if (
-      currentLeague === League.MLB &&
-      (!mlbTeamProfiles || mlbTeamProfiles.data.length === 0)
-    ) {
-      fetchMLBTeamProfiles();
-    }
-  }, [currentLeague, mlbTeamProfiles, fetchMLBTeamProfiles]);
 
   // Create team ID to logo mapping from the fetched data
   const teamIdToLogo =
@@ -133,29 +278,6 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
         return acc;
       },
       {} as Record<number, string>,
-    ) || {};
-
-  // Create team ID to team info mapping from the fetched data
-  const teamIdToInfo =
-    mlbTeamProfiles?.data?.reduce(
-      (
-        acc: Record<
-          number,
-          { name: string; city: string; abbreviation: string }
-        >,
-        team,
-      ) => {
-        acc[team.TeamID] = {
-          name: team.Name,
-          city: team.City,
-          abbreviation: team.Key,
-        };
-        return acc;
-      },
-      {} as Record<
-        number,
-        { name: string; city: string; abbreviation: string }
-      >,
     ) || {};
 
   // Debug logging
@@ -182,7 +304,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   }
   const [playByPlayData, setPlayByPlayData] =
     useState<ActualPlayByPlayResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasFetchedRef = useRef(false);
 
@@ -191,33 +313,9 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     return getPlayLabel(play);
   };
 
-  // Get the appropriate icon component for a play
-  const getPlayIconComponent = (play: Play) => {
-    const iconType = getPlayIcon(play);
-    const iconProps = { size: 16, color: "#6B7280" }; // Grey color
-
-    switch (iconType) {
-      case "strikeout":
-        return <Zap {...iconProps} />;
-      case "walk":
-        return <TrendingUp {...iconProps} />;
-      case "hit":
-        return <Target {...iconProps} />;
-      case "out":
-        return <X {...iconProps} />;
-      case "sacrifice":
-        return <Circle {...iconProps} />;
-      case "error":
-        return <AlertTriangle {...iconProps} />;
-      default:
-        return <Circle {...iconProps} />;
-    }
-  };
-
-  // Format inning display (Top 9, Bot 9, etc.)
+  // Format inning display with chevron icons (▲ 9, ▼ 9, etc.)
   const formatInning = (inningNumber: number, inningHalf: string): string => {
-    const half = inningHalf === "T" ? "Top" : "Bot";
-    return `${half} ${inningNumber}`;
+    return formatInningWithIcon(inningNumber, inningHalf);
   };
 
   // Format timestamp for display as relative time using centralized utility
@@ -255,7 +353,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       // Limit to latest events
       const limitedData = {
         ...data,
-        data: data.data.slice(0, MAX_EVENTS),
+        data: data.data.slice(0, PLAY_BY_PLAY_CONFIG.maxEventsInMemory),
       };
       setPlayByPlayData(limitedData);
 
@@ -277,41 +375,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     fetchPlayByPlay();
   };
 
-  // Get game data for team name lookups
-  const gameData = currentGame?.data?.Game;
-
-  if (loading && !playByPlayData) {
-    return (
-      <Box
-        minH="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap="4">
-          <Spinner size="lg" color="red.500" />
-          <Text color="gray.600">Loading play-by-play...</Text>
-        </VStack>
-      </Box>
-    );
-  }
-
-  // Don't render until we have the current game data
-  if (!currentGame || !gameData) {
-    return (
-      <Box
-        minH="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap="4">
-          <Spinner size="lg" color="red.500" />
-          <Text color="gray.600">Loading game data...</Text>
-        </VStack>
-      </Box>
-    );
-  }
+  // gameData is already defined above
 
   if (error) {
     return (
@@ -336,10 +400,12 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     );
   }
 
+  // Only show "No pbp data" message if we're not loading and have no data
   if (
-    !playByPlayData ||
-    !playByPlayData.data ||
-    playByPlayData.data.length === 0
+    !loading &&
+    (!playByPlayData ||
+      !playByPlayData.data ||
+      playByPlayData.data.length === 0)
   ) {
     return (
       <Box
@@ -360,24 +426,15 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   }
 
   // Extract plays from the actual API response structure and sort by time DESC (newest first)
-  const plays = [...playByPlayData.data].sort(
-    (a, b) => new Date(b.Updated).getTime() - new Date(a.Updated).getTime(),
-  );
+  const plays = playByPlayData?.data
+    ? [...playByPlayData.data].sort(
+        (a, b) => new Date(b.Updated).getTime() - new Date(a.Updated).getTime(),
+      )
+    : [];
 
   // Get team names using team IDs from box score data
   const awayTeamId = gameData?.AwayTeamID;
   const homeTeamId = gameData?.HomeTeamID;
-
-  // Use team profile data if available, otherwise fall back to box score team names
-  const awayTeam =
-    awayTeamId && teamIdToInfo[awayTeamId]
-      ? `${teamIdToInfo[awayTeamId].city} ${teamIdToInfo[awayTeamId].name}`
-      : gameData?.AwayTeam || "Away Team";
-
-  const homeTeam =
-    homeTeamId && teamIdToInfo[homeTeamId]
-      ? `${teamIdToInfo[homeTeamId].city} ${teamIdToInfo[homeTeamId].name}`
-      : gameData?.HomeTeam || "Home Team";
 
   // Function to get team logo for a play
   const getTeamLogoForPlay = (play: Play): string | null => {
@@ -389,11 +446,28 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     return logo;
   };
 
+  // Show loading state with skeletons only if we're actively loading and don't have play-by-play data
+  if (loading && !playByPlayData) {
+    return (
+      <Box minH="100vh" bg="primary.25">
+        <HeaderSkeleton />
+        <GameStatusSkeleton />
+        <Box px="8" py="4">
+          <VStack gap="2" align="stretch">
+            {Array.from({ length: 8 }, (_, index) => (
+              <PBPCardSkeleton key={`skeleton-${index}`} />
+            ))}
+          </VStack>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="primary.25">
       {/* Header */}
       <Box bg="primary.25" borderBottom="1px" borderColor="border.100" p="4">
-        <HStack justify="space-between" align="center">
+        <HStack justify="space-between" align="center" mb="4">
           <HStack gap="3">
             <IconButton
               aria-label="Go back"
@@ -405,26 +479,9 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
               <ArrowLeft size={20} />
             </IconButton>
             <VStack align="start" gap="0">
-              <Text fontSize="lg" fontWeight="bold">
-                {awayTeam} @ {homeTeam}
-              </Text>
-              <Text fontSize="sm" color="gray.600">
+              {/* <Text fontSize="lg" fontWeight="bold">
                 Play-by-Play
-              </Text>
-              {currentGame && (
-                <HStack gap="2" mt="1">
-                  <Text fontSize="sm" fontWeight="medium">
-                    {currentGame.AwayTeamRuns || 0} -{" "}
-                    {currentGame.HomeTeamRuns || 0}
-                  </Text>
-                  {currentGame.Inning && currentGame.InningHalf && (
-                    <Text fontSize="xs" color="gray.500">
-                      {currentGame.InningHalf === "T" ? "Top" : "Bot"}{" "}
-                      {currentGame.Inning}
-                    </Text>
-                  )}
-                </HStack>
-              )}
+              </Text> */}
             </VStack>
           </HStack>
 
@@ -443,14 +500,134 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
             </IconButton>
           </HStack>
         </HStack>
+
+        {/* Team vs Team Layout */}
+        <Flex justify="space-between" align="center" gap="4">
+          {/* Away Team */}
+          <VStack gap="2" align="center" flex="1">
+            {teamIdToLogo[awayTeamId] ? (
+              <Image
+                src={teamIdToLogo[awayTeamId]}
+                alt={orEmpty(currentGame?.AwayTeam)}
+                boxSize="12"
+              />
+            ) : (
+              <Box boxSize="12" bg="gray.200" borderRadius="full" />
+            )}
+            <VStack gap="0.5" align="center">
+              <Text fontSize="xs" color="gray.600">
+                {orEmpty(currentGame?.AwayTeam)}
+              </Text>
+              <Text fontSize="xs" color="gray.600">
+                --
+              </Text>
+            </VStack>
+            <Text fontSize="4xl" fontWeight="bold" color="gray.800">
+              {currentGame?.AwayTeamRuns || 0}
+            </Text>
+            {/* Strikes for Away Team */}
+            <VStack gap="0.5" align="center">
+              <HStack gap="0.5">
+                {[1, 2].map((i) => (
+                  <Box
+                    key={i}
+                    w="2"
+                    h="2"
+                    borderRadius="full"
+                    bg={
+                      currentGame?.Strikes && currentGame.Strikes >= i
+                        ? "red.500"
+                        : "gray.300"
+                    }
+                  />
+                ))}
+              </HStack>
+              <Text fontSize="xs" color="gray.500">
+                Strikes
+              </Text>
+            </VStack>
+          </VStack>
+
+          {/* Center - Game State */}
+          <VStack gap="3" align="center" flex="1">
+            <Text fontSize="sm" color="gray.600" fontWeight="medium">
+              {currentGame?.Status === "Final"
+                ? "Final"
+                : currentGame?.InningDescription ||
+                  getStatusDisplayText(
+                    mapApiStatusToGameStatus(currentGame?.Status || ""),
+                  )}
+            </Text>
+            {/* Baseball Diamond with Base Runners */}
+            <Bases
+              runnerOnFirst={currentGame?.RunnerOnFirst}
+              runnerOnSecond={currentGame?.RunnerOnSecond}
+              runnerOnThird={currentGame?.RunnerOnThird}
+              size="md"
+            />
+          </VStack>
+
+          {/* Home Team */}
+          <VStack gap="2" align="center" flex="1">
+            {teamIdToLogo[homeTeamId] ? (
+              <Image
+                src={teamIdToLogo[homeTeamId]}
+                alt={orEmpty(currentGame?.HomeTeam)}
+                boxSize="12"
+              />
+            ) : (
+              <Box boxSize="12" bg="gray.200" borderRadius="full" />
+            )}
+            <VStack gap="0.5" align="center">
+              <Text fontSize="xs" color="gray.600">
+                {orEmpty(currentGame?.HomeTeam)}
+              </Text>
+              <Text fontSize="xs" color="gray.600">
+                --
+              </Text>
+            </VStack>
+            <Text fontSize="4xl" fontWeight="bold" color="gray.800">
+              {currentGame?.HomeTeamRuns || 0}
+            </Text>
+            {/* Balls for Home Team */}
+            <VStack gap="0.5" align="center">
+              <HStack gap="0.5">
+                {[1, 2, 3, 4].map((i) => (
+                  <Box
+                    key={i}
+                    w="2"
+                    h="2"
+                    borderRadius="full"
+                    bg={
+                      currentGame?.Balls && currentGame.Balls >= i
+                        ? "blue.500"
+                        : "gray.300"
+                    }
+                  />
+                ))}
+              </HStack>
+              <Text fontSize="xs" color="gray.500">
+                Balls
+              </Text>
+            </VStack>
+          </VStack>
+        </Flex>
       </Box>
 
       {/* Game Status */}
-      <Box bg="primary.25" p="4" borderBottom="1px" borderColor="border.100">
+      <Box
+        bg="primary.25"
+        px="8"
+        py="4"
+        borderBottom="1px"
+        borderColor="border.100"
+      >
         <HStack justify="space-between" align="center">
           <VStack align="start" gap="1">
             <Text fontSize="sm" fontWeight="medium">
-              {currentGame?.Status || "Live Game"}
+              {getStatusDisplayText(
+                mapApiStatusToGameStatus(currentGame?.Status || ""),
+              )}
             </Text>
             <Text fontSize="xs" color="gray.600">
               Play-by-Play Events
@@ -467,16 +644,17 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                     {currentGame.HomeTeamErrors || 0}
                   </Text>
                 </HStack>
-                {(currentGame.CurrentPitcher || currentGame.CurrentHitter) && (
+                {(orEmpty(currentGame.CurrentPitcher) !== "--" ||
+                  orEmpty(currentGame.CurrentHitter) !== "--") && (
                   <HStack gap="4">
-                    {currentGame.CurrentPitcher && (
+                    {orEmpty(currentGame.CurrentPitcher) !== "--" && (
                       <Text fontSize="xs" color="gray.600">
-                        Pitcher: {currentGame.CurrentPitcher}
+                        Pitcher: {orEmpty(currentGame.CurrentPitcher)}
                       </Text>
                     )}
-                    {currentGame.CurrentHitter && (
+                    {orEmpty(currentGame.CurrentHitter) !== "--" && (
                       <Text fontSize="xs" color="gray.600">
-                        Batter: {currentGame.CurrentHitter}
+                        Batter: {orEmpty(currentGame.CurrentHitter)}
                       </Text>
                     )}
                   </HStack>
@@ -497,36 +675,14 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       </Box>
 
       {/* Play-by-Play Events */}
-      <Box p="4">
+      <Box px="8" py="4">
         <VStack gap="2" align="stretch">
           {loading ? (
             // Show skeleton events while loading
-            Array.from({ length: 5 }, (_, index) => (
-              <Card.Root key={`skeleton-${index}`} bg="primary.200" shadow="sm">
-                <Card.Body p="3">
-                  <HStack justify="space-between" align="start" gap="3">
-                    {/* Team logo and play icon skeleton */}
-                    <HStack gap="2" align="center">
-                      <SkeletonCircle size="6" />
-                      <Skeleton w="4" h="4" />
-                    </HStack>
-
-                    {/* Play description skeleton */}
-                    <VStack align="start" gap="1" flex="1" minW="0">
-                      <Skeleton w="80%" h="4" />
-                      <Skeleton w="60%" h="3" />
-                    </VStack>
-
-                    {/* Time and score skeleton */}
-                    <VStack align="end" gap="1" minW="0">
-                      <Skeleton w="12" h="3" />
-                      <Skeleton w="8" h="3" />
-                    </VStack>
-                  </HStack>
-                </Card.Body>
-              </Card.Root>
+            Array.from({ length: 8 }, (_, index) => (
+              <PBPCardSkeleton key={`skeleton-${index}`} />
             ))
-          ) : plays.length === 0 ? (
+          ) : !playByPlayData || plays.length === 0 ? (
             <Card.Root>
               <Card.Body p="6">
                 <VStack gap="2">
@@ -542,10 +698,10 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
             plays.map((play) => {
               const teamLogo = getTeamLogoForPlay(play);
               return (
-                <Card.Root key={play.PlayID} bg="primary.200" shadow="sm">
+                <Card.Root key={play.PlayID} bg="primary.100" shadow="sm">
                   <Card.Body p="3">
                     <HStack justify="space-between" align="start" gap="3">
-                      {/* Team logo and play icon */}
+                      {/* Team logo */}
                       <HStack gap="2" align="center">
                         {/* Team logo */}
                         {teamLogo && (
@@ -556,20 +712,14 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                             objectFit="contain"
                           />
                         )}
-                        {/* Play icon */}
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          minW="20px"
-                        >
-                          {getPlayIconComponent(play)}
-                        </Box>
                       </HStack>
 
                       {/* Main content */}
                       <VStack align="start" gap="1" flex="1">
                         <Text fontSize="sm" fontWeight="medium">
+                          {getPlayTitle(play)}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">
                           {formatEventDescription(play)}
                         </Text>
                       </VStack>
@@ -588,10 +738,10 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                             color="gray.600"
                             fontWeight="medium"
                           >
-                            {currentGame.AwayTeam}{" "}
+                            {orEmpty(currentGame.AwayTeam)}{" "}
                             {currentGame.AwayTeamRuns || 0} -{" "}
                             {currentGame.HomeTeamRuns || 0}{" "}
-                            {currentGame.HomeTeam}
+                            {orEmpty(currentGame.HomeTeam)}
                           </Text>
                         )}
                         {play.Balls !== undefined &&

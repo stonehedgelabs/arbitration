@@ -181,6 +181,9 @@ interface SportsDataState {
   leagueData: typeof mockData;
   forYouFeed: typeof forYouFeed;
   boxScoreData: typeof boxScoreData;
+  boxScoreLoading: boolean;
+  boxScoreError: string | null;
+  boxScoreRequests: string[]; // Track which game IDs are currently being fetched
   // Twitter state
   twitterData: TwitterSearchResponse | null;
   twitterLoading: boolean;
@@ -218,6 +221,9 @@ const initialState: SportsDataState = {
   leagueData: mockData,
   forYouFeed,
   boxScoreData,
+  boxScoreLoading: false,
+  boxScoreError: null,
+  boxScoreRequests: [],
   // Twitter state
   twitterData: null,
   twitterLoading: false,
@@ -290,11 +296,27 @@ const sportsDataSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchBoxScore.pending, (state, action) => {
+        state.boxScoreLoading = true;
+        state.boxScoreError = null;
+        // Add the gameId to the requests array
+        if (!state.boxScoreRequests.includes(action.meta.arg.gameId)) {
+          state.boxScoreRequests.push(action.meta.arg.gameId);
+        }
+      })
       .addCase(fetchBoxScore.fulfilled, (state, action) => {
+        state.boxScoreLoading = false;
+        state.boxScoreError = null;
+        // Remove the gameId from the requests array
+        state.boxScoreRequests = state.boxScoreRequests.filter(id => id !== action.payload.gameId);
         // Store the box score data using the gameId as the key
         state.boxScoreData[action.payload.gameId as keyof typeof state.boxScoreData] = action.payload.data;
       })
-      .addCase(fetchBoxScore.rejected, (_, action) => {
+      .addCase(fetchBoxScore.rejected, (state, action) => {
+        state.boxScoreLoading = false;
+        state.boxScoreError = action.error.message || 'Failed to fetch box score';
+        // Remove the gameId from the requests array
+        state.boxScoreRequests = state.boxScoreRequests.filter(id => id !== action.meta.arg.gameId);
         console.error('Failed to fetch box score:', action.error);
       })
       .addCase(fetchTwitterData.pending, (state) => {

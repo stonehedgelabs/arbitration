@@ -35,20 +35,30 @@ export function LivePlayByPlay({
   plays,
   onBack,
 }: LivePlayByPlayViewProps) {
-  const getEventIcon = (type: string) => {
-    switch (type) {
-      case "touchdown":
-        return "🏈";
-      case "field_goal":
-        return "🥅";
-      case "turnover":
-        return "🔄";
-      case "penalty":
-        return "🚩";
-      case "timeout":
-        return "⏱️";
-      default:
-        return "📝";
+  // Function to generate a short title from the description
+  const getPlayTitle = (description: string): string => {
+    // Extract the main action from the description
+    const desc = description.toLowerCase();
+
+    // Common patterns for different sports
+    if (desc.includes("touchdown")) {
+      return "Touchdown";
+    } else if (desc.includes("field goal")) {
+      return "Field Goal";
+    } else if (desc.includes("interception")) {
+      return "Interception";
+    } else if (desc.includes("fumble")) {
+      return "Fumble";
+    } else if (desc.includes("sack")) {
+      return "Sack";
+    } else if (desc.includes("penalty")) {
+      return "Penalty";
+    } else if (desc.includes("timeout")) {
+      return "Timeout";
+    } else {
+      // Fallback: use first few words of description
+      const words = description.split(" ");
+      return words.slice(0, 3).join(" ");
     }
   };
 
@@ -165,9 +175,6 @@ export function LivePlayByPlay({
                 >
                   <Card.Body className="p-3">
                     <div className="flex items-start gap-3">
-                      <div className="text-xl flex-shrink-0">
-                        {getEventIcon(play.type)}
-                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <Badge variant="outline" className="text-xs">
@@ -187,7 +194,10 @@ export function LivePlayByPlay({
                         <p className="text-xs text-muted-foreground mb-1 truncate">
                           {play.team}
                         </p>
-                        <p className="text-sm leading-tight">
+                        <p className="text-sm font-medium leading-tight">
+                          {getPlayTitle(play.description)}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-tight">
                           {play.description}
                         </p>
                       </div>

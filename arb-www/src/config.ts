@@ -140,8 +140,14 @@ export const PLAY_BY_PLAY_CONFIG = {
   // Refresh interval in milliseconds
   refreshInterval: 60000, // 1 minute
   
+  // API interval for fetching data
+  apiInterval: "1min",
+  
   // Maximum number of events to display
   maxEventsDisplay: 100,
+  
+  // Maximum number of events to keep in memory
+  maxEventsInMemory: 50,
   
   // Whether to auto-scroll to newest events
   autoScrollToTop: true,

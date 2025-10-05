@@ -34,6 +34,9 @@ import {
   setTwitterSearchQuery,
 } from "../store/slices/sportsDataSlice";
 
+// Internal imports - utils
+import { orEmpty } from "../utils.ts";
+
 interface SocialSectionProps {
   selectedLeague: string;
 }
@@ -100,13 +103,13 @@ export function Social({ selectedLeague }: SocialSectionProps) {
           id: game.GameID?.toString() || "",
           homeTeam: {
             name: homeTeamProfile
-              ? `${homeTeamProfile.City} ${homeTeamProfile.Name}`
-              : game.HomeTeam || "",
+              ? `${orEmpty(homeTeamProfile.City)} ${orEmpty(homeTeamProfile.Name)}`
+              : orEmpty(game.HomeTeam),
           },
           awayTeam: {
             name: awayTeamProfile
-              ? `${awayTeamProfile.City} ${awayTeamProfile.Name}`
-              : game.AwayTeam || "",
+              ? `${orEmpty(awayTeamProfile.City)} ${orEmpty(awayTeamProfile.Name)}`
+              : orEmpty(game.AwayTeam),
           },
           status: gameStatus,
           originalStatus: game.Status,

@@ -9,7 +9,6 @@ import {
   Card,
   HStack,
   Image,
-  Spinner,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -47,6 +46,8 @@ import {
   getCurrentLocalDate,
   formatDateForSlider,
   toLocalTime,
+  orEmpty,
+  formatInningWithIcon,
 } from "../utils.ts";
 
 interface Team {
@@ -337,7 +338,7 @@ const GameOddsDisplay = ({
       {/* Sportsbook */}
       {odds.sportsbook && (
         <Text color="gray.500" fontSize="2xs">
-          via {odds.sportsbook}
+          via {orEmpty(odds.sportsbook)}
         </Text>
       )}
     </HStack>
@@ -416,7 +417,7 @@ const convertMLBGameToGame = (
       : new Date().toISOString().split("T")[0],
     status: getStatus(rawGame.Status),
     quarter: rawGame.Inning
-      ? `${rawGame.InningHalf === "B" ? "Bot" : "Top"} ${rawGame.Inning}`
+      ? formatInningWithIcon(rawGame.Inning, rawGame.InningHalf || "T")
       : undefined,
     // Location/Venue information
     stadium: stadium?.Name,
@@ -524,7 +525,10 @@ const convertScheduleGameToGame = (
     date: convertedDate,
     status: getStatus(scheduleGame.Status),
     quarter: scheduleGame.Inning
-      ? `${scheduleGame.InningHalf === "B" ? "Bot" : "Top"} ${scheduleGame.Inning}`
+      ? formatInningWithIcon(
+          scheduleGame.Inning,
+          scheduleGame.InningHalf || "T",
+        )
       : undefined,
     // Location/Venue information
     stadium: stadium?.Name,
@@ -539,6 +543,10 @@ const convertScheduleGameToGame = (
     division: homeTeamProfile?.Division, // Store division for display
     // Postseason flag - determine based on the game date using config
     isPostseason: isPostseasonDate(League.MLB, convertedDate),
+    // Base runners
+    runnerOnFirst: scheduleGame.RunnerOnFirst || false,
+    runnerOnSecond: scheduleGame.RunnerOnSecond || false,
+    runnerOnThird: scheduleGame.RunnerOnThird || false,
     // Odds information
     odds: getGameOdds(gameId, oddsData),
   };
@@ -610,8 +618,9 @@ export function Live() {
       case GameStatus.LIVE:
         return (
           <Badge
-            colorScheme="red"
             variant="solid"
+            bg="danger.100"
+            color="text.100"
             fontSize="2xs"
             px="2"
             py="1"
@@ -658,15 +667,22 @@ export function Live() {
   // Show loading state while fetching data
   if (selectedLeague === League.MLB && !mlbScores) {
     return (
-      <Box
-        minH="200px"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap="4">
-          <Spinner size="lg" color="red.500" />
-          <Text color="gray.600">Loading live games...</Text>
+      <Box p="4">
+        <VStack gap="4" align="stretch">
+          {/* Header */}
+          <HStack justify="space-between" align="center">
+            <Text fontSize="2xl" fontWeight="bold" color="text.400">
+              Live Games
+            </Text>
+            <Skeleton w="16" h="6" />
+          </HStack>
+
+          {/* Games List - Show skeleton cards while loading */}
+          <VStack gap="4" align="stretch">
+            {Array.from({ length: 3 }, (_, index) => (
+              <GameCardSkeleton key={`skeleton-${index}`} />
+            ))}
+          </VStack>
         </VStack>
       </Box>
     );
@@ -704,7 +720,7 @@ export function Live() {
                 cursor="pointer"
                 transition="all 0.2s"
                 onClick={() => {
-                  navigate(`/scores/${selectedLeague}/${game.id}`);
+                  navigate(`/scores/${selectedLeague}/${game.id}/pbp`);
                 }}
               >
                 <Card.Body p="4">
@@ -722,7 +738,7 @@ export function Live() {
                             color="gray.600"
                             fontWeight="medium"
                           >
-                            {game.quarter}
+                            {orEmpty(game.quarter)}
                           </Text>
                         )}
                       </HStack>
@@ -742,7 +758,7 @@ export function Live() {
                               fontWeight="medium"
                               color="gray.700"
                             >
-                              {game.stadium}
+                              {orEmpty(game.stadium)}
                             </Text>
                           )}
                           <HStack
@@ -752,10 +768,14 @@ export function Live() {
                             color="gray.600"
                           >
                             {game.city && (
-                              <Text fontWeight="medium">{game.city}</Text>
+                              <Text fontWeight="medium">
+                                {orEmpty(game.city)}
+                              </Text>
                             )}
                             {game.state && (
-                              <Text color="gray.500">{game.state}</Text>
+                              <Text color="gray.500">
+                                {orEmpty(game.state)}
+                              </Text>
                             )}
                             {game.capacity && (
                               <Text color="gray.500">
@@ -763,12 +783,14 @@ export function Live() {
                               </Text>
                             )}
                             {game.surface && game.surface !== "Grass" && (
-                              <Text color="text.400">{game.surface}</Text>
+                              <Text color="text.400">
+                                {orEmpty(game.surface)}
+                              </Text>
                             )}
                           </HStack>
                           {game.division && (
                             <Text fontSize="xs" color="gray.500">
-                              {game.division} Division
+                              {orEmpty(game.division)} Division
                             </Text>
                           )}
                         </VStack>
@@ -803,7 +825,7 @@ export function Live() {
                           {game.awayTeam.logo ? (
                             <Image
                               src={game.awayTeam.logo}
-                              alt={game.awayTeam.name}
+                              alt={orEmpty(game.awayTeam.name)}
                               w="full"
                               h="full"
                               objectFit="cover"
@@ -825,7 +847,7 @@ export function Live() {
                           textOverflow="ellipsis"
                           whiteSpace="nowrap"
                         >
-                          {game.awayTeam.name}
+                          {orEmpty(game.awayTeam.name)}
                         </Text>
                       </HStack>
                       <Text
@@ -835,7 +857,7 @@ export function Live() {
                         minW="8"
                         textAlign="right"
                       >
-                        {game.awayTeam.score}
+                        {orEmpty(game.awayTeam.score.toString())}
                       </Text>
                     </HStack>
 
@@ -856,7 +878,7 @@ export function Live() {
                           {game.homeTeam.logo ? (
                             <Image
                               src={game.homeTeam.logo}
-                              alt={game.homeTeam.name}
+                              alt={orEmpty(game.homeTeam.name)}
                               w="full"
                               h="full"
                               objectFit="cover"
@@ -878,7 +900,7 @@ export function Live() {
                           textOverflow="ellipsis"
                           whiteSpace="nowrap"
                         >
-                          {game.homeTeam.name}
+                          {orEmpty(game.homeTeam.name)}
                         </Text>
                       </HStack>
                       <Text
@@ -888,7 +910,7 @@ export function Live() {
                         minW="8"
                         textAlign="right"
                       >
-                        {game.homeTeam.score}
+                        {orEmpty(game.homeTeam.score.toString())}
                       </Text>
                     </HStack>
                   </VStack>
@@ -1235,16 +1257,17 @@ export function Scores() {
   // Show loading state for MLB only on initial load (not when changing dates)
   if (selectedLeague === League.MLB && mlbScoresLoading && !selectedDate) {
     return (
-      <Box
-        minH="100vh"
-        bg="primary.25"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap="4">
-          <Spinner size="lg" color="red.500" />
-          <Text color="gray.600">Loading MLB scores...</Text>
+      <Box minH="100vh" bg="primary.25">
+        <VStack gap="4" align="stretch" p="4" pb="20">
+          {/* Date Selector Skeleton */}
+          <Skeleton w="full" h="12" borderRadius="md" />
+
+          {/* Games List - Show skeleton cards while loading */}
+          <VStack gap="4" align="stretch">
+            {Array.from({ length: 5 }, (_, index) => (
+              <GameCardSkeleton key={`skeleton-${index}`} />
+            ))}
+          </VStack>
         </VStack>
       </Box>
     );
@@ -1302,20 +1325,10 @@ export function Scores() {
             isFetchingDateData ||
             mlbScoresLoading ||
             (selectedLeague === League.MLB && !mlbScores) ? (
-              <Card.Root
-                bg="primary.25"
-                borderRadius="12px"
-                shadow="sm"
-                border="1px"
-                borderColor="gray.200"
-              >
-                <Card.Body p="8" textAlign="center">
-                  <VStack gap="4">
-                    <Spinner size="lg" color="red.500" />
-                    <Text color="gray.600">Loading games...</Text>
-                  </VStack>
-                </Card.Body>
-              </Card.Root>
+              // Show skeleton cards while loading
+              Array.from({ length: 3 }, (_, index) => (
+                <GameCardSkeleton key={`skeleton-${index}`} />
+              ))
             ) : (
               <Card.Root
                 bg="primary.25"
@@ -1409,7 +1422,7 @@ export function Scores() {
                                   <Badge
                                     variant="solid"
                                     bg="danger.100"
-                                    color="text.400"
+                                    color="text.100"
                                     fontSize="2xs"
                                     px="2"
                                     py="1"
@@ -1442,7 +1455,7 @@ export function Scores() {
                                       py="1"
                                       borderRadius="full"
                                     >
-                                      {game.stadium}
+                                      {orEmpty(game.stadium)}
                                     </Badge>
                                   )}
                                   {game.city && game.state && (
@@ -1454,7 +1467,8 @@ export function Scores() {
                                       py="1"
                                       borderRadius="full"
                                     >
-                                      {game.city}, {game.state}
+                                      {orEmpty(game.city)},{" "}
+                                      {orEmpty(game.state)}
                                     </Badge>
                                   )}
                                   {game.capacity && (
@@ -1478,7 +1492,7 @@ export function Scores() {
                                       py="1"
                                       borderRadius="full"
                                     >
-                                      {game.surface}
+                                      {orEmpty(game.surface)}
                                     </Badge>
                                   )}
                                   {game.division && (
@@ -1490,7 +1504,7 @@ export function Scores() {
                                       py="1"
                                       borderRadius="full"
                                     >
-                                      {game.division} Division
+                                      {orEmpty(game.division)} Division
                                     </Badge>
                                   )}
                                 </HStack>
@@ -1535,7 +1549,7 @@ export function Scores() {
                                   {game.awayTeam.logo ? (
                                     <Image
                                       src={game.awayTeam.logo}
-                                      alt={game.awayTeam.name}
+                                      alt={orEmpty(game.awayTeam.name)}
                                       w="full"
                                       h="full"
                                       objectFit="cover"
@@ -1559,7 +1573,7 @@ export function Scores() {
                                   flex="1"
                                   minW="0"
                                 >
-                                  {game.awayTeam.name}
+                                  {orEmpty(game.awayTeam.name)}
                                 </Text>
                               </HStack>
                               <HStack gap="2" align="center" flexShrink="0">
@@ -1570,7 +1584,7 @@ export function Scores() {
                                   minW="8"
                                   textAlign="right"
                                 >
-                                  {game.awayTeam.score}
+                                  {orEmpty(game.awayTeam.score.toString())}
                                 </Text>
                                 {(game.odds ||
                                   oddsLoading ||
@@ -1619,7 +1633,7 @@ export function Scores() {
                                   {game.homeTeam.logo ? (
                                     <Image
                                       src={game.homeTeam.logo}
-                                      alt={game.homeTeam.name}
+                                      alt={orEmpty(game.homeTeam.name)}
                                       w="full"
                                       h="full"
                                       objectFit="cover"
@@ -1643,7 +1657,7 @@ export function Scores() {
                                   flex="1"
                                   minW="0"
                                 >
-                                  {game.homeTeam.name}
+                                  {orEmpty(game.homeTeam.name)}
                                 </Text>
                               </HStack>
                               <HStack gap="2" align="center" flexShrink="0">
@@ -1654,7 +1668,7 @@ export function Scores() {
                                   minW="8"
                                   textAlign="right"
                                 >
-                                  {game.homeTeam.score}
+                                  {orEmpty(game.homeTeam.score.toString())}
                                 </Text>
                                 {(game.odds ||
                                   oddsLoading ||

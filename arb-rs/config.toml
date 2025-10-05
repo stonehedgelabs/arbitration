@@ -8,13 +8,13 @@ cors_origins = "http://localhost:5173,http://localhost:3000"
 [cache]
 enabled = true
 redis_url = "redis://localhost:6379"
-default_ttl = 3600
+default_ttl = 60
 
 [cache.ttl]
 team_profiles = 3600      # 1 hour
 schedule = 1800           # 30 minutes
 postseason_schedule = 1800 # 30 minutes
-scores = 120              # 2 minutes
+scores = 120              # 1 minutes
 play_by_play = 20         # 20 seconds
 box_scores = 60           # 1 minute
 stadiums = 7200           # 2 hours

@@ -377,7 +377,7 @@ interface PlayData {
 export const getPlayLabel = (play: PlayData): string => {
   const batter = play.HitterName;
   const pitcher = play.PitcherName;
-  const inning = `${play.InningHalf === "T" ? "Top" : "Bottom"} ${play.InningNumber}`;
+  const inning = formatInningWithIcon(play.InningNumber, play.InningHalf);
   const outs = play.Outs;
   const description = play.Description || "";
 
@@ -441,6 +441,83 @@ export const getPlayLabel = (play: PlayData): string => {
   } else {
     return `${batter} ${action}`;
   }
+};
+
+/**
+ * Formats inning display with chevron icons
+ * @param inningNumber - The inning number
+ * @param inningHalf - The inning half ("T" for top, "B" for bottom)
+ * @returns {string} Formatted inning with chevron icon
+ */
+export const formatInningWithIcon = (inningNumber: number, inningHalf: string): string => {
+  const icon = inningHalf === "T" ? "▲" : "▼";
+  return `${icon} ${inningNumber}`;
+};
+
+/**
+ * Generates a short title from a play description
+ * @param play - The play data object
+ * @returns {string} Short title for the play
+ */
+export const getPlayTitle = (play: PlayData): string => {
+  const batter = play.HitterName;
+  const description = play.Description || "";
+
+  // Check if description is usable (not scrambled/empty)
+  const hasRealDescription = description && description !== "Scrambled";
+
+  // Determine action
+  let action: string;
+  if (hasRealDescription) {
+    // Extract the main action from the description
+    const desc = description.toLowerCase();
+    if (desc.includes("strike") || desc.includes("strikeout")) {
+      action = "struck out";
+    } else if (desc.includes("walk") || desc.includes("base on balls")) {
+      action = "walked";
+    } else if (desc.includes("single")) {
+      action = "singled";
+    } else if (desc.includes("double")) {
+      action = "doubled";
+    } else if (desc.includes("triple")) {
+      action = "tripled";
+    } else if (desc.includes("home run")) {
+      action = "homered";
+    } else if (desc.includes("ground out")) {
+      action = "grounded out";
+    } else if (desc.includes("fly out")) {
+      action = "flied out";
+    } else if (desc.includes("pop out")) {
+      action = "popped out";
+    } else if (desc.includes("line out")) {
+      action = "lined out";
+    } else if (desc.includes("sacrifice")) {
+      action = "sacrificed";
+    } else if (desc.includes("error")) {
+      action = "reached on error";
+    } else {
+      // Fallback: use first few words of description
+      const words = description.split(" ");
+      action = words.slice(0, 3).join(" ").toLowerCase();
+    }
+  } else {
+    // Fall back to flags
+    if (play.Strikeout) {
+      action = "struck out";
+    } else if (play.Walk) {
+      action = "walked";
+    } else if (play.Hit) {
+      action = "singled";
+    } else if (play.Sacrifice) {
+      action = "sacrificed";
+    } else if (play.Out) {
+      action = "grounded out";
+    } else {
+      action = "in play";
+    }
+  }
+
+  return `${batter} ${action}`;
 };
 
 /**
