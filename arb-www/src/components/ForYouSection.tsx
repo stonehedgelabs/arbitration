@@ -39,6 +39,59 @@ interface ForYouSectionProps {
 }
 
 export function ForYouSection({ items }: ForYouSectionProps) {
+  // Show not implemented state if no items
+  if (!items || items.length === 0) {
+    return (
+      <Box
+        minH="100vh"
+        bg="primary.25"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        p="4"
+      >
+        <Card.Root
+          maxW="md"
+          w="full"
+          bg="primary.25"
+          borderRadius="16px"
+          shadow="lg"
+          border="1px"
+          borderColor="text.200"
+        >
+          <Card.Body p="8" textAlign="center">
+            <VStack gap="6">
+              {/* Icon */}
+              <Box
+                w="20"
+                h="20"
+                bg="accent.100"
+                borderRadius="full"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                color="text.400"
+              >
+                <Star size={48} />
+              </Box>
+
+              {/* Content */}
+              <VStack gap="3">
+                <Text fontSize="xl" fontWeight="bold" color="text.400">
+                  For You Feed
+                </Text>
+                <Text fontSize="md" color="text.500" lineHeight="1.6">
+                  Personalized content recommendations are coming soon. We're
+                  working on bringing you the most relevant sports content based
+                  on your preferences.
+                </Text>
+              </VStack>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
+      </Box>
+    );
+  }
   const renderSocialCard = (item: ForYouItem) => {
     const post = item.data;
     return (

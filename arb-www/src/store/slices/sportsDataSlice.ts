@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { mockData, leagues, forYouFeed, boxScoreData, MockLeague } from '../../services/MockData.ts';
+import { leagues, boxScoreData, MockLeague } from '../../services/MockData.ts';
 import { buildApiUrl } from '../../config';
 import { TwitterSearchResponse } from '../../schema/twitterapi';
 import { RedditGameThreadCommentsResponse } from '../../schema/redditGameThreadComments';
@@ -294,8 +294,8 @@ const initialState: SportsDataState = {
   selectedLeague: 'mlb',
   activeTab: 'for-you',
   selectedDate: getCurrentLocalDate(), // Today's date in YYYY-MM-DD format using centralized function
-  leagueData: mockData,
-  forYouFeed,
+  leagueData: {},
+  forYouFeed: [],
   boxScoreData,
   boxScoreLoading: false,
   boxScoreError: null,

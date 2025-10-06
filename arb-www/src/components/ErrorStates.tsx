@@ -1,0 +1,297 @@
+// Third-party library imports
+import { Box, Button, Card, Text, VStack } from "@chakra-ui/react";
+import {
+  AlertCircle,
+  RefreshCw,
+  ArrowLeft,
+  Construction,
+  Wifi,
+  Server,
+  Database,
+  Clock,
+} from "lucide-react";
+
+interface ErrorStateProps {
+  title: string;
+  message: string;
+  icon?: React.ReactNode;
+  onRetry?: () => void;
+  onBack?: () => void;
+  showRetry?: boolean;
+  showBack?: boolean;
+  variant?: "error" | "warning" | "info";
+}
+
+export function ErrorState({
+  title,
+  message,
+  icon,
+  onRetry,
+  onBack,
+  showRetry = true,
+  showBack = false,
+  variant = "error",
+}: ErrorStateProps) {
+  const getVariantStyles = () => {
+    switch (variant) {
+      case "error":
+        return {
+          iconColor: "red.500",
+          titleColor: "red.500",
+          bgColor: "red.50",
+          borderColor: "red.200",
+        };
+      case "warning":
+        return {
+          iconColor: "orange.500",
+          titleColor: "orange.500",
+          bgColor: "orange.50",
+          borderColor: "orange.200",
+        };
+      case "info":
+        return {
+          iconColor: "blue.500",
+          titleColor: "blue.500",
+          bgColor: "blue.50",
+          borderColor: "blue.200",
+        };
+    }
+  };
+
+  const styles = getVariantStyles();
+  const defaultIcon = <AlertCircle size={48} />;
+
+  return (
+    <Box
+      minH="100vh"
+      bg="primary.25"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      p="4"
+    >
+      <Card.Root
+        maxW="md"
+        w="full"
+        bg="primary.25"
+        borderRadius="16px"
+        shadow="lg"
+        border="1px"
+        borderColor={styles.borderColor}
+      >
+        <Card.Body p="8" textAlign="center">
+          <VStack gap="6">
+            {/* Icon */}
+            <Box
+              w="20"
+              h="20"
+              bg={styles.bgColor}
+              borderRadius="full"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              color={styles.iconColor}
+            >
+              {icon || defaultIcon}
+            </Box>
+
+            {/* Content */}
+            <VStack gap="3">
+              <Text fontSize="xl" fontWeight="bold" color={styles.titleColor}>
+                {title}
+              </Text>
+              <Text fontSize="md" color="text.400" lineHeight="1.6">
+                {message}
+              </Text>
+            </VStack>
+
+            {/* Actions */}
+            <VStack gap="3" w="full">
+              {showRetry && onRetry && (
+                <Button
+                  onClick={onRetry}
+                  colorScheme={
+                    variant === "error"
+                      ? "red"
+                      : variant === "warning"
+                        ? "orange"
+                        : "blue"
+                  }
+                  variant="solid"
+                  w="full"
+                >
+                  <RefreshCw size={16} style={{ marginRight: "8px" }} />
+                  Try Again
+                </Button>
+              )}
+              {showBack && onBack && (
+                <Button onClick={onBack} variant="outline" w="full">
+                  <ArrowLeft size={16} style={{ marginRight: "8px" }} />
+                  Go Back
+                </Button>
+              )}
+            </VStack>
+          </VStack>
+        </Card.Body>
+      </Card.Root>
+    </Box>
+  );
+}
+
+interface NotImplementedStateProps {
+  feature: string;
+  description?: string;
+  onBack?: () => void;
+  showBack?: boolean;
+}
+
+export function NotImplementedState({
+  feature,
+  description,
+  onBack,
+  showBack = true,
+}: NotImplementedStateProps) {
+  return (
+    <Box
+      minH="100vh"
+      bg="primary.25"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      p="4"
+    >
+      <Card.Root
+        maxW="md"
+        w="full"
+        bg="primary.25"
+        borderRadius="16px"
+        shadow="lg"
+        border="1px"
+        borderColor="text.200"
+      >
+        <Card.Body p="8" textAlign="center">
+          <VStack gap="6">
+            {/* Icon */}
+            <Box
+              w="20"
+              h="20"
+              bg="accent.100"
+              borderRadius="full"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              color="text.400"
+            >
+              <Construction size={48} />
+            </Box>
+
+            {/* Content */}
+            <VStack gap="3">
+              <Text fontSize="xl" fontWeight="bold" color="text.400">
+                Coming Soon
+              </Text>
+              <Text fontSize="lg" fontWeight="medium" color="text.300">
+                {feature}
+              </Text>
+              <Text fontSize="md" color="text.500" lineHeight="1.6">
+                {description ||
+                  "This feature is currently under development. We're working hard to bring you the best experience possible."}
+              </Text>
+            </VStack>
+
+            {/* Actions */}
+            {showBack && onBack && (
+              <Button onClick={onBack} variant="outline" w="full">
+                <ArrowLeft size={16} style={{ marginRight: "8px" }} />
+                Go Back
+              </Button>
+            )}
+          </VStack>
+        </Card.Body>
+      </Card.Root>
+    </Box>
+  );
+}
+
+interface NetworkErrorStateProps {
+  onRetry?: () => void;
+  onBack?: () => void;
+}
+
+export function NetworkErrorState({ onRetry, onBack }: NetworkErrorStateProps) {
+  return (
+    <ErrorState
+      title="Connection Problem"
+      message="We're having trouble connecting to our servers. Please check your internet connection and try again."
+      icon={<Wifi size={48} />}
+      onRetry={onRetry}
+      onBack={onBack}
+      showRetry={true}
+      showBack={true}
+      variant="warning"
+    />
+  );
+}
+
+interface ServerErrorStateProps {
+  onRetry?: () => void;
+  onBack?: () => void;
+}
+
+export function ServerErrorState({ onRetry, onBack }: ServerErrorStateProps) {
+  return (
+    <ErrorState
+      title="Server Error"
+      message="Something went wrong on our end. Our team has been notified and we're working to fix it."
+      icon={<Server size={48} />}
+      onRetry={onRetry}
+      onBack={onBack}
+      showRetry={true}
+      showBack={true}
+      variant="error"
+    />
+  );
+}
+
+interface DataErrorStateProps {
+  onRetry?: () => void;
+  onBack?: () => void;
+}
+
+export function DataErrorState({ onRetry, onBack }: DataErrorStateProps) {
+  return (
+    <ErrorState
+      title="Data Unavailable"
+      message="We're having trouble loading the data you requested. This might be temporary."
+      icon={<Database size={48} />}
+      onRetry={onRetry}
+      onBack={onBack}
+      showRetry={true}
+      showBack={true}
+      variant="warning"
+    />
+  );
+}
+
+interface LoadingTimeoutStateProps {
+  onRetry?: () => void;
+  onBack?: () => void;
+}
+
+export function LoadingTimeoutState({
+  onRetry,
+  onBack,
+}: LoadingTimeoutStateProps) {
+  return (
+    <ErrorState
+      title="Taking Too Long"
+      message="This is taking longer than expected. The request might have timed out."
+      icon={<Clock size={48} />}
+      onRetry={onRetry}
+      onBack={onBack}
+      showRetry={true}
+      showBack={true}
+      variant="warning"
+    />
+  );
+}

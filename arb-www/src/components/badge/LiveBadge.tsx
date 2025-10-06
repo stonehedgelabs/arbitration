@@ -28,8 +28,8 @@ export function LiveBadge({
       alignItems="center"
       gap="1"
     >
-      {showIcon && <Wifi size={12} />}
       {text}
+      {showIcon && <Wifi size={12} />}
     </Badge>
   );
 }

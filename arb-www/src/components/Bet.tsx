@@ -32,6 +32,59 @@ interface BetSectionProps {
 }
 
 export function Bet({ bettingLines }: BetSectionProps) {
+  // Show not implemented state if no betting lines
+  if (!bettingLines || bettingLines.length === 0) {
+    return (
+      <Box
+        minH="100vh"
+        bg="primary.25"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        p="4"
+      >
+        <Card.Root
+          maxW="md"
+          w="full"
+          bg="primary.25"
+          borderRadius="16px"
+          shadow="lg"
+          border="1px"
+          borderColor="text.200"
+        >
+          <Card.Body p="8" textAlign="center">
+            <VStack gap="6">
+              {/* Icon */}
+              <Box
+                w="20"
+                h="20"
+                bg="accent.100"
+                borderRadius="full"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                color="text.400"
+              >
+                <BarChart3 size={48} />
+              </Box>
+
+              {/* Content */}
+              <VStack gap="3">
+                <Text fontSize="xl" fontWeight="bold" color="text.400">
+                  Betting Lines
+                </Text>
+                <Text fontSize="md" color="text.500" lineHeight="1.6">
+                  Betting features are coming soon. We're working on bringing
+                  you the latest odds, player props, and betting insights.
+                </Text>
+              </VStack>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
+      </Box>
+    );
+  }
+
   const getPlayerInitials = (name: string) => {
     return name
       .split(" ")

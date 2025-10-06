@@ -24,7 +24,7 @@ import { ForYouSection } from "./ForYouSection.tsx";
 import { LeagueSelector } from "./LeagueSelector.tsx";
 import { Scores } from "../views/Scores.tsx";
 import { Live } from "../views/Live.tsx";
-import { PlayByPlayMLB } from "./play-by-play/PlayByPlayMLB.tsx";
+import { PlayByPlay } from "../views/PlayByPlay";
 import { Social } from "../views/Social.tsx";
 
 // Internal imports - services
@@ -309,29 +309,11 @@ export const Arbitration = memo(function Arbitration() {
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
       >
-        <Box minH="100vh" bg="primary.25">
-          {currentLeague === League.MLB ? (
-            <PlayByPlayMLB gameId={gameId} onBack={handleBackFromPlayByPlay} />
-          ) : (
-            <Box
-              minH="100vh"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <VStack gap="4">
-                <Text color="red.500" fontSize="lg" fontWeight="semibold">
-                  Unsupported League
-                </Text>
-                <Text color="gray.600" textAlign="center">
-                  Play-by-play for {selectedLeague?.toUpperCase()} is not yet
-                  supported.
-                </Text>
-                <Button onClick={handleBackFromPlayByPlay}>Go Back</Button>
-              </VStack>
-            </Box>
-          )}
-        </Box>
+        <PlayByPlay
+          gameId={gameId}
+          league={currentLeague as League}
+          onBack={handleBackFromPlayByPlay}
+        />
       </motion.div>
     );
   }

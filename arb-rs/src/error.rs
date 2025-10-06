@@ -39,6 +39,9 @@ pub enum Error {
 
     #[error("Server error: {0}")]
     Server(String),
+
+    #[error("Feature not implemented: {0}")]
+    NotImplemented(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -57,6 +60,11 @@ impl IntoResponse for Error {
                 (StatusCode::BAD_REQUEST, format!("Invalid league: {}", l))
                     .into_response()
             }
+            Error::NotImplemented(feature) => (
+                StatusCode::NOT_IMPLEMENTED,
+                format!("Feature not implemented: {}", feature),
+            )
+                .into_response(),
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal server error".to_string(),

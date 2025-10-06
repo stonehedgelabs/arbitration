@@ -21,6 +21,7 @@ import {
   League,
   GameStatus,
   mapApiStatusToGameStatus,
+  buildApiUrl,
 } from "../config";
 
 // Internal imports - components
@@ -570,6 +571,9 @@ export function Scores() {
   } = useArb();
 
   const [isFetchingDateData, setIsFetchingDateData] = useState(false);
+  const [otherLeagueTeamProfiles, setOtherLeagueTeamProfiles] =
+    useState<any>(null);
+  const [otherLeagueLoading, setOtherLeagueLoading] = useState(false);
 
   // Redux state
   const dispatch = useAppDispatch();
@@ -581,6 +585,34 @@ export function Scores() {
     navigate(`/scores/${selectedLeague}/${gameId}`);
   };
 
+  // Fetch team profiles for non-MLB leagues
+  const fetchTeamProfilesForLeague = async (league: string) => {
+    if (league === League.MLB) return; // MLB is handled separately
+
+    console.log(`🏀 Fetching team profiles for ${league.toUpperCase()}`);
+    setOtherLeagueLoading(true);
+    try {
+      const apiUrl = buildApiUrl("/api/team-profile", { league });
+      console.log(`🌐 Making request to: ${apiUrl}`);
+      const response = await fetch(apiUrl);
+      console.log(`📡 Response status: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Team profiles received for ${league}:`, data);
+        setOtherLeagueTeamProfiles(data);
+      } else {
+        console.error(
+          `❌ Failed to fetch team profiles for ${league}:`,
+          response.status,
+        );
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching team profiles for ${league}:`, error);
+    } finally {
+      setOtherLeagueLoading(false);
+    }
+  };
+
   // Initialize selected date to today only on first load (when selectedDate is empty)
   useEffect(() => {
     if (!selectedDate) {
@@ -589,21 +621,29 @@ export function Scores() {
     }
   }, [selectedDate, dispatch]);
 
-  // Fetch all MLB data when component mounts or league/date changes
+  // Fetch data when component mounts or league/date changes
   useEffect(() => {
-    if (selectedLeague === League.MLB && selectedDate) {
-      fetchMLBScores(selectedDate);
-      fetchMLBTeamProfiles();
-      fetchMLBStadiums();
-      fetchMLBOddsByDate(selectedDate);
+    if (selectedDate) {
+      if (selectedLeague === League.MLB) {
+        // MLB-specific data fetching
+        fetchMLBScores(selectedDate);
+        fetchMLBTeamProfiles();
+        fetchMLBStadiums();
+        fetchMLBOddsByDate(selectedDate);
 
-      // Check if this is a postseason date and fetch schedule if needed
-      const isPostseason = isPostseasonDate(League.MLB, selectedDate);
-      if (isPostseason) {
-        setIsFetchingDateData(true);
-        fetchMLBSchedule(selectedDate).finally(() => {
-          setIsFetchingDateData(false);
-        });
+        // Check if this is a postseason date and fetch schedule if needed
+        const isPostseason = isPostseasonDate(League.MLB, selectedDate);
+        if (isPostseason) {
+          setIsFetchingDateData(true);
+          fetchMLBSchedule(selectedDate).finally(() => {
+            setIsFetchingDateData(false);
+          });
+        }
+      } else {
+        // For other leagues, fetch team profiles (which are supported for all leagues)
+        // Note: Scores endpoint only supports MLB, so we'll show a "not implemented" message
+        // for other leagues until the backend supports them
+        fetchTeamProfilesForLeague(selectedLeague);
       }
     }
   }, [selectedLeague, selectedDate]);
@@ -653,6 +693,10 @@ export function Scores() {
           return scoresGames;
         }
       }
+    } else {
+      // For other leagues, return empty array since scores endpoint doesn't support them yet
+      // This will show the "No Games" message with appropriate text
+      return [];
     }
 
     return [];
@@ -704,6 +748,7 @@ export function Scores() {
             // Show loading state if we're fetching data, otherwise show no games
             isFetchingDateData ||
             mlbScoresLoading ||
+            otherLeagueLoading ||
             (selectedLeague === League.MLB && !mlbScores) ? (
               // Show skeleton cards while loading
               Array.from({ length: 3 }, (_, index) => (
@@ -736,21 +781,33 @@ export function Scores() {
                         fontWeight="semibold"
                         color="text.400"
                       >
-                        No Games
+                        {selectedLeague === League.MLB
+                          ? "No Games"
+                          : "Coming Soon"}
                       </Text>
                       <Text fontSize="sm" color="text.400" textAlign="center">
-                        No games scheduled for{" "}
-                        {selectedDate
-                          ? parseLocalDate(selectedDate).toLocaleDateString(
-                              "en-US",
-                              {
-                                weekday: "long",
-                                month: "long",
-                                day: "numeric",
-                              },
-                            )
-                          : "this date"}
-                        .
+                        {selectedLeague === League.MLB ? (
+                          <>
+                            No games scheduled for{" "}
+                            {selectedDate
+                              ? parseLocalDate(selectedDate).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    weekday: "long",
+                                    month: "long",
+                                    day: "numeric",
+                                  },
+                                )
+                              : "this date"}
+                            .
+                          </>
+                        ) : (
+                          <>
+                            {selectedLeague.toUpperCase()} scores are not yet
+                            available. We're working on adding support for{" "}
+                            {selectedLeague.toUpperCase()} games.
+                          </>
+                        )}
                       </Text>
                     </VStack>
                   </VStack>

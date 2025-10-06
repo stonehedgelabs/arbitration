@@ -13,7 +13,7 @@ use urlencoding;
 use crate::{
     cache::Cache,
     config::ArbConfig,
-    error::Result,
+    error::{Error, Result},
     path::{
         box_score_path, games_by_date_path, headshots_path, odds_by_date_path,
         play_by_play_path, postseason_schedule_path, schedule_path, stadiums_path,
@@ -362,41 +362,10 @@ async fn fetch_team_data_from_api(api_url: &str, league: &League) -> Result<Stri
             tracing::info!("Successfully fetched team profile data for MLB");
             Ok(body)
         }
-        _ => {
-            let mock_data = match league {
-                League::Nfl => serde_json::json!({
-                    "teams": [
-                        {"id": 1, "name": "Kansas City Chiefs", "city": "Kansas City"},
-                        {"id": 2, "name": "Buffalo Bills", "city": "Buffalo"}
-                    ],
-                    "league": "NFL"
-                }),
-                League::Nba => serde_json::json!({
-                    "teams": [
-                        {"id": 1, "name": "Los Angeles Lakers", "city": "Los Angeles"},
-                        {"id": 2, "name": "Boston Celtics", "city": "Boston"}
-                    ],
-                    "league": "NBA"
-                }),
-                League::Nhl => serde_json::json!({
-                    "teams": [
-                        {"id": 1, "name": "Tampa Bay Lightning", "city": "Tampa Bay"},
-                        {"id": 2, "name": "Colorado Avalanche", "city": "Denver"}
-                    ],
-                    "league": "NHL"
-                }),
-                League::Soccer => serde_json::json!({
-                    "teams": [
-                        {"id": 1, "name": "Manchester United", "city": "Manchester"},
-                        {"id": 2, "name": "Real Madrid", "city": "Madrid"}
-                    ],
-                    "league": "SOCCER"
-                }),
-                _ => serde_json::json!({}),
-            };
-
-            Ok(serde_json::to_string(&mock_data)?)
-        }
+        _ => Err(Error::NotImplemented(format!(
+            "Teams data for league: {:?}",
+            league
+        ))),
     }
 }
 
@@ -1218,54 +1187,21 @@ async fn fetch_data_from_api(
 
     tracing::info!("Fetching {} data from API: {}", data_type, api_url);
 
-    let mock_data = match (league, data_type) {
-        (League::Nfl, "teams") => serde_json::json!([
-            {"TeamID": 1, "Key": "ARI", "City": "Arizona", "Name": "Cardinals", "Conference": "NFC", "Division": "West"},
-            {"TeamID": 2, "Key": "ATL", "City": "Atlanta", "Name": "Falcons", "Conference": "NFC", "Division": "South"},
-            {"TeamID": 3, "Key": "BAL", "City": "Baltimore", "Name": "Ravens", "Conference": "AFC", "Division": "North"}
-        ]),
-        (League::Nfl, "schedule") => serde_json::json!([
-            {"GameKey": "202510126", "AwayTeam": "DAL", "HomeTeam": "PHI", "Date": "2025-09-04T20:20:00", "Week": 1},
-            {"GameKey": "202510127", "AwayTeam": "KC", "HomeTeam": "BUF", "Date": "2025-09-05T20:20:00", "Week": 1}
-        ]),
-        (League::Nfl, "headshots") => serde_json::json!([
-            {"PlayerID": 549, "Name": "Matt Prater", "Position": "K", "Team": "BUF"},
-            {"PlayerID": 611, "Name": "Joe Flacco", "Position": "QB", "Team": "CLE"}
-        ]),
-        (League::Mlb, "teams") => serde_json::json!([
-            {"TeamID": 1, "Name": "New York Yankees", "City": "New York", "League": "AL", "Division": "East"},
-            {"TeamID": 2, "Name": "Boston Red Sox", "City": "Boston", "League": "AL", "Division": "East"}
-        ]),
-        (League::Mlb, "schedule") => serde_json::json!([
-            {"GameID": 1, "AwayTeam": "NYY", "HomeTeam": "BOS", "Date": "2025-04-01T19:10:00", "Season": 2025}
-        ]),
-        (League::Mlb, "headshots") => serde_json::json!([
-            {"PlayerID": 1, "Name": "Aaron Judge", "Position": "OF", "Team": "NYY"}
-        ]),
-        (League::Nba, "teams") => serde_json::json!([
-            {"TeamID": 1, "Name": "Los Angeles Lakers", "City": "Los Angeles", "Conference": "Western", "Division": "Pacific"},
-            {"TeamID": 2, "Name": "Boston Celtics", "City": "Boston", "Conference": "Eastern", "Division": "Atlantic"}
-        ]),
-        (League::Nba, "schedule") => serde_json::json!([
-            {"GameID": 1, "AwayTeam": "LAL", "HomeTeam": "BOS", "Date": "2025-10-01T20:00:00", "Season": 2025}
-        ]),
-        (League::Nba, "headshots") => serde_json::json!([
-            {"PlayerID": 1, "Name": "LeBron James", "Position": "SF", "Team": "LAL"}
-        ]),
-        (League::Nhl, "teams") => serde_json::json!([
-            {"TeamID": 1, "Name": "Tampa Bay Lightning", "City": "Tampa Bay", "Conference": "Eastern", "Division": "Atlantic"},
-            {"TeamID": 2, "Name": "Colorado Avalanche", "City": "Denver", "Conference": "Western", "Division": "Central"}
-        ]),
-        (League::Nhl, "schedule") => serde_json::json!([
-            {"GameID": 1, "AwayTeam": "TBL", "HomeTeam": "COL", "Date": "2025-10-01T20:00:00", "Season": 2025}
-        ]),
-        (League::Nhl, "headshots") => serde_json::json!([
-            {"PlayerID": 1, "Name": "Nikita Kucherov", "Position": "RW", "Team": "TBL"}
-        ]),
-        _ => serde_json::json!([]),
-    };
-
-    Ok(serde_json::to_string(&mock_data)?)
+    // Only MLB is currently implemented
+    match league {
+        League::Mlb => {
+            // For MLB, we would make actual API calls here
+            // For now, return not implemented as we're removing all mock data
+            Err(Error::NotImplemented(format!(
+                "API data fetching for {} {} is not yet implemented",
+                league, data_type
+            )))
+        }
+        _ => Err(Error::NotImplemented(format!(
+            "API data fetching for {} {} is not yet implemented",
+            league, data_type
+        ))),
+    }
 }
 
 async fn fetch_play_by_play_from_api(
@@ -1399,63 +1335,10 @@ async fn fetch_scores_from_api(
             tracing::info!("Successfully fetched scores data for date: {}", date);
             Ok(response_text)
         }
-        _ => {
-            let mock_data = serde_json::json!([
-                {
-                    "GameID": 1,
-                    "DateTime": "2025-01-15T19:10:00",
-                    "DateTimeUTC": "2025-01-16T00:10:00Z",
-                    "Status": "Final",
-                    "AwayTeam": "NYY",
-                    "HomeTeam": "BOS",
-                    "AwayTeamID": 1,
-                    "HomeTeamID": 2,
-                    "AwayTeamScore": 4,
-                    "HomeTeamScore": 2,
-                    "Inning": 9,
-                    "InningHalf": "Bottom",
-                    "IsClosed": true,
-                    "GameEndDateTime": "2025-01-15T22:15:00",
-                    "GameEndDateTimeUTC": "2025-01-16T03:15:00Z"
-                },
-                {
-                    "GameID": 2,
-                    "DateTime": "2025-01-15T20:05:00",
-                    "DateTimeUTC": "2025-01-16T01:05:00Z",
-                    "Status": "InProgress",
-                    "AwayTeam": "LAD",
-                    "HomeTeam": "SF",
-                    "AwayTeamID": 3,
-                    "HomeTeamID": 4,
-                    "AwayTeamScore": 1,
-                    "HomeTeamScore": 3,
-                    "Inning": 6,
-                    "InningHalf": "Top",
-                    "IsClosed": false,
-                    "GameEndDateTime": null,
-                    "GameEndDateTimeUTC": null
-                },
-                {
-                    "GameID": 3,
-                    "DateTime": "2025-01-15T21:10:00",
-                    "DateTimeUTC": "2025-01-16T02:10:00Z",
-                    "Status": "Scheduled",
-                    "AwayTeam": "HOU",
-                    "HomeTeam": "OAK",
-                    "AwayTeamID": 5,
-                    "HomeTeamID": 6,
-                    "AwayTeamScore": null,
-                    "HomeTeamScore": null,
-                    "Inning": null,
-                    "InningHalf": null,
-                    "IsClosed": false,
-                    "GameEndDateTime": null,
-                    "GameEndDateTimeUTC": null
-                }
-            ]);
-
-            Ok(serde_json::to_string(&mock_data)?)
-        }
+        _ => Err(Error::NotImplemented(format!(
+            "Scores data for league: {:?} is not yet implemented",
+            league
+        ))),
     }
 }
 

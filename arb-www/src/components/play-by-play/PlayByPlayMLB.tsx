@@ -19,7 +19,7 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { Bases } from "../Bases.tsx";
-import { InningBadge } from "../badge";
+import { InningBadge, LiveBadge } from "../badge";
 
 // Internal imports - config
 import {
@@ -479,9 +479,11 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
           </HStack>
 
           <HStack gap="2">
-            <Badge colorScheme="red" variant="solid">
-              Live
-            </Badge>
+            {loading ? (
+              <Skeleton w="12" h="6" borderRadius="full" />
+            ) : (
+              <LiveBadge size="sm" showIcon={true} text="Live" />
+            )}
             <IconButton
               aria-label="Refresh"
               size="sm"
@@ -498,7 +500,9 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
         <Flex justify="space-between" align="center" gap="4">
           {/* Away Team */}
           <VStack gap="2" align="center" flex="1">
-            {teamIdToLogo[awayTeamId] ? (
+            {loading ? (
+              <SkeletonCircle size="12" />
+            ) : teamIdToLogo[awayTeamId] ? (
               <Image
                 src={teamIdToLogo[awayTeamId]}
                 alt={orEmpty(currentGame?.AwayTeam)}
@@ -508,61 +512,96 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
               <Box boxSize="12" bg="gray.200" borderRadius="full" />
             )}
             <VStack gap="0.5" align="center">
-              <Text fontSize="xs" color="text.400">
-                {orEmpty(currentGame?.AwayTeam)}
-              </Text>
-              <Text fontSize="xs" color="text.400">
-                --
-              </Text>
+              {loading ? (
+                <>
+                  <Skeleton w="20" h="3" />
+                  <Skeleton w="8" h="3" />
+                </>
+              ) : (
+                <>
+                  <Text fontSize="xs" color="text.400">
+                    {orEmpty(currentGame?.AwayTeam)}
+                  </Text>
+                  <Text fontSize="xs" color="text.400">
+                    --
+                  </Text>
+                </>
+              )}
             </VStack>
-            <Text fontSize="4xl" fontWeight="bold" color="text.400">
-              {currentGame?.AwayTeamRuns || 0}
-            </Text>
+            {loading ? (
+              <Skeleton w="16" h="12" />
+            ) : (
+              <Text fontSize="4xl" fontWeight="bold" color="text.400">
+                {currentGame?.AwayTeamRuns || 0}
+              </Text>
+            )}
             {/* Strikes for Away Team */}
             <VStack gap="0.5" align="center">
-              <HStack gap="0.5">
-                {[1, 2].map((i) => (
-                  <Box
-                    key={i}
-                    w="2"
-                    h="2"
-                    borderRadius="full"
-                    bg={
-                      currentGame?.Strikes && currentGame.Strikes >= i
-                        ? "red.500"
-                        : "text.400"
-                    }
-                  />
-                ))}
-              </HStack>
-              <Text fontSize="xs" color="text.400">
-                Strikes
-              </Text>
+              {loading ? (
+                <>
+                  <HStack gap="0.5">
+                    <Skeleton w="2" h="2" borderRadius="full" />
+                    <Skeleton w="2" h="2" borderRadius="full" />
+                  </HStack>
+                  <Skeleton w="12" h="3" />
+                </>
+              ) : (
+                <>
+                  <HStack gap="0.5">
+                    {[1, 2].map((i) => (
+                      <Box
+                        key={i}
+                        w="2"
+                        h="2"
+                        borderRadius="full"
+                        bg={
+                          currentGame?.Strikes && currentGame.Strikes >= i
+                            ? "red.500"
+                            : "text.400"
+                        }
+                      />
+                    ))}
+                  </HStack>
+                  <Text fontSize="xs" color="text.400">
+                    Strikes
+                  </Text>
+                </>
+              )}
             </VStack>
           </VStack>
 
           {/* Center - Game State */}
           <VStack gap="3" align="center" flex="1">
-            <Text fontSize="sm" color="text.400" fontWeight="medium">
-              {currentGame?.Status === "Final"
-                ? "Final"
-                : currentGame?.InningDescription ||
-                  getStatusDisplayText(
-                    mapApiStatusToGameStatus(currentGame?.Status || ""),
-                  )}
-            </Text>
+            {loading ? (
+              <Skeleton w="24" h="4" />
+            ) : (
+              <Text fontSize="sm" color="text.400" fontWeight="medium">
+                {currentGame?.Status === "Final"
+                  ? "Final"
+                  : currentGame?.InningDescription ||
+                    getStatusDisplayText(
+                      mapApiStatusToGameStatus(currentGame?.Status || ""),
+                    )}
+              </Text>
+            )}
             {/* Baseball Diamond with Base Runners */}
-            <Bases
-              runnerOnFirst={currentGame?.RunnerOnFirst}
-              runnerOnSecond={currentGame?.RunnerOnSecond}
-              runnerOnThird={currentGame?.RunnerOnThird}
-              size="md"
-            />
+            {loading ? (
+              <Skeleton w="16" h="16" borderRadius="md" />
+            ) : (
+              <Bases
+                runnerOnFirst={currentGame?.RunnerOnFirst}
+                runnerOnSecond={currentGame?.RunnerOnSecond}
+                runnerOnThird={currentGame?.RunnerOnThird}
+                size="md"
+              />
+            )}
           </VStack>
 
           {/* Home Team */}
           <VStack gap="2" align="center" flex="1">
-            {teamIdToLogo[homeTeamId] ? (
+            {loading ? (
+              <SkeletonCircle size="12" />
+            ) : teamIdToLogo[homeTeamId] ? (
               <Image
                 src={teamIdToLogo[homeTeamId]}
                 alt={orEmpty(currentGame?.HomeTeam)}
@@ -572,36 +611,63 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
               <Box boxSize="12" bg="gray.200" borderRadius="full" />
             )}
             <VStack gap="0.5" align="center">
-              <Text fontSize="xs" color="text.400">
-                {orEmpty(currentGame?.HomeTeam)}
-              </Text>
-              <Text fontSize="xs" color="text.400">
-                --
-              </Text>
+              {loading ? (
+                <>
+                  <Skeleton w="20" h="3" />
+                  <Skeleton w="8" h="3" />
+                </>
+              ) : (
+                <>
+                  <Text fontSize="xs" color="text.400">
+                    {orEmpty(currentGame?.HomeTeam)}
+                  </Text>
+                  <Text fontSize="xs" color="text.400">
+                    --
+                  </Text>
+                </>
+              )}
             </VStack>
-            <Text fontSize="4xl" fontWeight="bold" color="text.400">
-              {currentGame?.HomeTeamRuns || 0}
-            </Text>
+            {loading ? (
+              <Skeleton w="16" h="12" />
+            ) : (
+              <Text fontSize="4xl" fontWeight="bold" color="text.400">
+                {currentGame?.HomeTeamRuns || 0}
+              </Text>
+            )}
             {/* Balls for Home Team */}
             <VStack gap="0.5" align="center">
-              <HStack gap="0.5">
-                {[1, 2, 3, 4].map((i) => (
-                  <Box
-                    key={i}
-                    w="2"
-                    h="2"
-                    borderRadius="full"
-                    bg={
-                      currentGame?.Balls && currentGame.Balls >= i
-                        ? "accent.400"
-                        : "text.400"
-                    }
-                  />
-                ))}
-              </HStack>
-              <Text fontSize="xs" color="text.400">
-                Balls
-              </Text>
+              {loading ? (
+                <>
+                  <HStack gap="0.5">
+                    <Skeleton w="2" h="2" borderRadius="full" />
+                    <Skeleton w="2" h="2" borderRadius="full" />
+                    <Skeleton w="2" h="2" borderRadius="full" />
+                    <Skeleton w="2" h="2" borderRadius="full" />
+                  </HStack>
+                  <Skeleton w="10" h="3" />
+                </>
+              ) : (
+                <>
+                  <HStack gap="0.5">
+                    {[1, 2, 3, 4].map((i) => (
+                      <Box
+                        key={i}
+                        w="2"
+                        h="2"
+                        borderRadius="full"
+                        bg={
+                          currentGame?.Balls && currentGame.Balls >= i
+                            ? "accent.400"
+                            : "text.400"
+                        }
+                      />
+                    ))}
+                  </HStack>
+                  <Text fontSize="xs" color="text.400">
+                    Balls
+                  </Text>
+                </>
+              )}
             </VStack>
           </VStack>
         </Flex>
@@ -617,52 +683,78 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       >
         <HStack justify="space-between" align="center">
           <VStack align="start" gap="1">
-            <Text fontSize="sm" fontWeight="medium">
-              {getStatusDisplayText(
-                mapApiStatusToGameStatus(currentGame?.Status || ""),
-              )}
-            </Text>
+            {loading ? (
+              <Skeleton w="20" h="4" />
+            ) : (
+              <Text fontSize="sm" fontWeight="medium">
+                {getStatusDisplayText(
+                  mapApiStatusToGameStatus(currentGame?.Status || ""),
+                )}
+              </Text>
+            )}
             <Text fontSize="xs" color="text.400">
               Play-by-Play Events
             </Text>
-            {currentGame && (
+            {loading ? (
               <VStack align="start" gap="2" mt="1">
                 <HStack gap="4">
-                  <Text fontSize="xs" color="text.400">
-                    Hits: {currentGame.AwayTeamHits || 0} -{" "}
-                    {currentGame.HomeTeamHits || 0}
-                  </Text>
-                  <Text fontSize="xs" color="text.400">
-                    Errors: {currentGame.AwayTeamErrors || 0} -{" "}
-                    {currentGame.HomeTeamErrors || 0}
-                  </Text>
+                  <Skeleton w="24" h="3" />
+                  <Skeleton w="24" h="3" />
                 </HStack>
-                {(orEmpty(currentGame.CurrentPitcher) !== "--" ||
-                  orEmpty(currentGame.CurrentHitter) !== "--") && (
-                  <HStack gap="4">
-                    {orEmpty(currentGame.CurrentPitcher) !== "--" && (
-                      <Text fontSize="xs" color="text.400">
-                        Pitcher: {orEmpty(currentGame.CurrentPitcher)}
-                      </Text>
-                    )}
-                    {orEmpty(currentGame.CurrentHitter) !== "--" && (
-                      <Text fontSize="xs" color="text.400">
-                        Batter: {orEmpty(currentGame.CurrentHitter)}
-                      </Text>
-                    )}
-                  </HStack>
-                )}
+                <HStack gap="4">
+                  <Skeleton w="32" h="3" />
+                  <Skeleton w="32" h="3" />
+                </HStack>
               </VStack>
+            ) : (
+              currentGame && (
+                <VStack align="start" gap="2" mt="1">
+                  <HStack gap="4">
+                    <Text fontSize="xs" color="text.400">
+                      Hits: {currentGame.AwayTeamHits || 0} -{" "}
+                      {currentGame.HomeTeamHits || 0}
+                    </Text>
+                    <Text fontSize="xs" color="text.400">
+                      Errors: {currentGame.AwayTeamErrors || 0} -{" "}
+                      {currentGame.HomeTeamErrors || 0}
+                    </Text>
+                  </HStack>
+                  {(orEmpty(currentGame.CurrentPitcher) !== "--" ||
+                    orEmpty(currentGame.CurrentHitter) !== "--") && (
+                    <HStack gap="4">
+                      {orEmpty(currentGame.CurrentPitcher) !== "--" && (
+                        <Text fontSize="xs" color="text.400">
+                          Pitcher: {orEmpty(currentGame.CurrentPitcher)}
+                        </Text>
+                      )}
+                      {orEmpty(currentGame.CurrentHitter) !== "--" && (
+                        <Text fontSize="xs" color="text.400">
+                          Batter: {orEmpty(currentGame.CurrentHitter)}
+                        </Text>
+                      )}
+                    </HStack>
+                  )}
+                </VStack>
+              )
             )}
           </VStack>
 
           <VStack align="end" gap="1">
-            <Text fontSize="xs" color="text.400">
-              {plays.length} events
-            </Text>
-            <Text fontSize="xs" color="text.400">
-              Live
-            </Text>
+            {loading ? (
+              <>
+                <Skeleton w="16" h="3" />
+                <Skeleton w="12" h="3" />
+              </>
+            ) : (
+              <>
+                <Text fontSize="xs" color="text.400">
+                  {plays.length} events
+                </Text>
+                <Text fontSize="xs" color="text.400">
+                  Live
+                </Text>
+              </>
+            )}
           </VStack>
         </HStack>
       </Box>
