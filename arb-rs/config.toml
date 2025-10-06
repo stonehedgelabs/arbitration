@@ -21,6 +21,8 @@ play_by_play = 20         # 20 seconds
 box_scores = 60           # 1 minute
 stadiums = 7200           # 2 hours
 twitter_search = 60       # 1 minute
+reddit_thread = 21600     # 6 hours
+reddit_thread_comments = 120 # 2 minutes
 odds = 86400              # 24 hours
 user_auth = 604800        # 1 week (7 days)
 
@@ -48,3 +50,9 @@ postseason_start = "04-01"
 sportsdata_base_url = "https://api.sportsdata.io/v3"
 twitter_base_url = "https://api.twitterapi.io"
 request_timeout = 30
+
+[api.reddit_api]
+default_comment_limit = 20
+max_comment_limit = 100
+default_sort = "new"
+user_agent = "arbitration-app/1.0 by u/arbitration_dev"

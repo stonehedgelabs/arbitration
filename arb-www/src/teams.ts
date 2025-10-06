@@ -1,3 +1,6 @@
+import Fuse from "fuse.js";
+import { League } from "./config";
+
 export interface Team {
   id: string;
   name: string;
@@ -1250,3 +1253,32 @@ export const allTeams: Team[] = [
     subreddit: "r/whitecapsfc",
   },
 ];
+
+
+// Helper function to get team subreddit from team name (for score cards)
+export const getTeamSubredditByName = (teamName: string, league: League = League.MLB): string | null => {
+  if (!teamName) return null;
+  
+  // Create Fuse instance for fuzzy matching
+  const fuse = new Fuse(allTeams, {
+    keys: ['name'], // Search in the 'name' field
+    includeScore: true,
+    threshold: 0.4, // Lower = stricter matching (0.0 = exact, 1.0 = match anything)
+    distance: 100,  // Maximum distance for a match
+  });
+  
+  // Search for the team
+  const results = fuse.search(teamName);
+  
+  // If we found a match with a good score, return the subreddit
+  if (results.length > 0) {
+    const { item, score } = results[0];
+    // Lower score = better match (0.0 is perfect match)
+    // Use case-insensitive comparison for league
+    if (score !== undefined && score < 0.3 && item.league.toLowerCase() === league.toLowerCase()) {
+      return item.subreddit || null;
+    }
+  }
+  
+  return null;
+};

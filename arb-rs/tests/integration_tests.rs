@@ -1,10 +1,10 @@
 use axum_test::TestServer;
 use serde_json::Value;
 use std::env;
-use tokio;
 
 // Import the main application
 use arb_rs::cache::Cache;
+use arb_rs::config::{ArbConfig, CacheConfig, CacheMode, CacheTtlConfig};
 use arb_rs::server::Server;
 
 async fn setup_test_server() -> TestServer {
@@ -15,7 +15,27 @@ async fn setup_test_server() -> TestServer {
     // Create a test cache (this will fail if Redis is not available, but that's ok for tests)
     let redis_url =
         env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-    let cache = match Cache::new(&redis_url).await {
+    let cache_config = CacheConfig {
+        enabled: true,
+        mode: CacheMode::TtlBased,
+        redis_url,
+        default_ttl: 3600, // 1 hour default
+        ttl: CacheTtlConfig {
+            team_profiles: 86400,        // 24 hours
+            schedule: 3600,              // 1 hour
+            postseason_schedule: 3600,   // 1 hour
+            scores: 300,                 // 5 minutes
+            play_by_play: 60,            // 1 minute
+            box_scores: 3600,            // 1 hour
+            stadiums: 86400,             // 24 hours
+            twitter_search: 60,          // 1 minute
+            reddit_thread: 21600,        // 6 hours
+            reddit_thread_comments: 120, // 2 minutes
+            odds: 86400,                 // 24 hours
+            user_auth: 604800,           // 1 week
+        },
+    };
+    let cache = match Cache::new(cache_config).await {
         Ok(cache) => std::sync::Arc::new(async_std::sync::Mutex::new(cache)),
         Err(_) => {
             // If Redis is not available, create a minimal test server
@@ -77,9 +97,7 @@ async fn setup_test_server() -> TestServer {
                                     "Box score final not yet supported for league: nfl",
                                 );
                             }
-                            if params
-                                .get("game_id")
-                                .map_or(true, |id| id.trim().is_empty())
+                            if params.get("game_id").is_none_or(|id| id.trim().is_empty())
                             {
                                 return (
                                     axum::http::StatusCode::BAD_REQUEST,
@@ -123,10 +141,7 @@ async fn setup_test_server() -> TestServer {
                 .route(
                     "/api/v1/play-by-play",
                     get(|Query(params): Query<HashMap<String, String>>| async move {
-                        if params
-                            .get("game_id")
-                            .map_or(true, |id| id.trim().is_empty())
-                        {
+                        if params.get("game_id").is_none_or(|id| id.trim().is_empty()) {
                             return (
                                 axum::http::StatusCode::BAD_REQUEST,
                                 "Missing or empty game_id parameter",
@@ -143,7 +158,9 @@ async fn setup_test_server() -> TestServer {
         }
     };
 
-    let server = Server::new(cache);
+    // Create a minimal test config
+    let test_config = ArbConfig::default();
+    let server = Server::new(cache, test_config);
     let app = server.build();
 
     TestServer::new(app).unwrap()

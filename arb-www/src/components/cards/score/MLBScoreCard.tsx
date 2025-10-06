@@ -20,6 +20,13 @@ import { GameStatus, League } from "../../../config";
 // Internal imports - utils
 import { orEmpty, toLocalTime } from "../../../utils";
 
+// Internal imports - Redux
+import { useAppDispatch } from "../../../store/hooks";
+import { findRedditGameThread } from "../../../store/slices/sportsDataSlice";
+
+// Internal imports - teams
+import { getTeamSubredditByName } from "../../../teams";
+
 interface Team {
   name: string;
   score: number;
@@ -195,6 +202,32 @@ export function MLBScoreCard({
   oddsLoading,
   mlbOddsByDate,
 }: MLBScoreCardProps) {
+  const dispatch = useAppDispatch();
+
+  // Enhanced click handler that also searches for Reddit game threads
+  const handleGameClick = async () => {
+    // Call the original onGameClick
+    onGameClick(game.id, game.date);
+
+    // Find subreddits for both teams using the new function
+    const awaySubreddit = getTeamSubredditByName(
+      game.awayTeam.name,
+      League.MLB,
+    );
+    const homeSubreddit = getTeamSubredditByName(
+      game.homeTeam.name,
+      League.MLB,
+    );
+
+    // Search for game threads for both teams
+    if (awaySubreddit) {
+      dispatch(findRedditGameThread(awaySubreddit.replace("r/", "")));
+    }
+    if (homeSubreddit) {
+      dispatch(findRedditGameThread(homeSubreddit.replace("r/", "")));
+    }
+  };
+
   return (
     <Card.Root
       key={game.id}
@@ -206,7 +239,7 @@ export function MLBScoreCard({
       _active={{ transform: "scale(0.98)" }}
       transition="all 0.2s"
       cursor="pointer"
-      onClick={() => onGameClick(game.id, game.date)}
+      onClick={handleGameClick}
     >
       <Card.Body p="4">
         <VStack align="stretch" gap="3">

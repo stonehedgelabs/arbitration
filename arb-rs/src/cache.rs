@@ -6,6 +6,7 @@ pub use crate::uses::CacheKey;
 
 #[derive(Clone)]
 pub struct Cache {
+    #[allow(dead_code)]
     client: Client,
     connection: MultiplexedConnection,
     config: CacheConfig,

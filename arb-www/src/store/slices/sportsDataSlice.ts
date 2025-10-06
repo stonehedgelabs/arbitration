@@ -2,6 +2,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { mockData, leagues, forYouFeed, boxScoreData, MockLeague } from '../../services/MockData.ts';
 import { buildApiUrl } from '../../config';
 import { TwitterSearchResponse } from '../../schema/twitterapi';
+import { RedditGameThreadCommentsResponse } from '../../schema/redditGameThreadComments';
 import { MLBOddsByDateResponse } from '../../schema/mlb/odds';
 import { MLBScoresResponse, MLBTeamProfilesResponse, StadiumsResponse, MLBScheduleResponse } from '../../schema/mlb';
 import { getCurrentLocalDate } from '../../utils.ts';
@@ -53,6 +54,59 @@ export const fetchTwitterData = createAsyncThunk(
     const data = await response.json();
     console.log('✅ Twitter data received:', data);
     return data;
+  }
+);
+
+
+// Async thunk for finding Reddit game thread
+export const findRedditGameThread = createAsyncThunk(
+  'sportsData/findRedditGameThread',
+  async (subreddit: string, { rejectWithValue }) => {
+    try {
+      const url = buildApiUrl('/api/v1/reddit-thread', { subreddit });
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('No game thread found for this subreddit');
+        }
+        throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
+      }
+      
+      return { success: true, subreddit };
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
+);
+
+// Async thunk for fetching Reddit game thread comments
+export const fetchRedditGameThreadComments = createAsyncThunk(
+  'sportsData/fetchRedditGameThreadComments',
+  async ({ subreddit, gameId, kind }: { subreddit: string; gameId: string; kind?: string }, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { sportsData: SportsDataState };
+      const sortKind = kind || state.sportsData.redditSortKind;
+      
+      const url = buildApiUrl('/api/v1/reddit-thread-comments', { 
+        subreddit, 
+        game_id: gameId,
+        kind: sortKind
+      });
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('No game thread found for this subreddit. Please find the game thread first.');
+        }
+        throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return RedditGameThreadCommentsResponse.fromJSON(data);
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    }
   }
 );
 
@@ -201,6 +255,18 @@ interface SportsDataState {
   twitterSearchQuery: string;
   twitterHasSearched: boolean;
   twitterLoadingMore: boolean;
+  // Reddit state
+  redditCommentsData: RedditGameThreadCommentsResponse | null;
+  redditCommentsLoading: boolean;
+  redditCommentsError: string | null;
+  redditGameThreadLoading: boolean;
+  redditGameThreadError: string | null;
+  redditGameThreadFound: boolean;
+  redditHasSearched: boolean;
+  redditSortKind: 'top' | 'new';
+  // Boxscore view state
+  boxscoreView: 'stats' | 'social';
+  socialPlatform: 'reddit' | 'twitter';
   // Odds state
   oddsByDate: MLBOddsByDateResponse | null;
   oddsLoading: boolean;
@@ -241,6 +307,18 @@ const initialState: SportsDataState = {
   twitterSearchQuery: '',
   twitterHasSearched: false,
   twitterLoadingMore: false,
+  // Reddit state
+  redditCommentsData: null,
+  redditCommentsLoading: false,
+  redditCommentsError: null,
+  redditGameThreadLoading: false,
+  redditGameThreadError: null,
+  redditGameThreadFound: false,
+  redditHasSearched: false,
+  redditSortKind: 'new' as const,
+  // Boxscore view state
+  boxscoreView: 'stats',
+  socialPlatform: 'reddit',
   // Odds state
   oddsByDate: null,
   oddsLoading: false,
@@ -286,6 +364,26 @@ const sportsDataSlice = createSlice({
     clearTwitterData: (state) => {
       state.twitterData = null;
       state.twitterError = null;
+    },
+    // Reddit actions
+    setRedditHasSearched: (state, action: PayloadAction<boolean>) => {
+      state.redditHasSearched = action.payload;
+    },
+    clearRedditData: (state) => {
+      state.redditCommentsData = null;
+      state.redditCommentsError = null;
+      state.redditGameThreadFound = false;
+      state.redditGameThreadError = null;
+    },
+    // Boxscore view actions
+    setBoxscoreView: (state, action: PayloadAction<'stats' | 'social'>) => {
+      state.boxscoreView = action.payload;
+    },
+    setSocialPlatform: (state, action: PayloadAction<'reddit' | 'twitter'>) => {
+      state.socialPlatform = action.payload;
+    },
+    setRedditSortKind: (state, action: PayloadAction<'top' | 'new'>) => {
+      state.redditSortKind = action.payload;
     },
     clearOddsData: (state) => {
       state.oddsByDate = null;
@@ -372,6 +470,73 @@ const sportsDataSlice = createSlice({
       .addCase(loadMoreTwitterData.rejected, (state, action) => {
         state.twitterLoadingMore = false;
         state.twitterError = action.error.message || 'Failed to load more Twitter data';
+      })
+      // Reddit game thread reducers
+      .addCase(findRedditGameThread.pending, (state) => {
+        state.redditGameThreadLoading = true;
+        state.redditGameThreadError = null;
+        state.redditGameThreadFound = false;
+      })
+      .addCase(findRedditGameThread.fulfilled, (state) => {
+        state.redditGameThreadLoading = false;
+        state.redditGameThreadFound = true;
+        state.redditGameThreadError = null;
+      })
+      .addCase(findRedditGameThread.rejected, (state, action) => {
+        state.redditGameThreadLoading = false;
+        state.redditGameThreadFound = false;
+        state.redditGameThreadError = action.error.message || 'Failed to find Reddit game thread';
+      })
+      // Reddit comments reducers
+      .addCase(fetchRedditGameThreadComments.pending, (state) => {
+        state.redditCommentsLoading = true;
+        state.redditCommentsError = null;
+      })
+      .addCase(fetchRedditGameThreadComments.fulfilled, (state, action) => {
+        state.redditCommentsLoading = false;
+        
+        // Combine comments from both teams and sort by timestamp
+        if (state.redditCommentsData) {
+          // Merge with existing comments
+          const existingComments = state.redditCommentsData.posts?.[0]?.comments || [];
+          const newComments = action.payload.posts?.[0]?.comments || [];
+          
+          // Create a map to deduplicate by comment ID
+          const commentMap = new Map();
+          
+          // Add existing comments to map
+          existingComments.forEach(comment => {
+            commentMap.set(comment.id, comment);
+          });
+          
+          // Add new comments to map (this will overwrite duplicates)
+          newComments.forEach(comment => {
+            commentMap.set(comment.id, comment);
+          });
+          
+          // Convert back to array and sort by timestamp (newest first)
+          const combinedComments = Array.from(commentMap.values())
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          
+          // Update the data with combined comments
+          state.redditCommentsData = {
+            ...action.payload,
+            posts: [{
+              ...action.payload.posts[0],
+              comments: combinedComments
+            }]
+          };
+        } else {
+          // First set of comments
+          state.redditCommentsData = action.payload;
+        }
+        
+        state.redditCommentsError = null;
+        state.redditHasSearched = true;
+      })
+      .addCase(fetchRedditGameThreadComments.rejected, (state, action) => {
+        state.redditCommentsLoading = false;
+        state.redditCommentsError = action.error.message || 'Failed to fetch Reddit comments';
       })
       .addCase(fetchOddsByDate.pending, (state) => {
         state.oddsLoading = true;
@@ -461,6 +626,11 @@ export const {
   setTwitterSearchQuery,
   setTwitterHasSearched,
   clearTwitterData,
+  setRedditHasSearched,
+  clearRedditData,
+  setBoxscoreView,
+  setSocialPlatform,
+  setRedditSortKind,
   clearOddsData,
   clearMLBData
 } = sportsDataSlice.actions;

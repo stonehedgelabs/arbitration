@@ -4,10 +4,10 @@ use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 // Module declarations
-pub mod api_paths;
 pub mod cache;
 pub mod config;
 pub mod error;
+pub mod path;
 pub mod schema;
 pub mod server;
 pub mod services;
@@ -46,7 +46,7 @@ async fn main() -> Result<()> {
 
     let cache = Arc::new(Mutex::new(Cache::new(config.cache.clone()).await?));
 
-    info!("Server config: {:?}", config);
+    info!("Server config: {}", config);
     // Data will be fetched from API as needed, no pre-loading from test files
 
     let server = Server::new(cache, config);

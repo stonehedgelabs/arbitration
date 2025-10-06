@@ -12,7 +12,11 @@ import {
 import { ArrowLeft } from "lucide-react";
 import useArb from "../../services/Arb.ts";
 import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
-import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
+import {
+  fetchBoxScore,
+  setBoxscoreView,
+  findRedditGameThread,
+} from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
@@ -21,6 +25,9 @@ import { InningBadge } from "../badge";
 
 // Internal imports - containers
 import { HideVerticalScroll, HideHorizontalScroll } from "../containers";
+
+// Internal imports - social components
+import { BoxScoreSocial } from "./social/BoxScoreSocial";
 
 // Internal imports - utils
 import { orEmpty } from "../../utils.ts";
@@ -31,6 +38,9 @@ import {
   getStatusDisplayText,
   League,
 } from "../../config.ts";
+
+// Internal imports - teams data
+import { allTeams, getTeamSubredditByName } from "../../teams.ts";
 
 interface BoxScoreDetailMLBProps {
   gameId: string;
@@ -167,6 +177,9 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   const reduxBoxScore = boxScoreData[gameId as keyof typeof boxScoreData];
   const [selectedTeam, setSelectedTeam] = useState<"away" | "home">("away");
 
+  // Get boxscore view state
+  const boxscoreView = useAppSelector((state) => state.sportsData.boxscoreView);
+
   // Helper function to get odds for this specific game
   const getGameOdds = () => {
     if (!mlbOddsByDate?.data) return null;
@@ -212,6 +225,51 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
     fetchMLBStadiums();
   }, []);
 
+  // Use Redux data if available, otherwise use local data
+  const gameData = reduxBoxScore || mlbBoxScore;
+  const game = gameData?.data?.Game;
+
+  // Helper function to get stadium information
+  const getStadiumInfo = () => {
+    if (!mlbStadiums?.data || !game?.StadiumID) return null;
+    return mlbStadiums.data.find(
+      (stadium: any) => stadium.StadiumID === game.StadiumID,
+    );
+  };
+
+  const stadium = getStadiumInfo();
+
+  // Get team profiles for colors and logos
+  const awayTeamProfile = mlbTeamProfiles?.data?.find(
+    (team) => team.Key === game?.AwayTeam,
+  );
+  const homeTeamProfile = mlbTeamProfiles?.data?.find(
+    (team) => team.Key === game?.HomeTeam,
+  );
+
+  // Reddit thread request when game data is available
+  useEffect(() => {
+    if (game && awayTeamProfile && homeTeamProfile) {
+      // Find subreddits for both teams using the new function
+      const awaySubreddit = getTeamSubredditByName(
+        awayTeamProfile.Name,
+        League.MLB,
+      );
+      const homeSubreddit = getTeamSubredditByName(
+        homeTeamProfile.Name,
+        League.MLB,
+      );
+
+      // Search for game threads for both teams
+      if (awaySubreddit) {
+        dispatch(findRedditGameThread(awaySubreddit.replace("r/", "")));
+      }
+      if (homeSubreddit) {
+        dispatch(findRedditGameThread(homeSubreddit.replace("r/", "")));
+      }
+    }
+  }, [game, awayTeamProfile, homeTeamProfile, dispatch]);
+
   // Show loading state only if we don't have data in Redux and we're not currently fetching
   if (!reduxBoxScore && !mlbBoxScore?.data) {
     return (
@@ -224,30 +282,19 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
     );
   }
 
-  // Use Redux data if available, otherwise use local data
-  const gameData = reduxBoxScore || mlbBoxScore;
-  const game = gameData?.data?.Game;
-
-  // Helper function to get stadium information
-  const getStadiumInfo = () => {
-    if (!mlbStadiums?.data || !game.StadiumID) return null;
-    return mlbStadiums.data.find(
-      (stadium: any) => stadium.StadiumID === game.StadiumID,
-    );
-  };
-
-  const stadium = getStadiumInfo();
-
-  // Get team profiles for colors and logos
-  const awayTeamProfile = mlbTeamProfiles?.data?.find(
-    (team) => team.Key === game.AwayTeam,
-  );
-  const homeTeamProfile = mlbTeamProfiles?.data?.find(
-    (team) => team.Key === game.HomeTeam,
-  );
-
   const awayTeamColor = awayTeamProfile?.PrimaryColor || "#1a365d";
   const homeTeamColor = homeTeamProfile?.PrimaryColor || "#1a365d";
+
+  // Toggle handler for Stats/Social view
+  const handleViewToggle = (view: "stats" | "social") => {
+    dispatch(setBoxscoreView(view));
+  };
+
+  // Helper function to get team subreddit
+  const getTeamSubreddit = (teamName: string) => {
+    const team = allTeams.find((t) => t.name === teamName);
+    return team?.subreddit || "r/baseball";
+  };
 
   return (
     <HideVerticalScroll minH="100vh" bg="primary.25">
@@ -293,6 +340,48 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             })()}
           </Text>
         )}
+
+        {/* Stats/Social Toggle */}
+        <HStack justify="center" mb="4">
+          <Box bg="text.100" borderRadius="lg" p="1" display="flex" gap="0">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleViewToggle("stats")}
+              bg={boxscoreView === "stats" ? "white" : "transparent"}
+              color={boxscoreView === "stats" ? "text.600" : "text.400"}
+              borderRadius="md"
+              px="6"
+              _hover={{
+                bg: boxscoreView === "stats" ? "white" : "text.50",
+              }}
+              _active={{
+                bg: boxscoreView === "stats" ? "white" : "text.50",
+              }}
+              boxShadow={boxscoreView === "stats" ? "sm" : "none"}
+            >
+              Stats
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleViewToggle("social")}
+              bg={boxscoreView === "social" ? "white" : "transparent"}
+              color={boxscoreView === "social" ? "text.600" : "text.400"}
+              borderRadius="md"
+              px="6"
+              _hover={{
+                bg: boxscoreView === "social" ? "white" : "text.50",
+              }}
+              _active={{
+                bg: boxscoreView === "social" ? "white" : "text.50",
+              }}
+              boxShadow={boxscoreView === "social" ? "sm" : "none"}
+            >
+              Social
+            </Button>
+          </Box>
+        </HStack>
 
         {/* Scoreboard */}
         <Flex justify="space-between" align="center" mb="4">
@@ -499,7 +588,10 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
           )}
         </VStack>
 
-        {/* {(game.CurrentPitcher || game.CurrentHitter) && (
+        {/* Conditional Content: Stats or Social */}
+        {boxscoreView === "stats" ? (
+          <>
+            {/* {(game.CurrentPitcher || game.CurrentHitter) && (
           <Box mb="6" p="4" bg="text.200" borderRadius="md">
             <Text fontSize="sm" fontWeight="semibold" mb="3" color="text.400">
               Current At-Bat
@@ -529,8 +621,8 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
           </Box>
         )} */}
 
-        {/* Starting Pitchers */}
-        {/* {(game.AwayTeamStartingPitcher || game.HomeTeamStartingPitcher) && (
+            {/* Starting Pitchers */}
+            {/* {(game.AwayTeamStartingPitcher || game.HomeTeamStartingPitcher) && (
           <Box mb="6" p="4" bg="text.200" borderRadius="md">
             <Text fontSize="sm" fontWeight="semibold" mb="3" color="text.400">
               Starting Pitchers
@@ -560,14 +652,14 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
           </Box>
         )} */}
 
-        {/* <Box mt="8">
+            {/* <Box mt="8">
           <Text fontSize="lg" fontWeight="bold" mb="4">
             Pitcher Information
           </Text>
 
           <VStack gap="3" align="stretch">
             {/* Starting Pitchers */}
-        {/* <Box bg="text.200" p="4" borderRadius="lg">
+            {/* <Box bg="text.200" p="4" borderRadius="lg">
               <Text fontSize="md" fontWeight="bold" mb="3">
                 Starting Pitchers
               </Text>
@@ -591,7 +683,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               </VStack>
             </Box> */}
 
-        {/* {(game.WinningPitcher ||
+            {/* {(game.WinningPitcher ||
               game.LosingPitcher ||
               game.SavingPitcher) && (
               <Box bg="text.200" p="4" borderRadius="lg">
@@ -632,197 +724,205 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 </VStack>
               </Box>
             )} */}
-        {/* </VStack>
+            {/* </VStack>
         </Box> */}
 
-        <Text fontSize="lg" fontWeight="bold" mb="4">
-          Game Information
-        </Text>
-        {/* Innings Summary */}
-        {game.Innings && game.Innings.length > 0 && (
-          <Box bg="primary.25" p="4" borderRadius="lg" mb="6">
-            <Text fontSize="sm" fontWeight="bold" mb="3">
-              Innings Summary
+            <Text fontSize="lg" fontWeight="bold" mb="4">
+              Game Information
             </Text>
-            <HideHorizontalScroll>
-              <VStack gap="1" align="stretch">
-                {/* Inning Numbers Header */}
-                <HStack gap="1" minW="fit-content">
-                  <Box minW="8" p="1">
-                    <Text fontSize="2xs" color="text.400">
-                      Inning
-                    </Text>
-                  </Box>
-                  {game.Innings.slice(0, 9).map((inning, index) => (
-                    <Box key={index} minW="8" p="1">
-                      <Text fontSize="2xs" color="text.400">
-                        {inning.InningNumber}
-                      </Text>
-                    </Box>
-                  ))}
-                </HStack>
+            {/* Innings Summary */}
+            {game.Innings && game.Innings.length > 0 && (
+              <Box bg="primary.25" p="4" borderRadius="lg" mb="6">
+                <Text fontSize="sm" fontWeight="bold" mb="3">
+                  Innings Summary
+                </Text>
+                <HideHorizontalScroll>
+                  <VStack gap="1" align="stretch">
+                    {/* Inning Numbers Header */}
+                    <HStack gap="1" minW="fit-content">
+                      <Box minW="8" p="1">
+                        <Text fontSize="2xs" color="text.400">
+                          Inning
+                        </Text>
+                      </Box>
+                      {game.Innings.slice(0, 9).map((inning, index) => (
+                        <Box key={index} minW="8" p="1">
+                          <Text fontSize="2xs" color="text.400">
+                            {inning.InningNumber}
+                          </Text>
+                        </Box>
+                      ))}
+                    </HStack>
 
-                {/* Away Team Scores */}
-                <HStack gap="1" minW="fit-content">
-                  <Box minW="8" p="1">
-                    <Text fontSize="2xs" color="text.400" fontWeight="medium">
-                      {game.AwayTeam}
-                    </Text>
-                  </Box>
-                  {game.Innings.slice(0, 9).map((inning, index) => (
-                    <Box key={index} minW="8" p="1">
-                      <Text fontSize="xs" fontWeight="medium">
-                        {inning.AwayTeamRuns}
-                      </Text>
-                    </Box>
-                  ))}
-                </HStack>
+                    {/* Away Team Scores */}
+                    <HStack gap="1" minW="fit-content">
+                      <Box minW="8" p="1">
+                        <Text
+                          fontSize="2xs"
+                          color="text.400"
+                          fontWeight="medium"
+                        >
+                          {game.AwayTeam}
+                        </Text>
+                      </Box>
+                      {game.Innings.slice(0, 9).map((inning, index) => (
+                        <Box key={index} minW="8" p="1">
+                          <Text fontSize="xs" fontWeight="medium">
+                            {inning.AwayTeamRuns}
+                          </Text>
+                        </Box>
+                      ))}
+                    </HStack>
 
-                {/* Home Team Scores */}
-                <HStack gap="1" minW="fit-content">
-                  <Box minW="8" p="1">
-                    <Text fontSize="2xs" color="text.400" fontWeight="medium">
-                      {game.HomeTeam}
-                    </Text>
-                  </Box>
-                  {game.Innings.slice(0, 9).map((inning, index) => (
-                    <Box key={index} minW="8" p="1">
-                      <Text fontSize="xs" fontWeight="medium">
-                        {inning.HomeTeamRuns}
-                      </Text>
-                    </Box>
-                  ))}
-                </HStack>
-              </VStack>
-            </HideHorizontalScroll>
-          </Box>
-        )}
+                    {/* Home Team Scores */}
+                    <HStack gap="1" minW="fit-content">
+                      <Box minW="8" p="1">
+                        <Text
+                          fontSize="2xs"
+                          color="text.400"
+                          fontWeight="medium"
+                        >
+                          {game.HomeTeam}
+                        </Text>
+                      </Box>
+                      {game.Innings.slice(0, 9).map((inning, index) => (
+                        <Box key={index} minW="8" p="1">
+                          <Text fontSize="xs" fontWeight="medium">
+                            {inning.HomeTeamRuns}
+                          </Text>
+                        </Box>
+                      ))}
+                    </HStack>
+                  </VStack>
+                </HideHorizontalScroll>
+              </Box>
+            )}
 
-        {/* Team Selection Toggle */}
-        <Box mb="6">
-          <Flex
-            bg="primary.400"
-            borderRadius="xl"
-            p="1"
-            position="relative"
-            h="16"
-            align="center"
-            gap="0"
-          >
-            <Button
-              flex="1"
-              h="14"
-              borderRadius="xl"
-              borderTopRightRadius="none"
-              borderBottomRightRadius="none"
-              bg={
-                selectedTeam === "away"
-                  ? "linear-gradient(145deg, #ffffff, #f7f7f7)"
-                  : "linear-gradient(145deg, #e5e7eb, #d1d5db)"
-              }
-              color="text.400"
-              fontWeight="bold"
-              fontSize="lg"
-              onClick={() => setSelectedTeam("away")}
-              boxShadow={
-                selectedTeam === "away"
-                  ? "0 4px 8px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)"
-                  : "0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.1)"
-              }
-              borderRight="1px solid"
-              borderColor="text.300"
-            >
-              <HStack gap="2">
-                {awayTeamProfile?.WikipediaLogoUrl && (
-                  <Image
-                    src={awayTeamProfile.WikipediaLogoUrl}
-                    alt={game.AwayTeam}
-                    boxSize="8"
-                  />
-                )}
-                <Text>{game.AwayTeam}</Text>
-              </HStack>
-            </Button>
-            <Button
-              flex="1"
-              h="14"
-              borderRadius="xl"
-              borderTopLeftRadius="none"
-              borderBottomLeftRadius="none"
-              bg={
-                selectedTeam === "home"
-                  ? "linear-gradient(145deg, #ffffff, #f7f7f7)"
-                  : "linear-gradient(145deg, #e5e7eb, #d1d5db)"
-              }
-              color="text.400"
-              fontWeight="bold"
-              fontSize="lg"
-              onClick={() => setSelectedTeam("home")}
-              boxShadow={
-                selectedTeam === "home"
-                  ? "0 4px 8px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)"
-                  : "0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.1)"
-              }
-            >
-              <HStack gap="2">
-                {homeTeamProfile?.WikipediaLogoUrl && (
-                  <Image
-                    src={homeTeamProfile.WikipediaLogoUrl}
-                    alt={game.HomeTeam}
-                    boxSize="8"
-                  />
-                )}
-                <Text>{game.HomeTeam}</Text>
-              </HStack>
-            </Button>
-          </Flex>
-        </Box>
-
-        {/* Game Information */}
-        <Box>
-          <VStack gap="3" align="stretch">
-            {/* Team Stats */}
-            <Box bg="primary.25" p="4" borderRadius="lg">
-              <Text fontSize="md" fontWeight="bold" mb="3">
-                {selectedTeam === "away" ? game.AwayTeam : game.HomeTeam} Team
-                Stats
-              </Text>
-              <HStack justify="space-between" wrap="wrap" gap="4">
-                <VStack gap="1" align="center">
-                  <Text fontSize="sm" color="text.400">
-                    Runs
-                  </Text>
-                  <Text fontSize="lg" fontWeight="bold">
-                    {selectedTeam === "away"
-                      ? game.AwayTeamRuns || 0
-                      : game.HomeTeamRuns || 0}
-                  </Text>
-                </VStack>
-                <VStack gap="1" align="center">
-                  <Text fontSize="sm" color="text.400">
-                    Hits
-                  </Text>
-                  <Text fontSize="lg" fontWeight="bold">
-                    {selectedTeam === "away"
-                      ? game.AwayTeamHits || 0
-                      : game.HomeTeamHits || 0}
-                  </Text>
-                </VStack>
-                <VStack gap="1" align="center">
-                  <Text fontSize="sm" color="text.400">
-                    Errors
-                  </Text>
-                  <Text fontSize="lg" fontWeight="bold">
-                    {selectedTeam === "away"
-                      ? game.AwayTeamErrors || 0
-                      : game.HomeTeamErrors || 0}
-                  </Text>
-                </VStack>
-              </HStack>
+            {/* Team Selection Toggle */}
+            <Box mb="6">
+              <Flex
+                bg="primary.400"
+                borderRadius="xl"
+                p="1"
+                position="relative"
+                h="16"
+                align="center"
+                gap="0"
+              >
+                <Button
+                  flex="1"
+                  h="14"
+                  borderRadius="xl"
+                  borderTopRightRadius="none"
+                  borderBottomRightRadius="none"
+                  bg={
+                    selectedTeam === "away"
+                      ? "linear-gradient(145deg, #ffffff, #f7f7f7)"
+                      : "linear-gradient(145deg, #e5e7eb, #d1d5db)"
+                  }
+                  color="text.400"
+                  fontWeight="bold"
+                  fontSize="lg"
+                  onClick={() => setSelectedTeam("away")}
+                  boxShadow={
+                    selectedTeam === "away"
+                      ? "0 4px 8px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)"
+                      : "0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.1)"
+                  }
+                  borderRight="1px solid"
+                  borderColor="text.300"
+                >
+                  <HStack gap="2">
+                    {awayTeamProfile?.WikipediaLogoUrl && (
+                      <Image
+                        src={awayTeamProfile.WikipediaLogoUrl}
+                        alt={game.AwayTeam}
+                        boxSize="8"
+                      />
+                    )}
+                    <Text>{game.AwayTeam}</Text>
+                  </HStack>
+                </Button>
+                <Button
+                  flex="1"
+                  h="14"
+                  borderRadius="xl"
+                  borderTopLeftRadius="none"
+                  borderBottomLeftRadius="none"
+                  bg={
+                    selectedTeam === "home"
+                      ? "linear-gradient(145deg, #ffffff, #f7f7f7)"
+                      : "linear-gradient(145deg, #e5e7eb, #d1d5db)"
+                  }
+                  color="text.400"
+                  fontWeight="bold"
+                  fontSize="lg"
+                  onClick={() => setSelectedTeam("home")}
+                  boxShadow={
+                    selectedTeam === "home"
+                      ? "0 4px 8px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)"
+                      : "0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.1)"
+                  }
+                >
+                  <HStack gap="2">
+                    {homeTeamProfile?.WikipediaLogoUrl && (
+                      <Image
+                        src={homeTeamProfile.WikipediaLogoUrl}
+                        alt={game.HomeTeam}
+                        boxSize="8"
+                      />
+                    )}
+                    <Text>{game.HomeTeam}</Text>
+                  </HStack>
+                </Button>
+              </Flex>
             </Box>
 
-            {/* Pitcher Information */}
-            {/* {(selectedTeam === "away"
+            {/* Game Information */}
+            <Box>
+              <VStack gap="3" align="stretch">
+                {/* Team Stats */}
+                <Box bg="primary.25" p="4" borderRadius="lg">
+                  <Text fontSize="md" fontWeight="bold" mb="3">
+                    {selectedTeam === "away" ? game.AwayTeam : game.HomeTeam}{" "}
+                    Team Stats
+                  </Text>
+                  <HStack justify="space-between" wrap="wrap" gap="4">
+                    <VStack gap="1" align="center">
+                      <Text fontSize="sm" color="text.400">
+                        Runs
+                      </Text>
+                      <Text fontSize="lg" fontWeight="bold">
+                        {selectedTeam === "away"
+                          ? game.AwayTeamRuns || 0
+                          : game.HomeTeamRuns || 0}
+                      </Text>
+                    </VStack>
+                    <VStack gap="1" align="center">
+                      <Text fontSize="sm" color="text.400">
+                        Hits
+                      </Text>
+                      <Text fontSize="lg" fontWeight="bold">
+                        {selectedTeam === "away"
+                          ? game.AwayTeamHits || 0
+                          : game.HomeTeamHits || 0}
+                      </Text>
+                    </VStack>
+                    <VStack gap="1" align="center">
+                      <Text fontSize="sm" color="text.400">
+                        Errors
+                      </Text>
+                      <Text fontSize="lg" fontWeight="bold">
+                        {selectedTeam === "away"
+                          ? game.AwayTeamErrors || 0
+                          : game.HomeTeamErrors || 0}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </Box>
+
+                {/* Pitcher Information */}
+                {/* {(selectedTeam === "away"
               ? game.AwayTeamStartingPitcher
               : game.HomeTeamStartingPitcher) && (
               <Box bg="text.200" p="4" borderRadius="lg">
@@ -837,8 +937,8 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               </Box>
             )} */}
 
-            {/* Current Game State */}
-            {/* {game.CurrentPitcher && (
+                {/* Current Game State */}
+                {/* {game.CurrentPitcher && (
               <Box bg="text.200" p="4" borderRadius="lg">
                 <Text fontSize="md" fontWeight="bold" mb="3">
                   Current Pitcher
@@ -847,484 +947,502 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               </Box>
             )} */}
 
-            {/* Game Status */}
-            <Box bg="primary.25" p="4" borderRadius="lg">
-              <Text fontSize="md" fontWeight="bold" mb="3">
-                Game Status
-              </Text>
-              <VStack gap="2" align="stretch">
-                <HStack justify="space-between">
-                  <Text fontSize="sm" color="text.400">
-                    Status:
+                {/* Game Status */}
+                <Box bg="primary.25" p="4" borderRadius="lg">
+                  <Text fontSize="md" fontWeight="bold" mb="3">
+                    Game Status
                   </Text>
-                  <Text fontSize="sm" fontWeight="medium">
-                    {getStatusDisplayText(
-                      mapApiStatusToGameStatus(game.Status || ""),
-                    )}
-                  </Text>
-                </HStack>
-                {game.Inning && (
-                  <HStack justify="space-between">
-                    <Text fontSize="sm" color="text.400">
-                      Inning:
-                    </Text>
-                    {game.InningHalf ? (
-                      <InningBadge
-                        inningNumber={game.Inning}
-                        inningHalf={game.InningHalf}
-                        league={League.MLB}
-                        size="sm"
-                      />
-                    ) : (
-                      <Text fontSize="sm" fontWeight="medium">
-                        {game.Inning}
+                  <VStack gap="2" align="stretch">
+                    <HStack justify="space-between">
+                      <Text fontSize="sm" color="text.400">
+                        Status:
                       </Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {getStatusDisplayText(
+                          mapApiStatusToGameStatus(game.Status || ""),
+                        )}
+                      </Text>
+                    </HStack>
+                    {game.Inning && (
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="text.400">
+                          Inning:
+                        </Text>
+                        {game.InningHalf ? (
+                          <InningBadge
+                            inningNumber={game.Inning}
+                            inningHalf={game.InningHalf}
+                            league={League.MLB}
+                            size="sm"
+                          />
+                        ) : (
+                          <Text fontSize="sm" fontWeight="medium">
+                            {game.Inning}
+                          </Text>
+                        )}
+                      </HStack>
                     )}
-                  </HStack>
-                )}
-                {game.Outs !== undefined && game.Outs !== null && (
-                  <HStack justify="space-between">
-                    <Text fontSize="sm" color="text.400">
-                      Outs:
-                    </Text>
-                    <Text fontSize="sm" fontWeight="medium">
-                      {game.Outs}
-                    </Text>
-                  </HStack>
-                )}
-                {game.Balls !== undefined && game.Balls !== null && (
-                  <HStack justify="space-between">
-                    <Text fontSize="sm" color="text.400">
-                      Balls:
-                    </Text>
-                    <Text fontSize="sm" fontWeight="medium">
-                      {game.Balls}
-                    </Text>
-                  </HStack>
-                )}
-                {game.Strikes !== undefined && game.Strikes !== null && (
-                  <HStack justify="space-between">
-                    <Text fontSize="sm" color="text.400">
-                      Strikes:
-                    </Text>
-                    <Text fontSize="sm" fontWeight="medium">
-                      {game.Strikes}
-                    </Text>
-                  </HStack>
-                )}
+                    {game.Outs !== undefined && game.Outs !== null && (
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="text.400">
+                          Outs:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {game.Outs}
+                        </Text>
+                      </HStack>
+                    )}
+                    {game.Balls !== undefined && game.Balls !== null && (
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="text.400">
+                          Balls:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {game.Balls}
+                        </Text>
+                      </HStack>
+                    )}
+                    {game.Strikes !== undefined && game.Strikes !== null && (
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="text.400">
+                          Strikes:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {game.Strikes}
+                        </Text>
+                      </HStack>
+                    )}
+                  </VStack>
+                </Box>
               </VStack>
             </Box>
-          </VStack>
-        </Box>
 
-        {/* Player Stats */}
-        <Box mt="8">
-          <Text fontSize="lg" fontWeight="bold" mb="4">
-            Player Stats
-          </Text>
+            {/* Player Stats */}
+            <Box mt="8">
+              <Text fontSize="lg" fontWeight="bold" mb="4">
+                Player Stats
+              </Text>
 
-          {/* Batters */}
-          <Box mb="6">
-            <Text fontSize="md" fontWeight="bold" mb="3">
-              Batters
-            </Text>
-            <HideHorizontalScroll
-              bg="text.200"
-              borderRadius="lg"
-              border="1px"
-              borderColor="border.100"
-            >
-              <Box as="table" w="full" minW="600px">
-                <Box as="thead" bg="text.200">
-                  <Box as="tr">
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="left"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      Player
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      AB
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      R
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      H
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      RBI
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      BB
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      SO
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      AVG
-                    </Box>
-                  </Box>
-                </Box>
-                <Box as="tbody">
-                  {gameData?.data?.PlayerGames.filter(
-                    (player) =>
-                      player.TeamID ===
-                      (selectedTeam === "away"
-                        ? game.AwayTeamID
-                        : game.HomeTeamID),
-                  )
-                    .filter((player) => player.PositionCategory !== "P")
-                    .slice(0, 10)
-                    .map((player, index) => (
-                      <Box
-                        as="tr"
-                        key={player.PlayerID}
-                        bg={index % 2 === 0 ? "primary.25" : "primary.200"}
-                      >
-                        <Box as="td" px="2" py="1" fontSize="xs">
-                          <HStack align="center" gap="1">
-                            <Text fontSize="2xs" color="text.400">
-                              {player.Position}
-                            </Text>
-                            <Text fontWeight="medium">{player.Name}</Text>
-                          </HStack>
+              {/* Batters */}
+              <Box mb="6">
+                <Text fontSize="md" fontWeight="bold" mb="3">
+                  Batters
+                </Text>
+                <HideHorizontalScroll
+                  bg="text.200"
+                  borderRadius="lg"
+                  border="1px"
+                  borderColor="border.100"
+                >
+                  <Box as="table" w="full" minW="600px">
+                    <Box as="thead" bg="text.200">
+                      <Box as="tr">
+                        <Box
+                          as="th"
+                          px="2"
+                          py="1"
+                          textAlign="left"
+                          fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
+                        >
+                          Player
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.AtBats || 0}
+                          AB
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.Runs || 0}
+                          R
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.Hits || 0}
+                          H
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.RunsBattedIn || 0}
+                          RBI
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.Walks || 0}
+                          BB
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.Strikeouts || 0}
+                          SO
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.BattingAverage
-                            ? player.BattingAverage.toFixed(3)
-                            : ".000"}
+                          AVG
                         </Box>
                       </Box>
-                    ))}
-                </Box>
-              </Box>
-            </HideHorizontalScroll>
-          </Box>
-
-          {/* Pitchers */}
-          <Box>
-            <Text fontSize="md" fontWeight="bold" mb="3">
-              Pitchers
-            </Text>
-            <HideHorizontalScroll
-              bg="text.200"
-              borderRadius="lg"
-              border="1px"
-              borderColor="border.100"
-            >
-              <Box as="table" w="full" minW="600px">
-                <Box as="thead" bg="text.200">
-                  <Box as="tr">
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="left"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      Player
                     </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      IP
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      H
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      R
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      ER
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      BB
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      SO
-                    </Box>
-                    <Box
-                      as="th"
-                      px="2"
-                      py="1"
-                      textAlign="center"
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="text.400"
-                    >
-                      ERA
+                    <Box as="tbody">
+                      {gameData?.data?.PlayerGames.filter(
+                        (player) =>
+                          player.TeamID ===
+                          (selectedTeam === "away"
+                            ? game.AwayTeamID
+                            : game.HomeTeamID),
+                      )
+                        .filter((player) => player.PositionCategory !== "P")
+                        .slice(0, 10)
+                        .map((player, index) => (
+                          <Box
+                            as="tr"
+                            key={player.PlayerID}
+                            bg={index % 2 === 0 ? "primary.25" : "primary.200"}
+                          >
+                            <Box as="td" px="2" py="1" fontSize="xs">
+                              <HStack align="center" gap="1">
+                                <Text fontSize="2xs" color="text.400">
+                                  {player.Position}
+                                </Text>
+                                <Text fontWeight="medium">{player.Name}</Text>
+                              </HStack>
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.AtBats || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.Runs || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.Hits || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.RunsBattedIn || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.Walks || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.Strikeouts || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.BattingAverage
+                                ? player.BattingAverage.toFixed(3)
+                                : ".000"}
+                            </Box>
+                          </Box>
+                        ))}
                     </Box>
                   </Box>
-                </Box>
-                <Box as="tbody">
-                  {gameData?.data?.PlayerGames.filter(
-                    (player) =>
-                      player.TeamID ===
-                      (selectedTeam === "away"
-                        ? game.AwayTeamID
-                        : game.HomeTeamID),
-                  )
-                    .filter((player) => player.PositionCategory === "P")
-                    .slice(0, 10)
-                    .map((player, index) => (
-                      <Box
-                        as="tr"
-                        key={player.PlayerID}
-                        bg={index % 2 === 0 ? "primary.25" : "text.200"}
-                      >
-                        <Box as="td" px="2" py="1" fontSize="xs">
-                          <HStack align="center" gap="1">
-                            <Text fontSize="2xs" color="text.400">
-                              {player.Position}
-                            </Text>
-                            <Text fontWeight="medium">{player.Name}</Text>
-                          </HStack>
+                </HideHorizontalScroll>
+              </Box>
+
+              {/* Pitchers */}
+              <Box>
+                <Text fontSize="md" fontWeight="bold" mb="3">
+                  Pitchers
+                </Text>
+                <HideHorizontalScroll
+                  bg="text.200"
+                  borderRadius="lg"
+                  border="1px"
+                  borderColor="border.100"
+                >
+                  <Box as="table" w="full" minW="600px">
+                    <Box as="thead" bg="text.200">
+                      <Box as="tr">
+                        <Box
+                          as="th"
+                          px="2"
+                          py="1"
+                          textAlign="left"
+                          fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
+                        >
+                          Player
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.InningsPitchedDecimal
-                            ? player.InningsPitchedDecimal.toFixed(1)
-                            : "0.0"}
+                          IP
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.PitchingHits || 0}
+                          H
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.PitchingRuns || 0}
+                          R
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.PitchingEarnedRuns || 0}
+                          ER
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.PitchingWalks || 0}
+                          BB
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.PitchingStrikeouts || 0}
+                          SO
                         </Box>
                         <Box
-                          as="td"
+                          as="th"
                           px="2"
                           py="1"
                           textAlign="center"
                           fontSize="xs"
+                          fontWeight="bold"
+                          color="text.400"
                         >
-                          {player.EarnedRunAverage
-                            ? player.EarnedRunAverage.toFixed(2)
-                            : "0.00"}
+                          ERA
                         </Box>
                       </Box>
-                    ))}
-                </Box>
+                    </Box>
+                    <Box as="tbody">
+                      {gameData?.data?.PlayerGames.filter(
+                        (player) =>
+                          player.TeamID ===
+                          (selectedTeam === "away"
+                            ? game.AwayTeamID
+                            : game.HomeTeamID),
+                      )
+                        .filter((player) => player.PositionCategory === "P")
+                        .slice(0, 10)
+                        .map((player, index) => (
+                          <Box
+                            as="tr"
+                            key={player.PlayerID}
+                            bg={index % 2 === 0 ? "primary.25" : "text.200"}
+                          >
+                            <Box as="td" px="2" py="1" fontSize="xs">
+                              <HStack align="center" gap="1">
+                                <Text fontSize="2xs" color="text.400">
+                                  {player.Position}
+                                </Text>
+                                <Text fontWeight="medium">{player.Name}</Text>
+                              </HStack>
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.InningsPitchedDecimal
+                                ? player.InningsPitchedDecimal.toFixed(1)
+                                : "0.0"}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.PitchingHits || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.PitchingRuns || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.PitchingEarnedRuns || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.PitchingWalks || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.PitchingStrikeouts || 0}
+                            </Box>
+                            <Box
+                              as="td"
+                              px="2"
+                              py="1"
+                              textAlign="center"
+                              fontSize="xs"
+                            >
+                              {player.EarnedRunAverage
+                                ? player.EarnedRunAverage.toFixed(2)
+                                : "0.00"}
+                            </Box>
+                          </Box>
+                        ))}
+                    </Box>
+                  </Box>
+                </HideHorizontalScroll>
               </Box>
-            </HideHorizontalScroll>
+            </Box>
+          </>
+        ) : (
+          <Box px="2" py="2">
+            <BoxScoreSocial
+              gameId={gameId}
+              awayTeam={awayTeamProfile?.Name || game.AwayTeam}
+              homeTeam={homeTeamProfile?.Name || game.HomeTeam}
+              awayTeamSubreddit={getTeamSubredditByName(
+                awayTeamProfile?.Name || game.AwayTeam,
+                League.MLB,
+              )}
+              homeTeamSubreddit={getTeamSubredditByName(
+                homeTeamProfile?.Name || game.HomeTeam,
+                League.MLB,
+              )}
+            />
           </Box>
-        </Box>
+        )}
       </Box>
     </HideVerticalScroll>
   );

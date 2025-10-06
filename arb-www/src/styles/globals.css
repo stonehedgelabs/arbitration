@@ -153,3 +153,7 @@ body::-webkit-scrollbar {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.react-tweet-theme {
+  --tweet-body-font-size: 0.9rem; /* Adjust to your desired size */
+}

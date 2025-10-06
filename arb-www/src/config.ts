@@ -164,6 +164,8 @@ export const CACHE_CONFIG = {
     box_scores: 60 * 1000,           // 1 minute
     stadiums: 7200 * 1000,           // 2 hours
     twitter_search: 60 * 1000,       // 1 minute
+    reddit_thread: 21600 * 1000,     // 6 hours
+    reddit_thread_comments: 120 * 1000, // 2 minutes
     odds: 86400 * 1000,              // 24 hours
     user_auth: 604800 * 1000,        // 1 week (7 days)
   },
@@ -207,6 +209,23 @@ export const TWITTER_CONFIG = {
   
   // Supported search filters
   supportedFilters: ['latest', 'top'] as const,
+} as const;
+
+/**
+ * Reddit Configuration
+ */
+export const REDDIT_CONFIG = {
+  // Default number of comments to fetch
+  defaultCommentLimit: 20,
+  
+  // Maximum number of comments to fetch in a single request
+  maxCommentLimit: 100,
+  
+  // Default search sort
+  defaultSort: 'new' as const,
+  
+  // Supported search sorts
+  supportedSorts: ['new', 'top', 'hot'] as const,
 } as const;
 
 /**

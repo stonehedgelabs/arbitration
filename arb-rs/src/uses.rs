@@ -8,16 +8,21 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
+use urlencoding;
 
 use crate::{
-    api_paths::{
+    cache::Cache,
+    config::ArbConfig,
+    error::Result,
+    path::{
         box_score_path, games_by_date_path, headshots_path, odds_by_date_path,
         play_by_play_path, postseason_schedule_path, schedule_path, stadiums_path,
         team_profile_path, teams_path, League,
     },
-    cache::Cache,
-    config::ArbConfig,
-    error::Result,
+    schema::reddit::game_thread::{find_live_game_thread, RedditListing},
+    schema::reddit::{
+        RedditChild, RedditComment, RedditPost, RedditSearchQuery, RedditSearchResponse,
+    },
     schema::{
         mlb::{
             box_score::{BoxScore, BoxScoreResponse},
@@ -46,9 +51,9 @@ impl From<&str> for CacheKey {
     }
 }
 
-impl Into<String> for CacheKey {
-    fn into(self) -> String {
-        self.0
+impl From<CacheKey> for String {
+    fn from(val: CacheKey) -> Self {
+        val.0
     }
 }
 
@@ -457,7 +462,7 @@ async fn handle_schedule_request(
 
     let (api_url, cache_key) = if let Some(ref date) = date_filter {
         let api_url = games_by_date_path(league.clone(), Some(date.clone())).to_string();
-        let cache_key = CacheKey::scores(&league, &date);
+        let cache_key = CacheKey::scores(&league, date);
         (api_url, cache_key)
     } else if params.post.unwrap_or(false) {
         let api_url =
@@ -1335,6 +1340,7 @@ async fn fetch_play_by_play_from_api(
     Ok(body)
 }
 
+#[allow(dead_code)]
 async fn fetch_scores_from_api(
     api_url: &str,
     league: &League,
@@ -1477,6 +1483,7 @@ fn process_scores_data(data: &serde_json::Value) -> Result<(usize, usize, usize)
     Ok((games_count, live_games_count, final_games_count))
 }
 
+#[allow(dead_code)]
 fn extract_game_status(data: &serde_json::Value) -> Result<(bool, Option<String>)> {
     // Try to extract game status from various possible fields
     let status = data
@@ -2005,6 +2012,425 @@ pub async fn handle_twitter_search_request(
     Ok(Json(twitter_response))
 }
 
+// Reddit structures are now imported from schema::reddit
+
+pub async fn handle_reddit_search_request(
+    State(state): State<UseCaseState>,
+    Query(params): Query<RedditSearchQuery>,
+) -> Result<Json<RedditSearchResponse>> {
+    tracing::info!("Reddit search request received with params: {:?}", params);
+
+    // Get single subreddit
+    let subreddit = params.subreddit.ok_or_else(|| {
+        tracing::error!("Missing required parameter: subreddit");
+        StatusCode::BAD_REQUEST
+    })?;
+
+    let subreddit_clean = subreddit.trim().trim_start_matches("r/");
+    let game_id = params.game_id.unwrap_or_default();
+    let limit = params
+        .limit
+        .unwrap_or(state.config.api.reddit_api.default_comment_limit);
+    let sort_kind = params.kind.unwrap_or_else(|| "new".to_string());
+
+    tracing::info!(
+        "Reddit search for subreddit: {}, game_id: {}, limit: {}",
+        subreddit_clean,
+        game_id,
+        limit
+    );
+
+    // Check cache first for comments
+    let comments_cache_key = format!("reddit:thread_comments:{}", subreddit_clean);
+    if let Ok(Some(cached_data)) = state.cache.lock().await.get(&comments_cache_key).await
+    {
+        if let Ok(reddit_response) =
+            serde_json::from_str::<RedditSearchResponse>(&cached_data)
+        {
+            tracing::debug!("Returning cached Reddit comments result");
+            return Ok(Json(reddit_response));
+        }
+    }
+
+    // Check cache for game thread ID
+    let thread_cache_key = format!("reddit:thread:{}", subreddit_clean);
+    let game_thread_id = if let Ok(Some(cached_thread_id)) =
+        state.cache.lock().await.get(&thread_cache_key).await
+    {
+        if let Ok(thread_id) = serde_json::from_str::<String>(&cached_thread_id) {
+            tracing::debug!("Found cached game thread ID: {}", thread_id);
+            Some(thread_id)
+        } else {
+            None
+        }
+    } else {
+        tracing::info!(
+            "No cached game thread ID found for subreddit: {}",
+            subreddit_clean
+        );
+        None
+    };
+
+    let game_thread_id = match game_thread_id {
+        Some(id) => id,
+        None => {
+            tracing::error!("No game thread ID found for subreddit: {}", subreddit_clean);
+            return Err(StatusCode::NOT_FOUND.into());
+        }
+    };
+
+    // Get Reddit API credentials
+    let client_id = std::env::var("REDDIT_CLIENT_ID").map_err(|_| {
+        tracing::error!("REDDIT_CLIENT_ID environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let client_secret = std::env::var("REDDIT_CLIENT_SECRET").map_err(|_| {
+        tracing::error!("REDDIT_CLIENT_SECRET environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let user_agent = &state.config.api.reddit_api.user_agent;
+
+    // Step 1: Get OAuth token
+    let token_url = "https://www.reddit.com/api/v1/access_token";
+    let token_params = [("grant_type", "client_credentials")];
+
+    let token_response = reqwest::Client::new()
+        .post(token_url)
+        .basic_auth(&client_id, Some(&client_secret))
+        .form(&token_params)
+        .header("User-Agent", user_agent)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get Reddit token: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !token_response.status().is_success() {
+        tracing::error!(
+            "Reddit token request failed with status: {}",
+            token_response.status()
+        );
+        return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+    }
+
+    let token_data: serde_json::Value = token_response.json().await.map_err(|e| {
+        tracing::error!("Failed to parse Reddit token response: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let access_token = token_data["access_token"].as_str().ok_or_else(|| {
+        tracing::error!("Missing access token in Reddit response");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let mut all_posts = Vec::new();
+    let mut total_posts = 0;
+
+    // Get comments for the cached game thread ID
+    let search_url = format!(
+        "https://oauth.reddit.com/r/{}/comments/{}.json?sort={}&limit={}",
+        subreddit_clean, game_thread_id, sort_kind, limit
+    );
+
+    let search_response = reqwest::Client::new()
+        .get(&search_url)
+        .bearer_auth(access_token)
+        .header("User-Agent", user_agent)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!(
+                "Failed to search Reddit subreddit {}: {}",
+                subreddit_clean,
+                e
+            );
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !search_response.status().is_success() {
+        tracing::warn!(
+            "Reddit search failed for subreddit {} with status: {}",
+            subreddit_clean,
+            search_response.status()
+        );
+        return Ok(Json(RedditSearchResponse {
+            posts: vec![],
+            total_posts: 0,
+            subreddits_searched: vec![subreddit_clean.to_string()],
+            game_id,
+            search_timestamp: chrono::Utc::now().to_rfc3339(),
+        }));
+    }
+
+    // Reddit comments API returns an array with [post, comments]
+    let comments_data: Vec<serde_json::Value> =
+        search_response.json().await.map_err(|e| {
+            tracing::error!(
+                "Failed to parse Reddit comments response for {}: {}",
+                subreddit_clean,
+                e
+            );
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if comments_data.len() >= 2 {
+        // First element is the post, second element is the comments
+        let post_data = &comments_data[0];
+        let comments_listing = &comments_data[1];
+
+        // Create a basic post structure
+        let mut reddit_post = RedditPost {
+            id: game_thread_id.clone(),
+            title: post_data["data"]["title"]
+                .as_str()
+                .unwrap_or("Game Thread")
+                .to_string(),
+            author: post_data["data"]["author"]
+                .as_str()
+                .unwrap_or("Unknown")
+                .to_string(),
+            selftext: post_data["data"]["selftext"]
+                .as_str()
+                .unwrap_or("Game thread comments")
+                .to_string(),
+            score: post_data["data"]["score"].as_i64().unwrap_or(0) as i32,
+            num_comments: post_data["data"]["num_comments"].as_i64().unwrap_or(0) as i32,
+            created_utc: post_data["data"]["created_utc"].as_f64().unwrap_or(0.0),
+            permalink: post_data["data"]["permalink"]
+                .as_str()
+                .unwrap_or("")
+                .to_string(),
+            subreddit: subreddit_clean.to_string(),
+            url: post_data["data"]["url"].as_str().map(|s| s.to_string()),
+            is_self: post_data["data"]["is_self"].as_bool().unwrap_or(true),
+            team: None,
+            comments: Vec::new(),
+        };
+
+        // Parse comments from the second element
+        if let Some(comments_array) = comments_listing["data"]["children"].as_array() {
+            tracing::info!(
+                "Found {} comments for game thread {}",
+                comments_array.len(),
+                game_thread_id
+            );
+            let mut post_comments = Vec::new();
+
+            for comment_child in comments_array.iter().take(limit as usize) {
+                if let Ok(comment_data) =
+                    serde_json::from_value::<RedditChild>(comment_child.clone())
+                {
+                    if let Some(body) = &comment_data.data.body {
+                        let comment = RedditComment {
+                            id: comment_data.data.id.clone().unwrap_or_default(),
+                            author: comment_data.data.author.clone().unwrap_or_default(),
+                            content: body.clone(),
+                            timestamp: if let Some(created_utc) =
+                                comment_data.data.created_utc
+                            {
+                                chrono::DateTime::from_timestamp(created_utc as i64, 0)
+                                    .unwrap_or_else(chrono::Utc::now)
+                                    .to_rfc3339()
+                            } else {
+                                chrono::Utc::now().to_rfc3339()
+                            },
+                            score: comment_data.data.score.unwrap_or(0) as i32,
+                            permalink: format!(
+                                "https://reddit.com{}",
+                                comment_data.data.permalink.clone().unwrap_or_default()
+                            ),
+                            subreddit: comment_data
+                                .data
+                                .subreddit
+                                .clone()
+                                .unwrap_or_default(),
+                            team: Some("home".to_string()), // Default team assignment
+                            depth: 0,
+                            replies: comment_data
+                                .data
+                                .extract_comments(Some("home".to_string()), 1),
+                        };
+                        post_comments.push(comment);
+                    }
+                }
+            }
+
+            reddit_post.comments = post_comments;
+        }
+
+        all_posts.push(reddit_post);
+        total_posts = 1;
+    }
+
+    let reddit_response = RedditSearchResponse {
+        posts: all_posts,
+        total_posts,
+        subreddits_searched: vec![subreddit_clean.to_string()],
+        game_id,
+        search_timestamp: chrono::Utc::now().to_rfc3339(),
+    };
+
+    // Cache the response
+    if let Ok(json_data) = serde_json::to_string(&reddit_response) {
+        let _ = state
+            .cache
+            .lock()
+            .await
+            .setx(
+                &comments_cache_key,
+                &json_data,
+                state.config.cache.ttl.reddit_thread_comments,
+            )
+            .await;
+    }
+
+    Ok(Json(reddit_response))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RedditThreadQuery {
+    pub subreddit: Option<String>,
+}
+
+pub async fn handle_reddit_thread_request(
+    State(state): State<UseCaseState>,
+    Query(params): Query<RedditThreadQuery>,
+) -> Result<Json<serde_json::Value>> {
+    tracing::info!("Reddit thread request received with params: {:?}", params);
+
+    // Get single subreddit
+    let subreddit = params.subreddit.ok_or_else(|| {
+        tracing::error!("Missing required parameter: subreddit");
+        StatusCode::BAD_REQUEST
+    })?;
+
+    let subreddit_clean = subreddit.trim().trim_start_matches("r/");
+
+    tracing::info!("Reddit thread search for subreddit: {}", subreddit_clean);
+
+    // Check cache first
+    let cache_key = format!("reddit:thread:{}", subreddit_clean);
+    if let Ok(Some(_cached_data)) = state.cache.lock().await.get(&cache_key).await {
+        tracing::debug!("Returning cached Reddit thread result");
+        return Ok(Json(serde_json::json!({"success": true})));
+    }
+
+    // Get Reddit API credentials
+    let client_id = std::env::var("REDDIT_CLIENT_ID").map_err(|_| {
+        tracing::error!("REDDIT_CLIENT_ID environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let client_secret = std::env::var("REDDIT_CLIENT_SECRET").map_err(|_| {
+        tracing::error!("REDDIT_CLIENT_SECRET environment variable not set");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let user_agent = &state.config.api.reddit_api.user_agent;
+
+    // Step 1: Get OAuth token
+    let token_url = "https://www.reddit.com/api/v1/access_token";
+    let token_params = [("grant_type", "client_credentials")];
+
+    let token_response = reqwest::Client::new()
+        .post(token_url)
+        .basic_auth(&client_id, Some(&client_secret))
+        .form(&token_params)
+        .header("User-Agent", user_agent)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get Reddit token: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !token_response.status().is_success() {
+        tracing::error!(
+            "Reddit token request failed with status: {}",
+            token_response.status()
+        );
+        return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+    }
+
+    let token_data: serde_json::Value = token_response.json().await.map_err(|e| {
+        tracing::error!("Failed to parse Reddit token response: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let access_token = token_data["access_token"].as_str().ok_or_else(|| {
+        tracing::error!("Missing access token in Reddit response");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Step 2: Search for game thread
+    let query = "Game Thread";
+    let search_url = format!(
+        "https://oauth.reddit.com/r/{}/search.json?q={}&restrict_sr=1&sort=new&limit=10",
+        subreddit_clean,
+        urlencoding::encode(query)
+    );
+
+    let search_response = reqwest::Client::new()
+        .get(&search_url)
+        .bearer_auth(access_token)
+        .header("User-Agent", user_agent)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!(
+                "Failed to search Reddit subreddit {}: {}",
+                subreddit_clean,
+                e
+            );
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if !search_response.status().is_success() {
+        tracing::warn!(
+            "Reddit search failed for subreddit {} with status: {}",
+            subreddit_clean,
+            search_response.status()
+        );
+        return Err(StatusCode::NOT_FOUND.into());
+    }
+
+    let search_data: RedditListing = search_response.json().await.map_err(|e| {
+        tracing::error!(
+            "Failed to parse Reddit search response for {}: {}",
+            subreddit_clean,
+            e
+        );
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Find the game thread
+    if let Some(game_thread) = find_live_game_thread(&search_data) {
+        tracing::info!(
+            "Found game thread: {} (ID: {})",
+            game_thread.title,
+            game_thread.id
+        );
+
+        // Cache the game thread ID
+        if let Ok(json_data) = serde_json::to_string(&game_thread.id) {
+            let _ = state
+                .cache
+                .lock()
+                .await
+                .setx(&cache_key, &json_data, state.config.cache.ttl.reddit_thread)
+                .await;
+        }
+
+        Ok(Json(serde_json::json!({"success": true})))
+    } else {
+        tracing::warn!("No game thread found for subreddit: {}", subreddit_clean);
+        Err(StatusCode::NOT_FOUND.into())
+    }
+}
+
 pub async fn handle_odds_by_date_request(
     Query(params): Query<OddsByDateQuery>,
     State(use_case_state): State<UseCaseState>,
@@ -2396,5 +2822,7 @@ pub async fn handle_apple_auth_callback(
 pub use handle_box_score_request as box_score;
 pub use handle_game_by_date_request as game_by_date;
 pub use handle_odds_by_date_request as odds_by_date;
+pub use handle_reddit_search_request as reddit_search;
+pub use handle_reddit_thread_request as reddit_thread;
 pub use handle_stadiums_request as stadiums;
 pub use handle_twitter_search_request as twitter_search;

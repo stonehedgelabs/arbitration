@@ -1,6 +1,7 @@
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 
 /// Configuration for the Arbitration API server
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,6 +73,10 @@ pub struct CacheTtlConfig {
     pub stadiums: u64,
     /// TTL for Twitter search results (in seconds)
     pub twitter_search: u64,
+    /// TTL for Reddit game thread IDs (in seconds)
+    pub reddit_thread: u64,
+    /// TTL for Reddit game thread comments (in seconds)
+    pub reddit_thread_comments: u64,
     /// TTL for odds data (in seconds)
     pub odds: u64,
     /// TTL for user authentication data (in seconds)
@@ -120,6 +125,8 @@ pub struct ApiConfig {
     /// Reddit OAuth configuration (loaded from environment)
     #[serde(default)]
     pub reddit_oauth: RedditOAuthConfig,
+    /// Reddit API configuration
+    pub reddit_api: RedditApiConfig,
 }
 
 /// Google OAuth configuration
@@ -170,6 +177,19 @@ pub struct RedditOAuthConfig {
     /// Reddit OAuth redirect URI (loaded from environment)
     #[serde(default)]
     pub redirect_uri: String,
+}
+
+/// Reddit API configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RedditApiConfig {
+    /// Default number of comments to fetch
+    pub default_comment_limit: u32,
+    /// Maximum number of comments to fetch in a single request
+    pub max_comment_limit: u32,
+    /// Default search sort
+    pub default_sort: String,
+    /// User agent string for Reddit API requests
+    pub user_agent: String,
 }
 
 impl Default for ArbConfig {
@@ -229,16 +249,18 @@ impl Default for ArbConfig {
                 redis_url: "redis://localhost:6379".to_string(),
                 default_ttl: 3600, // 1 hour
                 ttl: CacheTtlConfig {
-                    team_profiles: 3600,       // 1 hour
-                    schedule: 1800,            // 30 minutes
-                    postseason_schedule: 1800, // 30 minutes
-                    scores: 120,               // 2 minutes
-                    play_by_play: 20,          // 20 seconds
-                    box_scores: 1800,          // 30 minutes
-                    stadiums: 7200,            // 2 hours
-                    twitter_search: 60,        // 1 minute
-                    odds: 86400,               // 24 hours
-                    user_auth: 604800,         // 1 week (7 days)
+                    team_profiles: 3600,         // 1 hour
+                    schedule: 1800,              // 30 minutes
+                    postseason_schedule: 1800,   // 30 minutes
+                    scores: 120,                 // 2 minutes
+                    play_by_play: 20,            // 20 seconds
+                    box_scores: 1800,            // 30 minutes
+                    stadiums: 7200,              // 2 hours
+                    twitter_search: 60,          // 1 minute
+                    reddit_thread: 21600,        // 6 hours
+                    reddit_thread_comments: 120, // 2 minutes
+                    odds: 86400,                 // 24 hours
+                    user_auth: 604800,           // 1 week (7 days)
                 },
             },
             seasons: SeasonsConfig { current_seasons },
@@ -265,6 +287,12 @@ impl Default for ArbConfig {
                     client_id: "".to_string(),
                     client_secret: "".to_string(),
                     redirect_uri: "".to_string(),
+                },
+                reddit_api: RedditApiConfig {
+                    default_comment_limit: 20,
+                    max_comment_limit: 100,
+                    default_sort: "new".to_string(),
+                    user_agent: "arbitration-app/1.0 by u/arbitration_dev".to_string(),
                 },
             },
         }
@@ -479,5 +507,83 @@ impl ArbConfig {
         } else {
             None
         }
+    }
+}
+
+/// Helper function to mask sensitive values
+fn mask_secret(value: &str) -> String {
+    if value.is_empty() {
+        "null".to_string()
+    } else {
+        "XXX".to_string()
+    }
+}
+
+impl fmt::Display for ArbConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ArbConfig {{ server: {}, cache: {}, seasons: {}, api: {} }}",
+            self.server, self.cache, self.seasons, self.api
+        )
+    }
+}
+
+impl fmt::Display for ServerConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ServerConfig {{ host: \"{}\", port: {}, cors_origins: \"{}\", client_url: \"{}\" }}", 
+               self.host, self.port, self.cors_origins, self.client_url)
+    }
+}
+
+impl fmt::Display for CacheConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "CacheConfig {{ enabled: {}, mode: {:?}, redis_url: \"{}\", default_ttl: {}, ttl: {:?} }}", 
+               self.enabled, self.mode, self.redis_url, self.default_ttl, self.ttl)
+    }
+}
+
+impl fmt::Display for SeasonsConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "SeasonsConfig {{ current_seasons: {:?} }}",
+            self.current_seasons
+        )
+    }
+}
+
+impl fmt::Display for ApiConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ApiConfig {{ sportsdata_base_url: \"{}\", sportsdata_api_key: \"{}\", twitter_base_url: \"{}\", request_timeout: {}, jwt_secret: \"{}\", google_oauth: {}, apple_oauth: {}, reddit_oauth: {} }}", 
+               self.sportsdata_base_url,
+               mask_secret(&self.sportsdata_api_key),
+               self.twitter_base_url,
+               self.request_timeout,
+               mask_secret(&self.jwt_secret),
+               self.google_oauth,
+               self.apple_oauth,
+               self.reddit_oauth)
+    }
+}
+
+impl fmt::Display for GoogleOAuthConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "GoogleOAuthConfig {{ client_id: \"{}\", client_secret: \"{}\", redirect_uri: \"{}\" }}", 
+               mask_secret(&self.client_id), mask_secret(&self.client_secret), self.redirect_uri)
+    }
+}
+
+impl fmt::Display for AppleOAuthConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "AppleOAuthConfig {{ client_id: \"{}\", redirect_uri: \"{}\", team_id: \"{}\", key_id: \"{}\", secret_key_path: \"{}\", jwt_expire_seconds: {} }}", 
+               mask_secret(&self.client_id), self.redirect_uri, mask_secret(&self.team_id), mask_secret(&self.key_id), mask_secret(&self.secret_key_path), self.jwt_expire_seconds)
+    }
+}
+
+impl fmt::Display for RedditOAuthConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "RedditOAuthConfig {{ client_id: \"{}\", client_secret: \"{}\", redirect_uri: \"{}\" }}", 
+               mask_secret(&self.client_id), mask_secret(&self.client_secret), self.redirect_uri)
     }
 }
