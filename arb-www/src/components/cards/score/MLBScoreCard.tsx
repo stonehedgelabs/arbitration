@@ -60,7 +60,7 @@ interface MLBScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
-  mlbOddsByDate?: any;
+  oddsByDate?: any;
 }
 
 // Helper component for team odds display
@@ -203,7 +203,7 @@ export function MLBScoreCard({
   game,
   onGameClick,
   oddsLoading,
-  mlbOddsByDate,
+  oddsByDate,
 }: MLBScoreCardProps) {
   const dispatch = useAppDispatch();
 
@@ -347,8 +347,8 @@ export function MLBScoreCard({
               </Text>
               {(game.odds ||
                 oddsLoading ||
-                (mlbOddsByDate?.data &&
-                  mlbOddsByDate.data.some(
+                (oddsByDate?.data &&
+                  oddsByDate.data.some(
                     (odds: any) => odds.GameId?.toString() === game.id,
                   ))) && (
                 <Box
@@ -421,8 +421,8 @@ export function MLBScoreCard({
               </Text>
               {(game.odds ||
                 oddsLoading ||
-                (mlbOddsByDate?.data &&
-                  mlbOddsByDate.data.some(
+                (oddsByDate?.data &&
+                  oddsByDate.data.some(
                     (odds: any) => odds.GameId?.toString() === game.id,
                   ))) && (
                 <Box
@@ -447,8 +447,8 @@ export function MLBScoreCard({
           {/* Game-level odds (Total and Sportsbook) */}
           {(game.odds ||
             oddsLoading ||
-            (mlbOddsByDate?.data &&
-              mlbOddsByDate.data.some(
+            (oddsByDate?.data &&
+              oddsByDate.data.some(
                 (odds: any) => odds.GameId?.toString() === game.id,
               ))) && (
             <Box mt="2" pt="2" borderTop="1px solid" borderColor="text.400">

@@ -229,7 +229,7 @@ export function Onboarding() {
                         onClick={() => toggleTeam(team.name)}
                         bg={
                           selectedTeams.includes(team.name)
-                            ? "accent.400"
+                            ? "buttons.primary.bg"
                             : "primary.25"
                         }
                         border="1px"
@@ -261,11 +261,22 @@ export function Onboarding() {
                                 <Text
                                   fontSize="sm"
                                   fontWeight="medium"
-                                  color="text.100"
+                                  color={
+                                    selectedTeams.includes(team.name)
+                                      ? "text.100"
+                                      : "text.400"
+                                  }
                                 >
                                   {team.name}
                                 </Text>
-                                <Text fontSize="xs" color="text.100">
+                                <Text
+                                  fontSize="xs"
+                                  color={
+                                    selectedTeams.includes(team.name)
+                                      ? "text.100"
+                                      : "text.400"
+                                  }
+                                >
                                   {team.city}
                                 </Text>
                               </VStack>
@@ -296,7 +307,7 @@ export function Onboarding() {
                                   <Check
                                     height={"16"}
                                     width="16"
-                                    color={"white"}
+                                    color={"gray"}
                                   />
                                 </Box>
                               ) : (
@@ -333,7 +344,7 @@ export function Onboarding() {
           h="12"
           disabled={selectedTeams.length === 0}
           bg="buttons.primary.bg"
-          color="text.100"
+          color="buttons.primary.color"
           _disabled={{ bg: "gray.300", cursor: "not-allowed" }}
         >
           <HStack>
@@ -341,7 +352,7 @@ export function Onboarding() {
               Continue with {selectedTeams.length} team
               {selectedTeams.length !== 1 ? "s" : ""}
             </Text>
-            <ArrowRight color="accent.400" className="w-4 h-4" />
+            <ArrowRight color="buttons.primary.color" className="w-4 h-4" />
           </HStack>
         </Button>
       </Box>

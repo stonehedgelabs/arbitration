@@ -95,7 +95,7 @@ const lightColors = {
   // Buttons
   buttons: {
     primary: {
-      bg: { value: "#456990" },
+      bg: { value: "#000000" },
       color: { value: "#FFFFFF" },
       hoverBg: { value: "#385574" },
       activeBg: { value: "#114B5F" },

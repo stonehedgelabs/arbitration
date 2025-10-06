@@ -36,10 +36,10 @@ export function ErrorState({
     switch (variant) {
       case "error":
         return {
-          iconColor: "red.500",
-          titleColor: "red.500",
-          bgColor: "red.50",
-          borderColor: "red.200",
+          iconColor: "text.400",
+          titleColor: "text.300",
+          bgColor: "danger.100",
+          borderColor: "danger.100",
         };
       case "warning":
         return {
@@ -59,34 +59,23 @@ export function ErrorState({
   };
 
   const styles = getVariantStyles();
-  const defaultIcon = <AlertCircle size={48} />;
+  const defaultIcon = <AlertCircle color={"lightgray"} size={48} />;
 
   return (
     <Box
       minH="100vh"
       bg="primary.25"
       display="flex"
-      alignItems="center"
       justifyContent="center"
       p="4"
     >
-      <Card.Root
-        maxW="md"
-        w="full"
-        bg="primary.25"
-        borderRadius="16px"
-        shadow="lg"
-        border="1px"
-        borderColor={styles.borderColor}
-      >
+      <Card.Root maxW="md" w="full" bg="primary.25" borderWidth={0}>
         <Card.Body p="8" textAlign="center">
           <VStack gap="6">
             {/* Icon */}
             <Box
               w="20"
               h="20"
-              bg={styles.bgColor}
-              borderRadius="full"
               display="flex"
               alignItems="center"
               justifyContent="center"
@@ -97,10 +86,10 @@ export function ErrorState({
 
             {/* Content */}
             <VStack gap="3">
-              <Text fontSize="xl" fontWeight="bold" color={styles.titleColor}>
+              <Text fontSize="md" fontWeight="bold" color={styles.titleColor}>
                 {title}
               </Text>
-              <Text fontSize="md" color="text.400" lineHeight="1.6">
+              <Text fontSize="xs" color="text.400" lineHeight="1.6">
                 {message}
               </Text>
             </VStack>
@@ -110,13 +99,15 @@ export function ErrorState({
               {showRetry && onRetry && (
                 <Button
                   onClick={onRetry}
-                  colorScheme={
-                    variant === "error"
-                      ? "red"
-                      : variant === "warning"
-                        ? "orange"
-                        : "blue"
-                  }
+                  bg={"buttons.primary.bg"}
+                  color={"buttons.primary.color"}
+                  // colorScheme={
+                  //   variant === "error"
+                  //     ? "red"
+                  //     : variant === "warning"
+                  //       ? "orange"
+                  //       : "blue"
+                  // }
                   variant="solid"
                   w="full"
                 >
@@ -165,8 +156,6 @@ export function NotImplementedState({
         w="full"
         bg="primary.25"
         borderRadius="16px"
-        shadow="lg"
-        border="1px"
         borderColor="text.200"
       >
         <Card.Body p="8" textAlign="center">

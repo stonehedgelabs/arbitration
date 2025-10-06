@@ -30,7 +30,7 @@ interface NHLScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
-  nhlOddsByDate?: any;
+  oddsByDate?: any;
 }
 
 export function NHLScoreCard({

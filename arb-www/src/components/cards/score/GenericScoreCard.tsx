@@ -31,12 +31,14 @@ interface GenericScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
+  oddsByDate?: any;
 }
 
 export function GenericScoreCard({
   game,
   onGameClick,
   oddsLoading: _oddsLoading,
+  oddsByDate: _oddsByDate,
 }: GenericScoreCardProps) {
   return (
     <Card.Root

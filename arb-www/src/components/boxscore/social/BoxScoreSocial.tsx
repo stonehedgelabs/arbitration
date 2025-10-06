@@ -18,6 +18,7 @@ interface BoxScoreSocialProps {
   homeTeam: string;
   awayTeamSubreddit?: string;
   homeTeamSubreddit?: string;
+  league: League;
 }
 
 export function BoxScoreSocial({
@@ -26,6 +27,7 @@ export function BoxScoreSocial({
   homeTeam,
   awayTeamSubreddit,
   homeTeamSubreddit,
+  league,
 }: BoxScoreSocialProps) {
   const dispatch = useAppDispatch();
   const socialPlatform = useAppSelector(
@@ -51,8 +53,8 @@ export function BoxScoreSocial({
   useEffect(() => {
     if (socialPlatform === "reddit" && !redditHasSearched) {
       // Find subreddits for both teams using the new function
-      const awaySubreddit = getTeamSubredditByName(awayTeam, League.MLB);
-      const homeSubreddit = getTeamSubredditByName(homeTeam, League.MLB);
+      const awaySubreddit = getTeamSubredditByName(awayTeam, league);
+      const homeSubreddit = getTeamSubredditByName(homeTeam, league);
 
       // Fetch comments for both teams if they have subreddits
       if (awaySubreddit) {
@@ -82,8 +84,8 @@ export function BoxScoreSocial({
     // If switching to Reddit and we haven't searched yet, fetch comments
     if (platform === "reddit" && !redditHasSearched) {
       // Find subreddits for both teams using the new function
-      const awaySubreddit = getTeamSubredditByName(awayTeam, League.MLB);
-      const homeSubreddit = getTeamSubredditByName(homeTeam, League.MLB);
+      const awaySubreddit = getTeamSubredditByName(awayTeam, league);
+      const homeSubreddit = getTeamSubredditByName(homeTeam, league);
 
       // Fetch comments for both teams if they have subreddits
       if (awaySubreddit) {
@@ -201,11 +203,11 @@ export function BoxScoreSocial({
                         // Re-fetch comments with new sort
                         const awaySubreddit = getTeamSubredditByName(
                           awayTeam,
-                          League.MLB,
+                          league,
                         );
                         const homeSubreddit = getTeamSubredditByName(
                           homeTeam,
-                          League.MLB,
+                          league,
                         );
                         if (awaySubreddit) {
                           dispatch(
@@ -238,11 +240,11 @@ export function BoxScoreSocial({
                         // Re-fetch comments with new sort
                         const awaySubreddit = getTeamSubredditByName(
                           awayTeam,
-                          League.MLB,
+                          league,
                         );
                         const homeSubreddit = getTeamSubredditByName(
                           homeTeam,
-                          League.MLB,
+                          league,
                         );
                         if (awaySubreddit) {
                           dispatch(

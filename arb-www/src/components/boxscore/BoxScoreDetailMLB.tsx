@@ -164,12 +164,17 @@ const BoxScoreGameInfoSkeleton = () => {
 export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   const {
     mlbBoxScore,
-    mlbTeamProfiles,
-    mlbStadiums,
-    mlbOddsByDate,
-    fetchMLBTeamProfiles,
-    fetchMLBStadiums,
+    teamProfiles,
+    stadiums,
+    odds,
+    fetchTeamProfiles,
+    fetchStadiums,
   } = useArb();
+
+  // Get selectedLeague from Redux state
+  const selectedLeague = useAppSelector(
+    (state) => state.sportsData.selectedLeague,
+  );
 
   // Get box score data from Redux state (persists across navigation)
   const dispatch = useAppDispatch();
@@ -182,9 +187,9 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
 
   // Helper function to get odds for this specific game
   const getGameOdds = () => {
-    if (!mlbOddsByDate?.data) return null;
+    if (!odds?.data) return null;
 
-    const gameOdds = mlbOddsByDate.data.find(
+    const gameOdds = odds.data.find(
       (odds: any) => odds.GameId?.toString() === gameId,
     );
     if (!gameOdds) return null;
@@ -192,17 +197,17 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
     // Get the first available odds (prefer pregame odds)
     const pregameOdds = gameOdds.PregameOdds?.[0];
     const liveOdds = gameOdds.LiveOdds?.[0];
-    const odds = pregameOdds || liveOdds;
+    const selectedOdds = pregameOdds || liveOdds;
 
-    if (!odds) return null;
+    if (!selectedOdds) return null;
 
     return {
-      homeMoneyLine: odds.HomeMoneyLine,
-      awayMoneyLine: odds.AwayMoneyLine,
-      homePointSpread: odds.HomePointSpread,
-      awayPointSpread: odds.AwayPointSpread,
-      overUnder: odds.OverUnder,
-      sportsbook: odds.Sportsbook || "Unknown",
+      homeMoneyLine: selectedOdds.HomeMoneyLine,
+      awayMoneyLine: selectedOdds.AwayMoneyLine,
+      homePointSpread: selectedOdds.HomePointSpread,
+      awayPointSpread: selectedOdds.AwayPointSpread,
+      overUnder: selectedOdds.OverUnder,
+      sportsbook: selectedOdds.Sportsbook || "Unknown",
     };
   };
 
@@ -221,8 +226,8 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   // Separate useEffect for supporting data to avoid dependency issues
   useEffect(() => {
     // Fetch supporting data - service layer will handle duplicate prevention
-    fetchMLBTeamProfiles();
-    fetchMLBStadiums();
+    fetchTeamProfiles(selectedLeague);
+    fetchStadiums(selectedLeague);
   }, []);
 
   // Use Redux data if available, otherwise use local data
@@ -231,8 +236,8 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
 
   // Helper function to get stadium information
   const getStadiumInfo = () => {
-    if (!mlbStadiums?.data || !game?.StadiumID) return null;
-    return mlbStadiums.data.find(
+    if (!stadiums?.data || !game?.StadiumID) return null;
+    return stadiums.data.find(
       (stadium: any) => stadium.StadiumID === game.StadiumID,
     );
   };
@@ -240,24 +245,28 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   const stadium = getStadiumInfo();
 
   // Get team profiles for colors and logos
-  const awayTeamProfile = mlbTeamProfiles?.data?.find(
+  console.log(">> teamProfiles:", teamProfiles);
+  console.log(">> game teams:", game?.AwayTeam, game?.HomeTeam);
+  const awayTeamProfile = teamProfiles?.data?.find(
     (team) => team.Key === game?.AwayTeam,
   );
-  const homeTeamProfile = mlbTeamProfiles?.data?.find(
+  const homeTeamProfile = teamProfiles?.data?.find(
     (team) => team.Key === game?.HomeTeam,
   );
+  console.log(">> found profiles:", awayTeamProfile, homeTeamProfile);
 
   // Reddit thread request when game data is available
   useEffect(() => {
+    console.log(">> foo ", game, awayTeamProfile, homeTeamProfile);
     if (game && awayTeamProfile && homeTeamProfile) {
       // Find subreddits for both teams using the new function
       const awaySubreddit = getTeamSubredditByName(
         awayTeamProfile.Name,
-        League.MLB,
+        selectedLeague as League,
       );
       const homeSubreddit = getTeamSubredditByName(
         homeTeamProfile.Name,
-        League.MLB,
+        selectedLeague as League,
       );
 
       // Search for game threads for both teams
@@ -438,7 +447,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               <InningBadge
                 inningNumber={game.Inning}
                 inningHalf={game.InningHalf}
-                league={League.MLB}
+                league={selectedLeague as League}
                 size="md"
               />
             ) : (
@@ -972,7 +981,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                           <InningBadge
                             inningNumber={game.Inning}
                             inningHalf={game.InningHalf}
-                            league={League.MLB}
+                            league={selectedLeague as League}
                             size="sm"
                           />
                         ) : (
@@ -1434,12 +1443,13 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               homeTeam={homeTeamProfile?.Name || game.HomeTeam}
               awayTeamSubreddit={getTeamSubredditByName(
                 awayTeamProfile?.Name || game.AwayTeam,
-                League.MLB,
+                selectedLeague as League,
               )}
               homeTeamSubreddit={getTeamSubredditByName(
                 homeTeamProfile?.Name || game.HomeTeam,
-                League.MLB,
+                selectedLeague as League,
               )}
+              league={selectedLeague as League}
             />
           </Box>
         )}

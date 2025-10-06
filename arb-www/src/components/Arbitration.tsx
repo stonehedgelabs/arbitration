@@ -54,15 +54,18 @@ export const Arbitration = memo(function Arbitration() {
 
   // Data fetching for live games
   const {
-    mlbScores,
-    mlbTeamProfiles,
-    mlbStadiums,
-    fetchMLBScores,
-    fetchMLBTeamProfiles,
-    fetchMLBStadiums,
-    mlbScoresLoading,
-    mlbTeamProfilesLoading,
-    mlbStadiumsLoading,
+    scores,
+    teamProfiles,
+    stadiums,
+    fetchScores,
+    fetchTeamProfiles,
+    fetchStadiums,
+    scoresLoading,
+    teamProfilesLoading,
+    stadiumsLoading,
+    scoresError,
+    teamProfilesError,
+    stadiumsError,
   } = useArb();
   // Router-based navigation
   const navigate = useNavigate();
@@ -99,6 +102,18 @@ export const Arbitration = memo(function Arbitration() {
 
   const activeTab = getActiveTab();
 
+  // Debug logging
+  console.log(
+    "🔍 Arbitration render - activeTab:",
+    activeTab,
+    "selectedLeague:",
+    selectedLeague,
+    "league from URL:",
+    league,
+    "currentLeague:",
+    currentLeague,
+  );
+
   // Load favorites from Redux on mount
   useEffect(() => {
     if (userType) {
@@ -108,14 +123,24 @@ export const Arbitration = memo(function Arbitration() {
 
   // Fetch live games data when on Live tab
   useEffect(() => {
-    if (activeTab === "live" && selectedLeague === League.MLB) {
+    console.log(
+      "🔍 Arbitration useEffect - activeTab:",
+      activeTab,
+      "currentLeague:",
+      currentLeague,
+    );
+    if (activeTab === "live") {
+      console.log(
+        "🚨 Fetching data from Arbitration component for league:",
+        currentLeague,
+      );
       // Fetch today's scores for live games
       const today = getCurrentLocalDate();
-      fetchMLBScores(today);
-      fetchMLBTeamProfiles();
-      fetchMLBStadiums();
+      fetchScores(currentLeague, today);
+      fetchTeamProfiles(currentLeague);
+      fetchStadiums(currentLeague);
     }
-  }, [activeTab, selectedLeague]);
+  }, [activeTab, currentLeague, fetchScores, fetchTeamProfiles, fetchStadiums]);
 
   // Note: MLB data fetching is now handled by the Scores component to prevent duplicate requests
 
@@ -143,25 +168,20 @@ export const Arbitration = memo(function Arbitration() {
 
   // Process live games data
   const getLiveGames = () => {
-    if (
-      selectedLeague === League.MLB &&
-      mlbScores &&
-      mlbTeamProfiles &&
-      mlbStadiums
-    ) {
-      // Convert MLB games to the format expected by LiveGames component
-      const allGames = mlbScores.data
+    if (scores && teamProfiles && stadiums) {
+      // Convert games to the format expected by LiveGames component
+      const allGames = scores.data
         .map((game) => {
           // Find team profiles
-          const homeTeamProfile = mlbTeamProfiles.data.find(
+          const homeTeamProfile = teamProfiles.data.find(
             (team) => team.TeamID === game.HomeTeamID,
           );
-          const awayTeamProfile = mlbTeamProfiles.data.find(
+          const awayTeamProfile = teamProfiles.data.find(
             (team) => team.TeamID === game.AwayTeamID,
           );
 
           // Find stadium
-          const stadium = mlbStadiums.data.find(
+          const stadium = stadiums.data.find(
             (s) => s.StadiumID === game.StadiumID,
           );
 
@@ -191,11 +211,11 @@ export const Arbitration = memo(function Arbitration() {
             state: stadium?.State,
             isPostseason: game.DateTime
               ? isPostseasonDate(
-                  League.MLB,
+                  currentLeague as League,
                   convertUtcToLocalDate(game.DateTime),
                 )
               : false,
-            league: League.MLB,
+            league: currentLeague as League,
           };
         })
         .filter((game): game is NonNullable<typeof game> => game !== null);
@@ -227,10 +247,9 @@ export const Arbitration = memo(function Arbitration() {
             onGameClick={(gameId) =>
               navigate(`/scores/${selectedLeague}/${gameId}/pbp`)
             }
-            loading={
-              mlbScoresLoading || mlbTeamProfilesLoading || mlbStadiumsLoading
-            }
-            selectedLeague={selectedLeague as League}
+            loading={scoresLoading || teamProfilesLoading || stadiumsLoading}
+            selectedLeague={currentLeague as League}
+            error={scoresError || teamProfilesError || stadiumsError}
           />
         );
       case "social":
@@ -254,9 +273,9 @@ export const Arbitration = memo(function Arbitration() {
     liveGames,
     navigate,
     selectedLeague,
-    mlbScoresLoading,
-    mlbTeamProfilesLoading,
-    mlbStadiumsLoading,
+    scoresLoading,
+    teamProfilesLoading,
+    stadiumsLoading,
     currentLeague,
     currentLeagueData?.betting,
   ]);

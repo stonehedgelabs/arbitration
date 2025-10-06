@@ -399,8 +399,28 @@ const sportsDataSlice = createSlice({
       state.mlbSchedule = null;
       state.mlbScheduleError = null;
     },
-    // In the future, you can add actions to fetch real data
-    // loadLeagueData: (state, action) => { ... }
+    // League data actions
+    setLeagueTeamProfiles: (state, action: PayloadAction<{league: string, data: any}>) => {
+      const { league, data } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {};
+      }
+      state.leagueData[league].teamProfiles = data;
+    },
+    setLeagueStadiums: (state, action: PayloadAction<{league: string, data: any}>) => {
+      const { league, data } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {};
+      }
+      state.leagueData[league].stadiums = data;
+    },
+    setLeagueError: (state, action: PayloadAction<{league: string, error: string}>) => {
+      const { league, error } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {};
+      }
+      state.leagueData[league].error = error;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -632,6 +652,9 @@ export const {
   setSocialPlatform,
   setRedditSortKind,
   clearOddsData,
-  clearMLBData
+  clearMLBData,
+  setLeagueTeamProfiles,
+  setLeagueStadiums,
+  setLeagueError
 } = sportsDataSlice.actions;
 export default sportsDataSlice.reducer;

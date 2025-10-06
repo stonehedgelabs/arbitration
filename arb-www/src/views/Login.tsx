@@ -117,7 +117,7 @@ export function Login() {
                   className="ios-button-press"
                   bg="primary.25"
                   color="text.400"
-                  borderColor="text.400"
+                  borderColor="text.200"
                   shadow="md"
                 >
                   <AppleIcon />
@@ -136,7 +136,7 @@ export function Login() {
                   className="ios-button-press"
                   bg="primary.25"
                   color="text.400"
-                  borderColor="text.400"
+                  borderColor="text.200"
                   shadow="md"
                 >
                   <GoogleIcon />
@@ -155,7 +155,7 @@ export function Login() {
                   className="ios-button-press"
                   bg="primary.25"
                   color="text.400"
-                  borderColor="text.400"
+                  borderColor="text.200"
                   shadow="md"
                 >
                   Continue as Guest

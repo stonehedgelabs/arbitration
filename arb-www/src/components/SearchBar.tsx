@@ -50,8 +50,8 @@ export const SearchBar = memo(function SearchBar({
         borderColor="text.300"
         pl="10" // Add left padding to make room for the search icon
         _focus={{
-          borderColor: "accent.400",
-          boxShadow: "0 0 0 1px var(--chakra-colors-accent-400)",
+          borderColor: "buttons.primary.bg",
+          boxShadow: "0 0 0 1px var(--chakra-colors-buttons-primary-bg)",
         }}
         w="full"
       />

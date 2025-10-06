@@ -233,7 +233,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   const currentLeague = leagueFromUrl || selectedLeague;
 
   // Get all data from Redux state
-  const { mlbTeamProfiles, fetchMLBTeamProfiles } = useArb();
+  const { teamProfiles, fetchTeamProfiles } = useArb();
 
   // Get current game data from box-score
   const currentGame = actualGameId
@@ -255,9 +255,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     hasFetchedRef.current = true;
 
     // Always fetch team profiles - service layer will handle duplicate prevention
-    if (currentLeague === League.MLB) {
-      fetchMLBTeamProfiles();
-    }
+    fetchTeamProfiles(currentLeague);
 
     // Fetch box score if it doesn't exist and not currently being requested
     if (!currentGame && !boxScoreRequests.includes(actualGameId)) {
@@ -270,7 +268,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
 
   // Create team ID to logo mapping from the fetched data
   const teamIdToLogo =
-    mlbTeamProfiles?.data?.reduce(
+    teamProfiles?.data?.reduce(
       (acc: Record<number, string>, team) => {
         acc[team.TeamID] = team.WikipediaLogoUrl;
         return acc;
@@ -324,7 +322,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       setLoading(true);
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
       const params: Record<string, string> = {
-        league: League.MLB,
+        league: currentLeague,
         game_id: actualGameId,
         interval: "1min",
         t: now.toString(), // Send as string to our backend, but it will be converted to int
@@ -657,7 +655,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                         borderRadius="full"
                         bg={
                           currentGame?.Balls && currentGame.Balls >= i
-                            ? "accent.400"
+                            ? "buttons.primary.bg"
                             : "text.400"
                         }
                       />
@@ -817,7 +815,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                         <InningBadge
                           inningNumber={play.InningNumber}
                           inningHalf={play.InningHalf}
-                          league={League.MLB}
+                          league={currentLeague as League}
                           size="sm"
                         />
                         {currentGame && (

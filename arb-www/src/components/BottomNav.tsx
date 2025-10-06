@@ -87,13 +87,17 @@ export function BottomNav() {
                   bg="transparent"
                   transition="all 0.2s"
                 >
-                  <Box w="5" h="5" color={isActive ? "accent.400" : "text.300"}>
+                  <Box
+                    w="5"
+                    h="5"
+                    color={isActive ? "buttons.primary.bg" : "text.300"}
+                  >
                     <Icon size={20} />
                   </Box>
                 </Box>
                 <Text
                   fontSize="xs"
-                  color={isActive ? "accent.400" : "text.300"}
+                  color={isActive ? "buttons.primary.bg" : "text.300"}
                   fontWeight="normal"
                   transition="all 0.2s"
                 >

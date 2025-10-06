@@ -11,14 +11,7 @@ import {
 
 // Internal imports - store
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { 
-  fetchOddsByDate, 
-  fetchMLBScores as fetchMLBScoresThunk, 
-  fetchMLBTeamProfiles as fetchMLBTeamProfilesThunk, 
-  fetchMLBStadiums as fetchMLBStadiumsThunk, 
-  fetchMLBSchedule as fetchMLBScheduleThunk,
-  fetchCurrentGames as fetchCurrentGamesThunk
-} from '../store/slices/sportsDataSlice';
+import { setLeagueTeamProfiles, setLeagueStadiums, setLeagueError } from '../store/slices/sportsDataSlice';
 
 /**
  * Determines if a given date is in the postseason for a given league
@@ -38,90 +31,98 @@ const useArb = () => {
   const dispatch = useAppDispatch();
   const selectedLeague = useAppSelector((state) => state.sportsData.selectedLeague);
   
-  // Redux state for all MLB data
-  const mlbScores = useAppSelector((state) => state.sportsData.mlbScores);
-  const mlbScoresLoading = useAppSelector((state) => state.sportsData.mlbScoresLoading);
-  const mlbScoresError = useAppSelector((state) => state.sportsData.mlbScoresError);
+  // Redux state for current league data (generic)
+  const leagueData = useAppSelector((state) => state.sportsData.leagueData);
+  const currentLeagueData = leagueData[selectedLeague];
   
-  const mlbTeamProfiles = useAppSelector((state) => state.sportsData.mlbTeamProfiles);
-  const mlbTeamProfilesLoading = useAppSelector((state) => state.sportsData.mlbTeamProfilesLoading);
-  const mlbTeamProfilesError = useAppSelector((state) => state.sportsData.mlbTeamProfilesError);
+  // Generic state accessors
+  const scores = currentLeagueData?.scores || null;
+  const scoresLoading = currentLeagueData?.loading || false;
+  const scoresError = currentLeagueData?.error || null;
   
-  const mlbStadiums = useAppSelector((state) => state.sportsData.mlbStadiums);
-  const mlbStadiumsLoading = useAppSelector((state) => state.sportsData.mlbStadiumsLoading);
-  const mlbStadiumsError = useAppSelector((state) => state.sportsData.mlbStadiumsError);
+  const teamProfiles = currentLeagueData?.teamProfiles || null;
+  const teamProfilesLoading = currentLeagueData?.loading || false;
+  const teamProfilesError = currentLeagueData?.error || null;
   
-  const mlbSchedule = useAppSelector((state) => state.sportsData.mlbSchedule);
-  const mlbScheduleLoading = useAppSelector((state) => state.sportsData.mlbScheduleLoading);
-  const mlbScheduleError = useAppSelector((state) => state.sportsData.mlbScheduleError);
+  const stadiums = currentLeagueData?.stadiums || null;
+  const stadiumsLoading = currentLeagueData?.loading || false;
+  const stadiumsError = currentLeagueData?.error || null;
   
-  const currentGames = useAppSelector((state) => state.sportsData.currentGames);
-  const currentGamesLoading = useAppSelector((state) => state.sportsData.currentGamesLoading);
-  const currentGamesError = useAppSelector((state) => state.sportsData.currentGamesError);
+  const schedule = currentLeagueData?.schedule || null;
+  const scheduleLoading = currentLeagueData?.loading || false;
+  const scheduleError = currentLeagueData?.error || null;
   
-  const mlbOddsByDate = useAppSelector((state) => state.sportsData.oddsByDate);
-  const oddsLoading = useAppSelector((state) => state.sportsData.oddsLoading);
-  const oddsError = useAppSelector((state) => state.sportsData.oddsError);
+  const odds = currentLeagueData?.odds || null;
+  const oddsLoading = currentLeagueData?.loading || false;
+  const oddsError = currentLeagueData?.error || null;
+  
+  // Current games (this might need to be updated based on your current implementation)
+  const currentGames = null; // TODO: Update this based on your current games implementation
+  const currentGamesLoading = false;
+  const currentGamesError = null;
 
   /**
-   * Fetch MLB scores for a specific date
+   * Fetch scores for a specific league and date
    */
-  const fetchMLBScores = useCallback(async (date?: string): Promise<void> => {
-    // Only fetch if MLB is selected
-    if (selectedLeague !== League.MLB) {
-      return;
-    }
-
+  const fetchScores = useCallback(async (league: string, date?: string): Promise<void> => {
     // Don't fetch if already loading
-    if (mlbScoresLoading) {
+    if (scoresLoading) {
       return;
     }
 
-    // For scores, we need to fetch for each date since it's date-specific data
-    // The Redux thunk will handle caching at the API level if needed
-
     try {
-      await dispatch(fetchMLBScoresThunk({ date })).unwrap();
+      const params: Record<string, string> = { league };
+      if (date) {
+        params.date = date;
+      }
+      const apiUrl = buildApiUrl('/api/v1/scores', params);
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch scores: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(`✅ Scores received for ${league}:`, data);
     } catch (err) {
-      // Error is handled by Redux state
-      console.error('Failed to fetch MLB scores:', err);
+      console.error('Failed to fetch scores:', err);
+      // Set error state
+      dispatch(setLeagueError({ league, error: err instanceof Error ? err.message : 'Failed to fetch scores' }));
     }
-  }, [dispatch, selectedLeague, mlbScoresLoading]);
+  }, [scoresLoading]);
 
   /**
-   * Fetch MLB team profiles
+   * Fetch team profiles for a specific league
    */
-  const fetchMLBTeamProfiles = useCallback(async (): Promise<void> => {
-    // Only fetch if MLB is selected
-    if (selectedLeague !== League.MLB) {
-        return;
-    }
-
+  const fetchTeamProfiles = useCallback(async (league: string): Promise<void> => {
     // Don't fetch if already loading or data exists
-    if (mlbTeamProfilesLoading || mlbTeamProfiles) {
+    if (teamProfilesLoading || teamProfiles) {
       return;
     }
 
     try {
-      await dispatch(fetchMLBTeamProfilesThunk()).unwrap();
+      const apiUrl = buildApiUrl('/api/team-profile', { league });
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch team profiles: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(`✅ Team profiles received for ${league}:`, data);
+      
+      // Update Redux state
+      dispatch(setLeagueTeamProfiles({ league, data }));
     } catch (err) {
-      // Error is handled by Redux state
-      console.error('Failed to fetch MLB team profiles:', err);
+      console.error('Failed to fetch team profiles:', err);
+      // Set error state
+      dispatch(setLeagueError({ league, error: err instanceof Error ? err.message : 'Failed to fetch team profiles' }));
     }
-  }, [dispatch, selectedLeague, mlbTeamProfilesLoading, mlbTeamProfiles]);
+  }, [teamProfilesLoading, teamProfiles, dispatch]);
 
   /**
-   * Fetch MLB box score for a specific game ID
+   * Fetch box score for a specific game ID and league
    */
-  const fetchMLBBoxScore = useCallback(async (gameId: string): Promise<void> => {
-    // Only fetch if MLB is selected
-    if (selectedLeague !== League.MLB) {
-        return;
-    }
-
+  const fetchBoxScore = useCallback(async (league: string, gameId: string): Promise<void> => {
     try {
       const url = buildApiUrl('/api/v1/box-score', { 
-        league: League.MLB,
+        league,
         game_id: gameId
       });
 
@@ -142,133 +143,139 @@ const useArb = () => {
       const boxScoreResponse = BoxScoreResponse.fromJSON(data);
       setMlbBoxScore(boxScoreResponse);
     } catch (err) {
-      console.error('Failed to fetch MLB box score:', err);
+      console.error('Failed to fetch box score:', err);
     }
-  }, [selectedLeague]);
+  }, []);
 
   /**
-   * Fetch MLB stadiums/venues
+   * Fetch stadiums/venues for a specific league
    */
-  const fetchMLBStadiums = useCallback(async (): Promise<void> => {
-    // Only fetch if MLB is selected
-    if (selectedLeague !== League.MLB) {
-        return;
-    }
-
+  const fetchStadiums = useCallback(async (league: string): Promise<void> => {
     // Don't fetch if already loading or data exists
-    if (mlbStadiumsLoading || mlbStadiums) {
+    if (stadiumsLoading || stadiums) {
       return;
     }
 
     try {
-      await dispatch(fetchMLBStadiumsThunk()).unwrap();
-    } catch (err) {
-      // Error is handled by Redux state
-      console.error('Failed to fetch MLB stadiums:', err);
-    }
-  }, [dispatch, selectedLeague, mlbStadiumsLoading, mlbStadiums]);
-
-  /**
-   * Fetch MLB schedule for specific dates (both regular season and postseason)
-   */
-  const fetchMLBSchedule = useCallback(async (date?: string): Promise<void> => {
-    // Only fetch if MLB is selected
-    if (selectedLeague !== League.MLB) {
-        return;
-    }
-
-    // Don't fetch if already loading
-    if (mlbScheduleLoading) {
-      return;
-    }
-
-    // For schedule, we need to fetch for each date since it's date-specific data
-    // The Redux thunk will handle caching at the API level if needed
-
-    try {
-      // Determine if this is a postseason date using config
-      const isPostseason = date ? isPostseasonDate(League.MLB, date) : false;
+      const apiUrl = buildApiUrl('/api/v1/venues', { league });
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stadiums: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(`✅ Stadiums received for ${league}:`, data);
       
-      await dispatch(fetchMLBScheduleThunk({ date, isPostseason })).unwrap();
+      // Update Redux state
+      dispatch(setLeagueStadiums({ league, data }));
     } catch (err) {
-      // Error is handled by Redux state
-      console.error('Failed to fetch MLB schedule:', err);
+      console.error('Failed to fetch stadiums:', err);
+      // Set error state
+      dispatch(setLeagueError({ league, error: err instanceof Error ? err.message : 'Failed to fetch stadiums' }));
     }
-  }, [dispatch, selectedLeague, mlbScheduleLoading]);
+  }, [stadiumsLoading, stadiums, dispatch]);
 
   /**
-   * Fetch MLB odds for a specific date
+   * Fetch schedule for specific league and dates (both regular season and postseason)
    */
-  const fetchMLBOddsByDate = useCallback(async (date: string): Promise<void> => {
-    // Only fetch if MLB is selected
-    if (selectedLeague !== League.MLB) {
+  const fetchSchedule = useCallback(async (league: string, date?: string): Promise<void> => {
+    // Don't fetch if already loading
+    if (scheduleLoading) {
       return;
     }
 
+    try {
+      const params: Record<string, string> = { league };
+      if (date) {
+        params.date = date;
+      }
+      // Determine if this is a postseason date using config
+      const isPostseason = date ? isPostseasonDate(league as League, date) : false;
+      if (isPostseason) {
+        params.post = 'true';
+      }
+      
+      const apiUrl = buildApiUrl('/api/v1/schedule', params);
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch schedule: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(`✅ Schedule received for ${league}:`, data);
+    } catch (err) {
+      console.error('Failed to fetch schedule:', err);
+    }
+  }, [scheduleLoading]);
+
+  /**
+   * Fetch odds for a specific league and date
+   */
+  const fetchOdds = useCallback(async (league: string, date: string): Promise<void> => {
     // Don't fetch if already loading
     if (oddsLoading) {
       return;
     }
 
-    // For odds, we need to fetch for each date since it's date-specific data
-    // The Redux thunk will handle caching at the API level if needed
-
     try {
-      await dispatch(fetchOddsByDate({ league: 'mlb', date })).unwrap();
+      const apiUrl = buildApiUrl('/api/v1/odds-by-date', { league, date });
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch odds: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(`✅ Odds received for ${league}:`, data);
     } catch (err) {
-      // Error is handled by Redux state
       console.error('Failed to fetch odds by date:', err);
     }
-  }, [dispatch, selectedLeague, oddsLoading]);
+  }, [oddsLoading]);
 
   /**
    * Fetch current games for a date range
    */
-  const fetchCurrentGames = useCallback(async (start: string, end: string): Promise<void> => {
-    // Only fetch if MLB is selected
-    if (selectedLeague !== League.MLB) {
-      return;
-    }
-
+  const fetchCurrentGames = useCallback(async (league: string, start: string, end: string): Promise<void> => {
     try {
-      await dispatch(fetchCurrentGamesThunk({ start, end })).unwrap();
+      const apiUrl = buildApiUrl('/api/v1/current-games', { league, start, end });
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch current games: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(`✅ Current games received for ${league}:`, data);
     } catch (err) {
-      // Error is handled by Redux state
       console.error('Failed to fetch current games:', err);
     }
-  }, [dispatch]);
+  }, []);
 
   return {
     // State
-    mlbScores,
-    mlbTeamProfiles,
-    mlbBoxScore,
-    mlbStadiums,
-    mlbSchedule,
+    scores,
+    teamProfiles,
+    stadiums,
+    schedule,
+    odds,
     currentGames,
-    mlbOddsByDate,
-    // Redux loading states
-    mlbScoresLoading,
-    mlbTeamProfilesLoading,
-    mlbStadiumsLoading,
-    mlbScheduleLoading,
-    currentGamesLoading,
+    mlbBoxScore, // Keep this for now as it's used in box score components
+    // Loading states
+    scoresLoading,
+    teamProfilesLoading,
+    stadiumsLoading,
+    scheduleLoading,
     oddsLoading,
-    // Redux error states
-    mlbScoresError,
-    mlbTeamProfilesError,
-    mlbStadiumsError,
-    mlbScheduleError,
-    currentGamesError,
+    currentGamesLoading,
+    // Error states
+    scoresError,
+    teamProfilesError,
+    stadiumsError,
+    scheduleError,
     oddsError,
+    currentGamesError,
     // Actions
-    fetchMLBScores,
-    fetchMLBTeamProfiles,
-    fetchMLBBoxScore,
-    fetchMLBStadiums,
-    fetchMLBSchedule,
+    fetchScores,
+    fetchTeamProfiles,
+    fetchBoxScore,
+    fetchStadiums,
+    fetchSchedule,
     fetchCurrentGames,
-    fetchMLBOddsByDate,
+    fetchOddsByDate: fetchOdds,
   };
 };
 

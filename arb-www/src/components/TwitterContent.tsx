@@ -296,7 +296,7 @@ export const TwitterContent = memo(function TwitterContent({
             <Box ref={loadMoreRef} py="4">
               {twitterLoadingMore ? (
                 <Flex justify="center" align="center" py="4">
-                  <Spinner size="sm" color="accent.400" />
+                  <Spinner size="sm" color="buttons.primary.bg" />
                   <Text ml="2" fontSize="sm" color="text.500">
                     Loading more tweets...
                   </Text>

@@ -30,14 +30,14 @@ interface NFLScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
-  nflOddsByDate?: any;
+  oddsByDate?: any;
 }
 
 export function NFLScoreCard({
   game,
   onGameClick,
   oddsLoading: _oddsLoading,
-  nflOddsByDate: _nflOddsByDate,
+  oddsByDate: _oddsByDate,
 }: NFLScoreCardProps) {
   return (
     <Card.Root

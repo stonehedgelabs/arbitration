@@ -30,14 +30,14 @@ interface NBAScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
-  nbaOddsByDate?: any;
+  oddsByDate?: any;
 }
 
 export function NBAScoreCard({
   game,
   onGameClick,
   oddsLoading: _oddsLoading,
-  nbaOddsByDate: _nbaOddsByDate,
+  oddsByDate: _oddsByDate,
 }: NBAScoreCardProps) {
   return (
     <Card.Root

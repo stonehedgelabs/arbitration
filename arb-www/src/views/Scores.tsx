@@ -14,6 +14,7 @@ import {
   NHLScoreCard,
   GenericScoreCard,
 } from "../components/cards/score";
+import { ErrorState } from "../components/ErrorStates";
 
 // Internal imports - config
 import {
@@ -31,10 +32,7 @@ import { DatePicker } from "../components/DatePicker";
 import { HideVerticalScroll } from "../components/containers";
 
 // Internal imports - schema
-import { MLBScheduleGame } from "../schema";
-
-// Internal imports - services
-import useArb from "../services/Arb";
+// import { MLBScheduleGame } from "../schema"; // No longer needed as we use generic types
 
 // Internal imports - store
 import { useAppSelector, useAppDispatch } from "../store/hooks";
@@ -312,11 +310,12 @@ const GameCardSkeleton = () => {
   );
 };
 
-// Convert MLB game to Game format
-const convertMLBGameToGame = (
+// Convert game data to Game format (works for all leagues)
+const convertGameToGame = (
   rawGame: any,
-  mlbTeamProfiles: any,
-  mlbStadiums: any,
+  teamProfiles: any,
+  stadiums: any,
+  league: League,
   oddsData?: any,
 ): Game | null => {
   // Map API status to our status format
@@ -326,15 +325,15 @@ const convertMLBGameToGame = (
 
   // Helper functions to get team profiles and stadiums
   const getTeamProfile = (teamName: string) => {
-    if (!mlbTeamProfiles?.data) return null;
-    return mlbTeamProfiles.data.find(
+    if (!teamProfiles?.data) return null;
+    return teamProfiles.data.find(
       (team: any) => team.Name === teamName || team.Key === teamName,
     );
   };
 
   const getStadium = (stadiumId?: number) => {
-    if (!mlbStadiums?.data || !stadiumId) return null;
-    return mlbStadiums.data.find(
+    if (!stadiums?.data || !stadiumId) return null;
+    return stadiums.data.find(
       (stadium: any) => stadium.StadiumID === stadiumId,
     );
   };
@@ -384,7 +383,7 @@ const convertMLBGameToGame = (
     division: homeTeamProfile?.Division, // Store division for display
     // Postseason flag - determine based on the game date using config
     isPostseason: isPostseasonDate(
-      League.MLB,
+      league,
       rawGame.DateTime
         ? convertUtcToLocalDate(rawGame.DateTime)
         : new Date().toISOString().split("T")[0],
@@ -396,7 +395,7 @@ const convertMLBGameToGame = (
     // Odds information
     odds: getGameOdds(gameId, oddsData) || undefined,
     // League
-    league: League.MLB,
+    league: league,
   };
 
   return convertedGame;
@@ -404,9 +403,10 @@ const convertMLBGameToGame = (
 
 // Convert schedule game to Game format
 const convertScheduleGameToGame = (
-  scheduleGame: MLBScheduleGame,
-  mlbTeamProfiles: any,
-  mlbStadiums: any,
+  scheduleGame: any, // Changed from MLBScheduleGame to any for generic support
+  teamProfiles: any,
+  stadiums: any,
+  league: League,
   oddsData?: any,
 ): Game | null => {
   // Map API status to our status format
@@ -416,15 +416,15 @@ const convertScheduleGameToGame = (
 
   // Helper functions to get team profiles and stadiums
   const getTeamProfile = (teamName: string) => {
-    if (!mlbTeamProfiles?.data) return null;
-    return mlbTeamProfiles.data.find(
+    if (!teamProfiles?.data) return null;
+    return teamProfiles.data.find(
       (team: any) => team.Name === teamName || team.Key === teamName,
     );
   };
 
   const getStadium = (stadiumId?: number) => {
-    if (!mlbStadiums?.data || !stadiumId) return null;
-    return mlbStadiums.data.find(
+    if (!stadiums?.data || !stadiumId) return null;
+    return stadiums.data.find(
       (stadium: any) => stadium.StadiumID === stadiumId,
     );
   };
@@ -474,7 +474,7 @@ const convertScheduleGameToGame = (
     stadiumId: scheduleGame.StadiumID, // Store stadium ID for potential future lookup
     division: homeTeamProfile?.Division, // Store division for display
     // Postseason flag - determine based on the game date using config
-    isPostseason: isPostseasonDate(League.MLB, convertedDate),
+    isPostseason: isPostseasonDate(league, convertedDate),
     // Base runners
     runnerOnFirst: scheduleGame.RunnerOnFirst || false,
     runnerOnSecond: scheduleGame.RunnerOnSecond || false,
@@ -482,7 +482,7 @@ const convertScheduleGameToGame = (
     // Odds information
     odds: getGameOdds(gameId, oddsData) || undefined,
     // League
-    league: League.MLB,
+    league: league,
   };
 
   return convertedGame;
@@ -493,12 +493,12 @@ const ScoreCard = ({
   game,
   onGameClick,
   oddsLoading,
-  mlbOddsByDate,
+  oddsByDate,
 }: {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
-  mlbOddsByDate?: any;
+  oddsByDate?: any;
 }) => {
   switch (game.league) {
     case League.MLB:
@@ -507,7 +507,7 @@ const ScoreCard = ({
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
-          mlbOddsByDate={mlbOddsByDate}
+          oddsByDate={oddsByDate}
         />
       );
     case League.NBA:
@@ -516,6 +516,7 @@ const ScoreCard = ({
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
+          oddsByDate={oddsByDate}
         />
       );
     case League.NFL:
@@ -524,6 +525,7 @@ const ScoreCard = ({
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
+          oddsByDate={oddsByDate}
         />
       );
     case League.NHL:
@@ -532,6 +534,7 @@ const ScoreCard = ({
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
+          oddsByDate={oddsByDate}
         />
       );
     default:
@@ -540,6 +543,7 @@ const ScoreCard = ({
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
+          oddsByDate={oddsByDate}
         />
       );
   }
@@ -551,29 +555,18 @@ export function Scores() {
     (state) => state.sportsData.selectedLeague,
   );
 
-  const {
-    mlbScores,
-    mlbTeamProfiles,
-    mlbStadiums,
-    mlbSchedule,
-    mlbOddsByDate,
-    mlbScoresLoading,
-    mlbTeamProfilesLoading,
-    mlbStadiumsLoading,
-    mlbScheduleLoading,
-    mlbScoresError: mlbError,
-    oddsLoading,
-    fetchMLBScores,
-    fetchMLBTeamProfiles,
-    fetchMLBStadiums,
-    fetchMLBSchedule,
-    fetchMLBOddsByDate,
-  } = useArb();
-
-  const [isFetchingDateData, setIsFetchingDateData] = useState(false);
-  const [otherLeagueTeamProfiles, setOtherLeagueTeamProfiles] =
-    useState<any>(null);
-  const [otherLeagueLoading, setOtherLeagueLoading] = useState(false);
+  // Generic league data state (replaces MLB-specific state)
+  const [leagueData, setLeagueData] = useState<{
+    [league: string]: {
+      scores: any;
+      teamProfiles: any;
+      stadiums: any;
+      schedule: any;
+      odds: any;
+      loading: boolean;
+      error: string | null;
+    };
+  }>({});
 
   // Redux state
   const dispatch = useAppDispatch();
@@ -585,12 +578,65 @@ export function Scores() {
     navigate(`/scores/${selectedLeague}/${gameId}`);
   };
 
-  // Fetch team profiles for non-MLB leagues
-  const fetchTeamProfilesForLeague = async (league: string) => {
-    if (league === League.MLB) return; // MLB is handled separately
+  // Generic fetch functions for all leagues
+  const fetchScoresForLeague = async (league: string, date: string) => {
+    console.log(`🏀 Fetching scores for ${league.toUpperCase()}`);
 
+    // Set loading state
+    setLeagueData((prev) => ({
+      ...prev,
+      [league]: {
+        ...prev[league],
+        loading: true,
+        error: null,
+      },
+    }));
+
+    try {
+      const apiUrl = buildApiUrl("/api/v1/scores", { league, date });
+      console.log(`🌐 Making request to: ${apiUrl}`);
+      const response = await fetch(apiUrl);
+      console.log(`📡 Response status: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Scores received for ${league}:`, data);
+        setLeagueData((prev) => ({
+          ...prev,
+          [league]: {
+            ...prev[league],
+            scores: data,
+            loading: false,
+            error: null,
+          },
+        }));
+      } else {
+        console.log(
+          `ℹ️ Scores not supported for ${league}: ${response.status}`,
+        );
+        setLeagueData((prev) => ({
+          ...prev,
+          [league]: {
+            ...prev[league],
+            loading: false,
+            error: `Scores not supported for ${league}`,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching scores for ${league}:`, error);
+      setLeagueData((prev) => ({
+        ...prev,
+        [league]: {
+          ...prev[league],
+          loading: false,
+          error: `Error fetching scores for ${league}`,
+        },
+      }));
+    }
+  };
+
+  const fetchTeamProfilesForLeague = async (league: string) => {
     console.log(`🏀 Fetching team profiles for ${league.toUpperCase()}`);
-    setOtherLeagueLoading(true);
     try {
       const apiUrl = buildApiUrl("/api/team-profile", { league });
       console.log(`🌐 Making request to: ${apiUrl}`);
@@ -599,17 +645,99 @@ export function Scores() {
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ Team profiles received for ${league}:`, data);
-        setOtherLeagueTeamProfiles(data);
+        setLeagueData((prev) => ({
+          ...prev,
+          [league]: {
+            ...prev[league],
+            teamProfiles: data,
+          },
+        }));
       } else {
-        console.error(
-          `❌ Failed to fetch team profiles for ${league}:`,
-          response.status,
+        console.log(
+          `ℹ️ Team profiles not supported for ${league}: ${response.status}`,
         );
       }
     } catch (error) {
       console.error(`❌ Error fetching team profiles for ${league}:`, error);
-    } finally {
-      setOtherLeagueLoading(false);
+    }
+  };
+
+  const fetchStadiumsForLeague = async (league: string) => {
+    console.log(`🏀 Fetching stadiums for ${league.toUpperCase()}`);
+    try {
+      const apiUrl = buildApiUrl("/api/v1/venues", { league });
+      console.log(`🌐 Making request to: ${apiUrl}`);
+      const response = await fetch(apiUrl);
+      console.log(`📡 Response status: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Stadiums received for ${league}:`, data);
+        setLeagueData((prev) => ({
+          ...prev,
+          [league]: {
+            ...prev[league],
+            stadiums: data,
+          },
+        }));
+      } else {
+        console.log(
+          `ℹ️ Stadiums not supported for ${league}: ${response.status}`,
+        );
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching stadiums for ${league}:`, error);
+    }
+  };
+
+  const fetchOddsForLeague = async (league: string, date: string) => {
+    console.log(`🏀 Fetching odds for ${league.toUpperCase()}`);
+    try {
+      const apiUrl = buildApiUrl("/api/v1/odds-by-date", { league, date });
+      console.log(`🌐 Making request to: ${apiUrl}`);
+      const response = await fetch(apiUrl);
+      console.log(`📡 Response status: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Odds received for ${league}:`, data);
+        setLeagueData((prev) => ({
+          ...prev,
+          [league]: {
+            ...prev[league],
+            odds: data,
+          },
+        }));
+      } else {
+        console.log(`ℹ️ Odds not supported for ${league}: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching odds for ${league}:`, error);
+    }
+  };
+
+  const fetchScheduleForLeague = async (league: string, date: string) => {
+    console.log(`🏀 Fetching schedule for ${league.toUpperCase()}`);
+    try {
+      const apiUrl = buildApiUrl("/api/v1/schedule", { league, date });
+      console.log(`🌐 Making request to: ${apiUrl}`);
+      const response = await fetch(apiUrl);
+      console.log(`📡 Response status: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Schedule received for ${league}:`, data);
+        setLeagueData((prev) => ({
+          ...prev,
+          [league]: {
+            ...prev[league],
+            schedule: data,
+          },
+        }));
+      } else {
+        console.log(
+          `ℹ️ Schedule not supported for ${league}: ${response.status}`,
+        );
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching schedule for ${league}:`, error);
     }
   };
 
@@ -624,79 +752,74 @@ export function Scores() {
   // Fetch data when component mounts or league/date changes
   useEffect(() => {
     if (selectedDate) {
-      if (selectedLeague === League.MLB) {
-        // MLB-specific data fetching
-        fetchMLBScores(selectedDate);
-        fetchMLBTeamProfiles();
-        fetchMLBStadiums();
-        fetchMLBOddsByDate(selectedDate);
+      // Always attempt to fetch data for the selected league
+      // The backend will return errors for non-MLB leagues, which we handle gracefully
 
-        // Check if this is a postseason date and fetch schedule if needed
-        const isPostseason = isPostseasonDate(League.MLB, selectedDate);
-        if (isPostseason) {
-          setIsFetchingDateData(true);
-          fetchMLBSchedule(selectedDate).finally(() => {
-            setIsFetchingDateData(false);
-          });
-        }
-      } else {
-        // For other leagues, fetch team profiles (which are supported for all leagues)
-        // Note: Scores endpoint only supports MLB, so we'll show a "not implemented" message
-        // for other leagues until the backend supports them
-        fetchTeamProfilesForLeague(selectedLeague);
-      }
+      // Fetch scores for the selected league
+      fetchScoresForLeague(selectedLeague, selectedDate);
+
+      // Fetch team profiles for the selected league
+      fetchTeamProfilesForLeague(selectedLeague);
+
+      // Fetch stadiums for the selected league (if supported)
+      fetchStadiumsForLeague(selectedLeague);
+
+      // Fetch odds for the selected league (if supported)
+      fetchOddsForLeague(selectedLeague, selectedDate);
+
+      // Fetch schedule for the selected league (if supported)
+      fetchScheduleForLeague(selectedLeague, selectedDate);
     }
   }, [selectedLeague, selectedDate]);
 
   // Get all games based on the selected date and league
   const getAllGames = (): Game[] => {
-    if (selectedLeague === League.MLB) {
-      // Check if this is a postseason date
-      const isPostseason = selectedDate
-        ? isPostseasonDate(League.MLB, selectedDate)
+    const currentLeagueData = leagueData[selectedLeague];
+
+    if (!currentLeagueData) {
+      return [];
+    }
+
+    // Check if this is a postseason date (only for MLB)
+    const isPostseason =
+      selectedLeague === League.MLB && selectedDate
+        ? isPostseasonDate(selectedLeague as League, selectedDate)
         : false;
 
-      if (isPostseason) {
-        // Use schedule data for postseason
-        if (
-          mlbSchedule?.data &&
-          selectedDate &&
-          isPostseasonDate(League.MLB, selectedDate)
-        ) {
-          const scheduleGames = mlbSchedule.data
-            .map((game) =>
-              convertScheduleGameToGame(
-                game,
-                mlbTeamProfiles,
-                mlbStadiums,
-                mlbOddsByDate,
-              ),
-            )
-            .filter((game): game is Game => game !== null);
+    if (isPostseason) {
+      // Use schedule data for postseason
+      if (currentLeagueData.schedule?.data && selectedDate) {
+        const scheduleGames = currentLeagueData.schedule.data
+          .map((game) =>
+            convertScheduleGameToGame(
+              game,
+              currentLeagueData.teamProfiles,
+              currentLeagueData.stadiums,
+              selectedLeague as League,
+              currentLeagueData.odds,
+            ),
+          )
+          .filter((game): game is Game => game !== null);
 
-          return scheduleGames;
-        }
-      } else {
-        // Use regular scores data for regular season
-        if (mlbScores?.data) {
-          const scoresGames = mlbScores.data
-            .map((game) =>
-              convertMLBGameToGame(
-                game,
-                mlbTeamProfiles,
-                mlbStadiums,
-                mlbOddsByDate,
-              ),
-            )
-            .filter((game): game is Game => game !== null);
-
-          return scoresGames;
-        }
+        return scheduleGames;
       }
     } else {
-      // For other leagues, return empty array since scores endpoint doesn't support them yet
-      // This will show the "No Games" message with appropriate text
-      return [];
+      // Use regular scores data for regular season
+      if (currentLeagueData.scores?.data) {
+        const scoresGames = currentLeagueData.scores.data
+          .map((game) =>
+            convertGameToGame(
+              game,
+              currentLeagueData.teamProfiles,
+              currentLeagueData.stadiums,
+              selectedLeague as League,
+              currentLeagueData.odds,
+            ),
+          )
+          .filter((game): game is Game => game !== null);
+
+        return scoresGames;
+      }
     }
 
     return [];
@@ -720,19 +843,42 @@ export function Scores() {
     return timeB - timeA; // Most recent first
   });
 
+  // Retry function for error state
+  const handleRetry = () => {
+    if (selectedDate) {
+      // Clear the error and refetch all data for the current league
+      setLeagueData((prev) => ({
+        ...prev,
+        [selectedLeague]: {
+          ...prev[selectedLeague],
+          error: null,
+          loading: true,
+        },
+      }));
+
+      console.log("> selected", selectedLeague);
+
+      // Refetch all data
+      fetchScoresForLeague(selectedLeague, selectedDate);
+      fetchTeamProfilesForLeague(selectedLeague);
+      fetchStadiumsForLeague(selectedLeague);
+      fetchOddsForLeague(selectedLeague, selectedDate);
+      fetchScheduleForLeague(selectedLeague, selectedDate);
+    }
+  };
+
   // Show error state if there's an error
-  if (mlbError) {
+  const currentLeagueData = leagueData[selectedLeague];
+  if (currentLeagueData?.error) {
     return (
-      <HideVerticalScroll minH="100vh" bg="primary.25" p="4">
-        <VStack gap="4" align="center" justify="center" minH="50vh">
-          <Text color="red.500" fontSize="lg" fontWeight="semibold">
-            Error loading scores
-          </Text>
-          <Text color="text.400" textAlign="center">
-            {mlbError}
-          </Text>
-        </VStack>
-      </HideVerticalScroll>
+      <ErrorState
+        title="Error Loading Scores"
+        message={`Failed to load ${selectedLeague.toUpperCase()} scores. ${currentLeagueData.error}`}
+        onRetry={handleRetry}
+        showRetry={true}
+        showBack={false}
+        variant="error"
+      />
     );
   }
 
@@ -746,10 +892,7 @@ export function Scores() {
         <VStack gap="4" align="stretch">
           {sortedGames.length === 0 ? (
             // Show loading state if we're fetching data, otherwise show no games
-            isFetchingDateData ||
-            mlbScoresLoading ||
-            otherLeagueLoading ||
-            (selectedLeague === League.MLB && !mlbScores) ? (
+            currentLeagueData?.loading || !currentLeagueData ? (
               // Show skeleton cards while loading
               Array.from({ length: 3 }, (_, index) => (
                 <GameCardSkeleton key={`skeleton-${index}`} />
@@ -816,7 +959,7 @@ export function Scores() {
             )
           ) : (
             <VStack gap="4" align="stretch">
-              {isFetchingDateData
+              {currentLeagueData?.loading
                 ? // Show skeleton cards while loading
                   Array.from({ length: 3 }, (_, index) => (
                     <GameCardSkeleton key={`skeleton-${index}`} />
@@ -826,8 +969,8 @@ export function Scores() {
                       key={game.id}
                       game={game}
                       onGameClick={handleGameClick}
-                      oddsLoading={oddsLoading}
-                      mlbOddsByDate={mlbOddsByDate}
+                      oddsLoading={currentLeagueData?.loading || false}
+                      oddsByDate={currentLeagueData?.odds}
                     />
                   ))}
             </VStack>

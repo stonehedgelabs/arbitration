@@ -37,16 +37,15 @@ export function LeagueSelector() {
   };
   const getLeagueColors = (isSelected: boolean) => {
     if (isSelected) {
-      // Active state - red background with white text
+      // Active state - primary button background with primary text color
       return {
-        bg: "accent.400",
-        // border: "red.500",
-        text: "white",
+        bg: "buttons.primary.bg",
+        text: "buttons.primary.color",
       };
     } else {
-      // Default state - red outline with red text
+      // Default state - transparent background with text.400 outline
       return {
-        bg: "primary.25",
+        bg: "transparent",
         border: "text.400",
         text: "text.400",
       };

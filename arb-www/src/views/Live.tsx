@@ -12,6 +12,7 @@ import { ChevronRight } from "lucide-react";
 
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../components/Skeleton";
+import { ErrorState } from "../components/ErrorStates";
 import {
   MLBLiveGameCard,
   NBALiveGameCard,
@@ -49,6 +50,7 @@ interface LiveGamesSectionProps {
   onGameClick?: (gameId: string) => void;
   loading?: boolean;
   selectedLeague: League;
+  error?: string | null;
 }
 
 // Game Card Skeleton Component - EXACT same as Scores component
@@ -141,6 +143,7 @@ export function Live({
   onGameClick,
   loading = false,
   selectedLeague,
+  error,
 }: LiveGamesSectionProps) {
   const liveGames = games.filter((game) => game.status === GameStatus.LIVE);
 
@@ -164,7 +167,17 @@ export function Live({
 
         {/* Games List */}
         <VStack gap="4" align="stretch">
-          {loading ? (
+          {error ? (
+            // Show error state when there's an error (e.g., unsupported league)
+            <ErrorState
+              title="Error Loading Live Games"
+              message={`Failed to load ${selectedLeague.toUpperCase()} live games. ${error}`}
+              onRetry={() => window.location.reload()}
+              showRetry={true}
+              showBack={false}
+              variant="error"
+            />
+          ) : loading ? (
             // Show skeleton cards while loading - EXACT same as Scores component
             Array.from({ length: 3 }, (_, index) => (
               <GameCardSkeleton key={`skeleton-${index}`} />
