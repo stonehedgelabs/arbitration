@@ -39,12 +39,12 @@ const lightColors = {
 
   // Simplified neutral text hierarchy
   text: {
-    100: { value: "#FFFFFF" }, // Almost white (use sparingly)
-    200: { value: "#E6E6E6" }, // Slightly muted light gray
-    300: { value: "#BDBDBD" }, // Very muted mid-gray
-    350: { value: "#8E8E8E" }, // Mid-gray between 300 and 400
-    400: { value: "#5C5C5C" }, // Dark gray (main body)
-    500: { value: "#1A1A1A" }, // Almost black (max contrast)
+    100: { value: "#FFFFFF" }, // Brightest, rarely used
+    200: { value: "#E6E6E6" },
+    300: { value: "#BDBDBD" },
+    350: { value: "#8E8E8E" },
+    400: { value: "#5C5C5C" }, // ✅ main body text
+    500: { value: "#1A1A1A" }, // ✅ headings / titles
   },
 
   label: { 
@@ -146,12 +146,12 @@ const darkColors = {
   },
 
   text: {
-    100: { value: "#FFFFFF" }, // Brightest (use sparingly, highlights or on darkest backgrounds)
-    200: { value: "#FAFAFA" }, // Headings – high contrast but softer than pure white
-    300: { value: "#E0E0E0" }, // Body text – comfortable contrast, readable on dark bg
-    350: { value: "#CFCFCF" }, // Mid-gray between 300 and 400
-    400: { value: "#BDBDBD" }, // Secondary – captions, hints, disabled labels
-    500: { value: "#999999" }, // Muted – lowest contrast, placeholders or subtle UI text
+    100: { value: "#FFFFFF" }, // ✅ headings / titles
+    200: { value: "#FAFAFA" }, // ✅ large text on dark bg
+    300: { value: "#E0E0E0" }, // ✅ body text
+    350: { value: "#CFCFCF" }, // secondary
+    400: { value: "#BDBDBD" }, // muted / captions
+    500: { value: "#999999" }, // disabled
   },
 
 

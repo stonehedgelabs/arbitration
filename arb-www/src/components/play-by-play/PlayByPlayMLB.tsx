@@ -1,5 +1,5 @@
 // React imports
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 // Third-party library imports
 import {
@@ -319,7 +319,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   };
 
   // Fetch play-by-play data
-  const fetchPlayByPlay = async () => {
+  const fetchPlayByPlay = useCallback(async () => {
     try {
       setLoading(true);
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
@@ -361,7 +361,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [actualGameId]);
 
   // Manual refresh
   const handleRefresh = () => {

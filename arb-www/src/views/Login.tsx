@@ -76,6 +76,8 @@ export function Login() {
                 alignItems="center"
                 justifyContent="center"
                 shadow="lg"
+                borderColor={"text.400"}
+                // borderWidth={"1px"}
               >
                 <Text color="text.400" fontSize="xl" fontWeight="bold">
                   A
@@ -108,14 +110,14 @@ export function Login() {
                   onClick={() => handleLogin("apple")}
                   w="full"
                   h="56px"
-                  bg="primary.25"
-                  color="text.400"
-                  borderColor="text.400"
+                  borderWidth="1px"
                   borderRadius="12px"
                   fontSize="md"
                   fontWeight="medium"
                   className="ios-button-press"
-                  border="1px"
+                  bg="primary.25"
+                  color="text.400"
+                  borderColor="text.400"
                   shadow="md"
                 >
                   <AppleIcon />
@@ -144,17 +146,16 @@ export function Login() {
                 {/* Guest Login */}
                 <Button
                   onClick={() => handleLogin("guest")}
-                  variant="ghost"
                   w="full"
                   h="56px"
+                  borderWidth="1px"
                   borderRadius="12px"
                   fontSize="md"
                   fontWeight="medium"
+                  className="ios-button-press"
                   bg="primary.25"
                   color="text.400"
                   borderColor="text.400"
-                  className="ios-button-press"
-                  border="1px"
                   shadow="md"
                 >
                   Continue as Guest

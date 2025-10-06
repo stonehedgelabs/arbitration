@@ -10,6 +10,8 @@ import {
   VStack,
   Text,
   HStack,
+  Select,
+  createListCollection,
 } from "@chakra-ui/react";
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import { setFavoriteTeams } from "../store/slices/favoritesSlice.ts";
@@ -25,6 +27,7 @@ export function Onboarding() {
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const leagues = ["all", "NFL", "NBA", "MLB", "NHL", "MLS"];
+  const leagueCollection = createListCollection({ items: leagues });
 
   // Filter teams based on selected league and search query
   const filteredTeams = useMemo(() => {
@@ -144,7 +147,7 @@ export function Onboarding() {
               <Text fontSize="2xl" fontWeight="bold">
                 Follow Your Teams
               </Text>
-              <Text color="gray.600" textAlign="center">
+              <Text color="gray.400" textAlign="center">
                 {userType === "guest"
                   ? "Select teams to see personalized content in your For You feed"
                   : "Choose your favorite teams to get personalized updates and content"}
@@ -155,33 +158,31 @@ export function Onboarding() {
           {/* League Selector and Search */}
           <VStack gap="4" mt="8">
             {/* League Dropdown */}
-            <Box w="full">
-              <Text fontSize="sm" fontWeight="medium" mb="2" color="gray.700">
+            <Box w="full" fontSize={"sm"}>
+              <Text fontSize="sm" fontWeight="medium" mb="2" color="text.400">
                 Select League
               </Text>
-              <select
-                value={selectedLeague}
-                onChange={(e) => setSelectedLeague(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 12px",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "6px",
-                  backgroundColor: "white",
-                  fontSize: "14px",
-                }}
+              <Select.Root
+                value={[selectedLeague]}
+                onValueChange={(details) => setSelectedLeague(details.value[0])}
+                collection={leagueCollection}
               >
-                {leagues.map((league) => (
-                  <option key={league} value={league}>
-                    {league === "all" ? "All Leagues" : league}
-                  </option>
-                ))}
-              </select>
+                <Select.Trigger w="full" bg="primary.25" borderColor="text.400">
+                  <Select.ValueText placeholder="Select League" />
+                </Select.Trigger>
+                <Select.Content bg="primary.100">
+                  {leagues.map((league) => (
+                    <Select.Item key={league} item={league}>
+                      {league === "all" ? "All Leagues" : league}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
             </Box>
 
             {/* Search Input */}
             <Box w="full">
-              <Text fontSize="sm" fontWeight="medium" mb="2" color="gray.700">
+              <Text fontSize="sm" fontWeight="medium" mb="2" color="text.400">
                 Search Teams
               </Text>
               <SearchBar
@@ -194,7 +195,7 @@ export function Onboarding() {
 
             {/* Selected Teams Count */}
             <Box w="full">
-              <Text fontSize="sm" color="gray.600">
+              <Text fontSize="sm" color="text.500">
                 {selectedTeams.length} team
                 {selectedTeams.length !== 1 ? "s" : ""} selected
               </Text>
@@ -212,13 +213,10 @@ export function Onboarding() {
               return (
                 <Box key={league} w="full">
                   <HStack gap="2" mb="3">
-                    <Badge
-                      variant="outline"
-                      style={{ borderColor: leagueColor, color: leagueColor }}
-                    >
+                    <Badge bg="primary.25" color={leagueColor}>
                       {league}
                     </Badge>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="xs" color="gray.600">
                       {selectedInLeague} of {leagueTeams.length} selected
                     </Text>
                   </HStack>
@@ -229,17 +227,13 @@ export function Onboarding() {
                         w="full"
                         cursor="pointer"
                         onClick={() => toggleTeam(team.name)}
-                        // borderWidth="1px"
-                        // borderColor={
-                        //   selectedTeams.includes(team.name)
-                        //     ? "blue.500"
-                        //     : "gray.200"
-                        // }
                         bg={
                           selectedTeams.includes(team.name)
-                            ? "blue.50"
+                            ? "accent.400"
                             : "primary.25"
                         }
+                        border="1px"
+                        borderColor="text.400"
                         transition="all 0.2s"
                       >
                         <Card.Body p="3">
@@ -255,7 +249,7 @@ export function Onboarding() {
                                 color="text.100"
                                 fontSize="xs"
                                 fontWeight="medium"
-                                style={{ backgroundColor: team.leagueColor }}
+                                bg={team.leagueColor}
                               >
                                 {team.name
                                   .split(" ")
@@ -267,11 +261,11 @@ export function Onboarding() {
                                 <Text
                                   fontSize="sm"
                                   fontWeight="medium"
-                                  color="text.400"
+                                  color="text.100"
                                 >
                                   {team.name}
                                 </Text>
-                                <Text fontSize="xs" color="text.400">
+                                <Text fontSize="xs" color="text.100">
                                   {team.city}
                                 </Text>
                               </VStack>
@@ -293,7 +287,7 @@ export function Onboarding() {
                                 <Box
                                   w="6"
                                   h="6"
-                                  bg="accent.100"
+                                  bg="primary.25"
                                   borderRadius="full"
                                   display="flex"
                                   alignItems="center"
@@ -306,13 +300,7 @@ export function Onboarding() {
                                   />
                                 </Box>
                               ) : (
-                                <Box
-                                  w="6"
-                                  h="6"
-                                  // borderWidth="2px"
-                                  // borderColor="gray.300"
-                                  borderRadius="full"
-                                />
+                                <Box w="6" h="6" borderRadius="full" />
                               )}
                             </motion.div>
                           </HStack>

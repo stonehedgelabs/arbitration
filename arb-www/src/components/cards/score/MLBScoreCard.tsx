@@ -1,3 +1,6 @@
+// React imports
+import { useCallback } from "react";
+
 // Third-party library imports
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
@@ -205,7 +208,7 @@ export function MLBScoreCard({
   const dispatch = useAppDispatch();
 
   // Enhanced click handler that also searches for Reddit game threads
-  const handleGameClick = async () => {
+  const handleGameClick = useCallback(async () => {
     // Call the original onGameClick
     onGameClick(game.id, game.date);
 
@@ -226,7 +229,14 @@ export function MLBScoreCard({
     if (homeSubreddit) {
       dispatch(findRedditGameThread(homeSubreddit.replace("r/", "")));
     }
-  };
+  }, [
+    onGameClick,
+    game.id,
+    game.date,
+    game.awayTeam.name,
+    game.homeTeam.name,
+    dispatch,
+  ]);
 
   return (
     <Card.Root
