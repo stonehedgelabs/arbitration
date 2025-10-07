@@ -144,7 +144,7 @@ export const isToday = (dateString: string): boolean => {
   return dateString === getCurrentLocalDate();
 };
 
-export const formatRelativeTime = (timestamp: string): string => {
+export const formatRelativeESTTime = (timestamp: string): string => {
   try {
     // Convert EST/EDT timestamp to UTC
     const utcDate = fromZonedTime(timestamp, "America/New_York");
@@ -153,6 +153,19 @@ export const formatRelativeTime = (timestamp: string): string => {
     return formatDistanceToNow(utcDate, { addSuffix: true });
   } catch (error) {
     console.error("Error formatting relative time:", timestamp, error);
+    return "Just now";
+  }
+};
+
+export const formatRelativeUTCTime = (timestamp: string): string => {
+  try {
+    // Parse the timestamp directly (it's already in UTC format)
+    const date = new Date(timestamp);
+
+    // Get relative time
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch (error) {
+    console.error("Error formatting relative UTC time:", timestamp, error);
     return "Just now";
   }
 };

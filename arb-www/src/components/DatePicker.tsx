@@ -1,17 +1,11 @@
-// React imports
 import { useEffect, useRef } from "react";
-
-// Third-party library imports
 import { Box, Text } from "@chakra-ui/react";
 
-// Internal imports - containers
 import { HideHorizontalScroll } from "./containers";
 
-// Internal imports - store
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { setSelectedDate } from "../store/slices/sportsDataSlice";
 
-// Internal imports - utils
 import { getCurrentLocalDate, formatDateForSlider } from "../utils.ts";
 
 // Date utility function

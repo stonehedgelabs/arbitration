@@ -43,7 +43,7 @@ pub struct RedditPost {
 pub fn find_live_game_thread(listing: &RedditListing) -> Option<&RedditPost> {
     listing.data.children.iter().map(|c| &c.data).find(|post| {
         let title = post.title.to_lowercase();
-        title.contains("game thread")
+        (title.contains("game thread") || title.contains("game chat"))
             && !title.contains("post game")
             && !title.contains("pre game")
     })

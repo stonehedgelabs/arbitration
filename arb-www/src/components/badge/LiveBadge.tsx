@@ -1,4 +1,3 @@
-// Third-party library imports
 import { Badge } from "@chakra-ui/react";
 import { Wifi } from "lucide-react";
 

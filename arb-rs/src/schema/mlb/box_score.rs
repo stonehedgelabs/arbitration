@@ -7,23 +7,23 @@ pub struct Inning {
     #[serde(rename = "GameID")]
     pub game_id: i64,
     #[serde(rename = "InningNumber")]
-    pub inning_number: i32,
+    pub inning_number: Option<i32>,
     #[serde(rename = "AwayTeamRuns")]
-    pub away_team_runs: i32,
+    pub away_team_runs: Option<i32>,
     #[serde(rename = "HomeTeamRuns")]
-    pub home_team_runs: i32,
+    pub home_team_runs: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SeriesInfo {
     #[serde(rename = "HomeTeamWins")]
-    pub home_team_wins: i32,
+    pub home_team_wins: Option<i32>,
     #[serde(rename = "AwayTeamWins")]
-    pub away_team_wins: i32,
+    pub away_team_wins: Option<i32>,
     #[serde(rename = "GameNumber")]
-    pub game_number: i32,
+    pub game_number: Option<i32>,
     #[serde(rename = "MaxLength")]
-    pub max_length: i32,
+    pub max_length: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,9 +31,9 @@ pub struct Game {
     #[serde(rename = "GameID")]
     pub game_id: i64,
     #[serde(rename = "Season")]
-    pub season: i32,
+    pub season: Option<i32>,
     #[serde(rename = "SeasonType")]
-    pub season_type: i32,
+    pub season_type: Option<i32>,
     #[serde(rename = "Status")]
     pub status: Option<String>,
     #[serde(rename = "Day")]
@@ -45,13 +45,13 @@ pub struct Game {
     #[serde(rename = "HomeTeam")]
     pub home_team: String,
     #[serde(rename = "AwayTeamID")]
-    pub away_team_id: i32,
+    pub away_team_id: Option<i32>,
     #[serde(rename = "HomeTeamID")]
-    pub home_team_id: i32,
+    pub home_team_id: Option<i32>,
     #[serde(rename = "RescheduledGameID")]
     pub rescheduled_game_id: Option<i64>,
     #[serde(rename = "StadiumID")]
-    pub stadium_id: i32,
+    pub stadium_id: Option<i32>,
     #[serde(rename = "Channel")]
     pub channel: Option<String>,
     #[serde(rename = "Inning")]
@@ -199,11 +199,11 @@ pub struct TeamGame {
     #[serde(rename = "StatID")]
     pub stat_id: i64,
     #[serde(rename = "TeamID")]
-    pub team_id: i32,
+    pub team_id: Option<i32>,
     #[serde(rename = "SeasonType")]
-    pub season_type: i32,
+    pub season_type: Option<i32>,
     #[serde(rename = "Season")]
-    pub season: i32,
+    pub season: Option<i32>,
     #[serde(rename = "Name")]
     pub name: Option<String>,
     #[serde(rename = "Team")]
@@ -213,7 +213,7 @@ pub struct TeamGame {
     #[serde(rename = "GameID")]
     pub game_id: i64,
     #[serde(rename = "OpponentID")]
-    pub opponent_id: i32,
+    pub opponent_id: Option<i32>,
     #[serde(rename = "Opponent")]
     pub opponent: String,
     #[serde(rename = "Day")]
@@ -441,13 +441,13 @@ pub struct PlayerGame {
     #[serde(rename = "StatID")]
     pub stat_id: i64,
     #[serde(rename = "TeamID")]
-    pub team_id: i32,
+    pub team_id: Option<i32>,
     #[serde(rename = "PlayerID")]
     pub player_id: i64,
     #[serde(rename = "SeasonType")]
-    pub season_type: i32,
+    pub season_type: Option<i32>,
     #[serde(rename = "Season")]
-    pub season: i32,
+    pub season: Option<i32>,
     #[serde(rename = "Name")]
     pub name: Option<String>,
     #[serde(rename = "Team")]
@@ -457,7 +457,7 @@ pub struct PlayerGame {
     #[serde(rename = "PositionCategory")]
     pub position_category: Option<String>,
     #[serde(rename = "Started")]
-    pub started: i32,
+    pub started: Option<i32>,
     #[serde(rename = "BattingOrder")]
     pub batting_order: Option<i32>,
     #[serde(rename = "FanDuelSalary")]
@@ -495,7 +495,7 @@ pub struct PlayerGame {
     #[serde(rename = "GameID")]
     pub game_id: i64,
     #[serde(rename = "OpponentID")]
-    pub opponent_id: i32,
+    pub opponent_id: Option<i32>,
     #[serde(rename = "Opponent")]
     pub opponent: String,
     #[serde(rename = "Day")]

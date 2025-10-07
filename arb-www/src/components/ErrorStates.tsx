@@ -1,4 +1,3 @@
-// Third-party library imports
 import { Box, Button, Card, Text, VStack } from "@chakra-ui/react";
 import {
   AlertCircle,

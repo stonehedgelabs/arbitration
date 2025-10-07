@@ -41,7 +41,7 @@ import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - utils
 import {
-  formatRelativeTime,
+  formatRelativeESTTime,
   getPlayLabel,
   getPlayTitle,
   orEmpty,
@@ -187,7 +187,7 @@ export function PlayByPlayNHL({ gameId, onBack }: PlayByPlayNHLProps) {
 
   // Format timestamp for display
   const formatTimestamp = (timestamp: string) => {
-    return formatRelativeTime(timestamp);
+    return formatRelativeESTTime(timestamp);
   };
 
   // Fetch play-by-play data

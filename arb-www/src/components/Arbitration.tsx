@@ -1,21 +1,8 @@
-// React imports
 import { useEffect, useCallback, memo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-
-// Third-party library imports
 import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
 import { motion } from "motion/react";
 
-// Internal imports - config
-import {
-  League,
-  GameStatus,
-  ViewType,
-  mapApiStatusToGameStatus,
-  isPostseasonDate,
-} from "../config";
-
-// Internal imports - components
 import { Bet } from "./Bet.tsx";
 import { BottomNav } from "./BottomNav.tsx";
 import { BoxScoreDetailMLB } from "./boxscore/BoxScoreDetailMLB.tsx";
@@ -27,20 +14,29 @@ import { Live } from "../views/Live.tsx";
 import { PlayByPlay } from "../views/PlayByPlay";
 import { Social } from "../views/Social.tsx";
 
-// Internal imports - services
+import {
+  League,
+  GameStatus,
+  ViewType,
+  mapApiStatusToGameStatus,
+  isPostseasonDate,
+  Tab,
+} from "../config";
+
 import useArb from "../services/Arb";
 
-// Internal imports - utils
 import { convertUtcToLocalDate, getCurrentLocalDate } from "../utils";
 
-// Internal imports - store
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import {
   addFavoriteTeam,
   loadFavorites,
   removeFavoriteTeam,
 } from "../store/slices/favoritesSlice.ts";
-import { setSelectedLeague } from "../store/slices/sportsDataSlice";
+import {
+  setSelectedLeague,
+  fetchBoxScore,
+} from "../store/slices/sportsDataSlice";
 
 export const Arbitration = memo(function Arbitration() {
   const dispatch = useAppDispatch();
@@ -48,7 +44,7 @@ export const Arbitration = memo(function Arbitration() {
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
   );
-  const leagueData = useAppSelector((state) => state.sportsData.leagueData);
+  // const leagueData = useAppSelector((state) => state.sportsData.leagueData);
   const forYouFeed = useAppSelector((state) => state.sportsData.forYouFeed);
   const favoriteTeams = useAppSelector((state) => state.favorites.teams);
 
@@ -57,16 +53,23 @@ export const Arbitration = memo(function Arbitration() {
     scores,
     teamProfiles,
     stadiums,
+    schedule,
     fetchScores,
     fetchTeamProfiles,
     fetchStadiums,
+    fetchSchedule,
     scoresLoading,
     teamProfilesLoading,
     stadiumsLoading,
+    scheduleLoading,
     scoresError,
     teamProfilesError,
     stadiumsError,
+    scheduleError,
   } = useArb();
+
+  // Get box score data from Redux state for more accurate scores
+  const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
   // Router-based navigation
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,27 +95,15 @@ export const Arbitration = memo(function Arbitration() {
   // Determine active tab from URL
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path === "/fyp") return "for-you";
-    if (path.startsWith("/scores")) return "scores";
-    if (path.startsWith("/live")) return "live";
-    if (path.startsWith("/social")) return "social";
-    if (path === "/bet") return "bet";
-    return "for-you"; // default
+    if (path === "/fyp") return Tab.FOR_YOU;
+    if (path.startsWith("/scores")) return Tab.SCORES;
+    if (path.startsWith("/live")) return Tab.LIVE;
+    if (path.startsWith("/social")) return Tab.SOCIAL;
+    if (path === "/bet") return Tab.BET;
+    return Tab.FOR_YOU; // default
   };
 
   const activeTab = getActiveTab();
-
-  // Debug logging
-  console.log(
-    "🔍 Arbitration render - activeTab:",
-    activeTab,
-    "selectedLeague:",
-    selectedLeague,
-    "league from URL:",
-    league,
-    "currentLeague:",
-    currentLeague,
-  );
 
   // Load favorites from Redux on mount
   useEffect(() => {
@@ -123,24 +114,38 @@ export const Arbitration = memo(function Arbitration() {
 
   // Fetch live games data when on Live tab
   useEffect(() => {
-    console.log(
-      "🔍 Arbitration useEffect - activeTab:",
-      activeTab,
-      "currentLeague:",
-      currentLeague,
-    );
-    if (activeTab === "live") {
-      console.log(
-        "🚨 Fetching data from Arbitration component for league:",
-        currentLeague,
-      );
-      // Fetch today's scores for live games
+    if (activeTab === Tab.LIVE) {
+      // Fetch today's scores and schedule for live games
       const today = getCurrentLocalDate();
       fetchScores(currentLeague, today);
+      fetchSchedule(currentLeague, today);
       fetchTeamProfiles(currentLeague);
       fetchStadiums(currentLeague);
     }
-  }, [activeTab, currentLeague, fetchScores, fetchTeamProfiles, fetchStadiums]);
+  }, [
+    activeTab,
+    currentLeague,
+    fetchScores,
+    fetchSchedule,
+    fetchTeamProfiles,
+    fetchStadiums,
+  ]);
+
+  // Fetch box score data for live games to get more accurate scores
+  useEffect(() => {
+    if (activeTab === Tab.LIVE && scores?.data) {
+      // Fetch box score data for each live game to get accurate scores
+      scores.data.forEach((game: any) => {
+        const gameId = game.GameID.toString();
+        const gameStatus = mapApiStatusToGameStatus(game.Status);
+
+        // Only fetch box score for live games that we don't already have
+        if (gameStatus === GameStatus.LIVE && !boxScoreData[gameId]) {
+          dispatch(fetchBoxScore({ league: currentLeague, gameId }));
+        }
+      });
+    }
+  }, [activeTab, scores?.data, currentLeague, dispatch, boxScoreData]);
 
   // Note: MLB data fetching is now handled by the Scores component to prevent duplicate requests
 
@@ -162,75 +167,153 @@ export const Arbitration = memo(function Arbitration() {
     navigate(-1);
   };
 
-  // Get current league data based on URL league
-  const currentLeagueData =
-    leagueData[currentLeague as keyof typeof leagueData];
+  // Get current league data based on URL league (currently unused)
+  // const currentLeagueData =
+  //   leagueData[currentLeague as keyof typeof leagueData];
 
-  // Process live games data
+  // Process live games data - prioritize box score data for accuracy
   const getLiveGames = () => {
-    if (scores && teamProfiles && stadiums) {
-      // Convert games to the format expected by LiveGames component
-      const allGames = scores.data
-        .map((game) => {
-          // Find team profiles
-          const homeTeamProfile = teamProfiles.data.find(
-            (team) => team.TeamID === game.HomeTeamID,
-          );
-          const awayTeamProfile = teamProfiles.data.find(
-            (team) => team.TeamID === game.AwayTeamID,
-          );
-
-          // Find stadium
-          const stadium = stadiums.data.find(
-            (s) => s.StadiumID === game.StadiumID,
-          );
-
-          if (!homeTeamProfile || !awayTeamProfile) return null;
-
-          // Get the actual game status from the API
-          const actualStatus = mapApiStatusToGameStatus(game.Status);
-
-          return {
-            id: game.GameID.toString(),
-            homeTeam: {
-              name: homeTeamProfile.Name,
-              score: game.HomeTeamRuns || 0,
-              logo: homeTeamProfile.WikipediaLogoUrl,
-            },
-            awayTeam: {
-              name: awayTeamProfile.Name,
-              score: game.AwayTeamRuns || 0,
-              logo: awayTeamProfile.WikipediaLogoUrl,
-            },
-            status: actualStatus as GameStatus.LIVE,
-            time: game.DateTime || "",
-            quarter: game.Inning || undefined,
-            inningHalf: game.InningHalf || undefined,
-            stadium: stadium?.Name,
-            city: stadium?.City,
-            state: stadium?.State,
-            isPostseason: game.DateTime
-              ? isPostseasonDate(
-                  currentLeague as League,
-                  convertUtcToLocalDate(game.DateTime),
-                )
-              : false,
-            league: currentLeague as League,
-          };
-        })
-        .filter((game): game is NonNullable<typeof game> => game !== null);
-
-      // Filter only live games
-      return allGames.filter((game) => game.status === GameStatus.LIVE);
+    if (!scores && !schedule) {
+      return [];
     }
-    return [];
+
+    // Check if this is a postseason date (only for MLB)
+    const today = getCurrentLocalDate();
+    const isPostseason =
+      currentLeague === League.MLB
+        ? isPostseasonDate(currentLeague as League, today)
+        : false;
+
+    let allGames: any[] = [];
+
+    if (isPostseason) {
+      // Use schedule data for postseason
+      if (schedule?.data) {
+        allGames = schedule.data
+          .map((game: any) => {
+            // Check if we have more accurate box score data for this game
+            const boxScoreGame =
+              boxScoreData[game.GameID.toString()]?.data?.Game;
+
+            // Find team profiles by ID
+            const homeTeamProfile = teamProfiles?.data?.find(
+              (team: any) => team.TeamID === game.HomeTeamID,
+            );
+            const awayTeamProfile = teamProfiles?.data?.find(
+              (team: any) => team.TeamID === game.AwayTeamID,
+            );
+
+            // Find stadium
+            const stadium = stadiums?.data?.find(
+              (s: any) => s.StadiumID === game.StadiumID,
+            );
+
+            if (!homeTeamProfile || !awayTeamProfile) return null;
+
+            // Use box score data if available, otherwise use schedule data
+            const gameData = boxScoreGame || game;
+            const actualStatus = mapApiStatusToGameStatus(
+              gameData.Status || "",
+            );
+
+            return {
+              id: game.GameID.toString(),
+              homeTeam: {
+                name: homeTeamProfile.Name,
+                score: gameData.HomeTeamRuns || 0,
+                logo: homeTeamProfile.WikipediaLogoUrl,
+              },
+              awayTeam: {
+                name: awayTeamProfile.Name,
+                score: gameData.AwayTeamRuns || 0,
+                logo: awayTeamProfile.WikipediaLogoUrl,
+              },
+              status: actualStatus,
+              time: gameData.DateTime || "",
+              quarter: gameData.Inning?.toString() || undefined,
+              inningHalf: gameData.InningHalf || undefined,
+              stadium: stadium?.Name,
+              city: stadium?.City,
+              state: stadium?.State,
+              isPostseason: true,
+              league: currentLeague as League,
+            };
+          })
+          .filter(
+            (game: any): game is NonNullable<typeof game> => game !== null,
+          );
+      }
+    } else {
+      // Use regular scores data for regular season
+      if (scores?.data) {
+        allGames = scores.data
+          .map((game: any) => {
+            // Check if we have more accurate box score data for this game
+            const boxScoreGame =
+              boxScoreData[game.GameID.toString()]?.data?.Game;
+
+            // Find team profiles by ID
+            const homeTeamProfile = teamProfiles?.data?.find(
+              (team: any) => team.TeamID === game.HomeTeamID,
+            );
+            const awayTeamProfile = teamProfiles?.data?.find(
+              (team: any) => team.TeamID === game.AwayTeamID,
+            );
+
+            // Find stadium
+            const stadium = stadiums?.data?.find(
+              (s: any) => s.StadiumID === game.StadiumID,
+            );
+
+            if (!homeTeamProfile || !awayTeamProfile) return null;
+
+            // Use box score data if available, otherwise use scores data
+            const gameData = boxScoreGame || game;
+            const actualStatus = mapApiStatusToGameStatus(gameData.Status);
+
+            return {
+              id: game.GameID.toString(),
+              homeTeam: {
+                name: homeTeamProfile.Name,
+                score: gameData.HomeTeamRuns || 0,
+                logo: homeTeamProfile.WikipediaLogoUrl,
+              },
+              awayTeam: {
+                name: awayTeamProfile.Name,
+                score: gameData.AwayTeamRuns || 0,
+                logo: awayTeamProfile.WikipediaLogoUrl,
+              },
+              status: actualStatus,
+              time: gameData.DateTime || "",
+              quarter: gameData.Inning || undefined,
+              inningHalf: gameData.InningHalf || undefined,
+              stadium: stadium?.Name,
+              city: stadium?.City,
+              state: stadium?.State,
+              isPostseason: gameData.DateTime
+                ? isPostseasonDate(
+                    currentLeague as League,
+                    convertUtcToLocalDate(gameData.DateTime),
+                  )
+                : false,
+              league: currentLeague as League,
+            };
+          })
+          .filter(
+            (game: any): game is NonNullable<typeof game> => game !== null,
+          );
+      }
+    }
+
+    // Filter only live games
+    return allGames.filter((game) => game.status === GameStatus.LIVE);
   };
 
   const liveGames = getLiveGames();
 
   const renderContent = useCallback(() => {
     switch (activeTab) {
-      case "for-you":
+      case Tab.FOR_YOU:
         return (
           <ForYouSection
             items={forYouFeed}
@@ -238,24 +321,31 @@ export const Arbitration = memo(function Arbitration() {
             onToggleFavorite={handleToggleFavorite}
           />
         );
-      case "scores":
+      case Tab.SCORES:
         return <Scores />;
-      case "live":
+      case Tab.LIVE:
         return (
           <Live
             games={liveGames}
             onGameClick={(gameId) =>
               navigate(`/scores/${selectedLeague}/${gameId}/pbp`)
             }
-            loading={scoresLoading || teamProfilesLoading || stadiumsLoading}
+            loading={
+              scoresLoading ||
+              teamProfilesLoading ||
+              stadiumsLoading ||
+              scheduleLoading
+            }
             selectedLeague={currentLeague as League}
-            error={scoresError || teamProfilesError || stadiumsError}
+            error={
+              scoresError || teamProfilesError || stadiumsError || scheduleError
+            }
           />
         );
-      case "social":
+      case Tab.SOCIAL:
         return <Social selectedLeague={currentLeague} />;
-      case "bet":
-        return <Bet bettingLines={currentLeagueData?.betting as any} />;
+      case Tab.BET:
+        return <Bet bettingLines={[]} />;
       default:
         return (
           <ForYouSection
@@ -277,7 +367,7 @@ export const Arbitration = memo(function Arbitration() {
     teamProfilesLoading,
     stadiumsLoading,
     currentLeague,
-    currentLeagueData?.betting,
+    null,
   ]);
 
   // Show box score detail view if selected
@@ -397,7 +487,7 @@ export const Arbitration = memo(function Arbitration() {
           </Box>
 
           {/* League Selector - hidden on For You tab */}
-          {activeTab !== "for-you" && (
+          {activeTab !== Tab.FOR_YOU && (
             <Box px="4" pb="3">
               <LeagueSelector />
             </Box>
@@ -412,7 +502,7 @@ export const Arbitration = memo(function Arbitration() {
           bg="primary.25"
         >
           {/* Discover section for For You tab */}
-          {activeTab === "for-you" && (
+          {activeTab === Tab.FOR_YOU && (
             <Box
               p="4"
               borderBottom="1px"

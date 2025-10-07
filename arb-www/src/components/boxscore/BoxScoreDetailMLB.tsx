@@ -166,15 +166,21 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
     mlbBoxScore,
     teamProfiles,
     stadiums,
-    odds,
     fetchTeamProfiles,
     fetchStadiums,
   } = useArb();
+
+  // Get league from URL path (e.g., /scores/mlb/76782 -> mlb)
+  const pathParts = window.location.pathname.split("/");
+  const leagueFromUrl = pathParts[2]; // /scores/mlb/76782 -> mlb
 
   // Get selectedLeague from Redux state
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
   );
+
+  // Use league from URL if available, otherwise fall back to Redux state
+  const currentLeague = leagueFromUrl || selectedLeague;
 
   // Get box score data from Redux state (persists across navigation)
   const dispatch = useAppDispatch();
@@ -187,31 +193,40 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
 
   // Helper function to get odds for this specific game
   const getGameOdds = () => {
-    if (!odds?.data) return null;
+    if (!game) return null;
 
-    const gameOdds = odds.data.find(
-      (odds: any) => odds.GameId?.toString() === gameId,
-    );
-    if (!gameOdds) return null;
+    // Check if odds are directly on the game object (schedule format)
+    if (game.HomeTeamMoneyLine !== undefined) {
+      return {
+        homeMoneyLine: game.HomeTeamMoneyLine,
+        awayMoneyLine: game.AwayTeamMoneyLine,
+        homePointSpread: game.PointSpreadHomeTeamMoneyLine,
+        awayPointSpread: game.PointSpreadAwayTeamMoneyLine,
+        overUnder: game.OverUnder,
+        sportsbook: game.Sportsbook || "Unknown",
+      };
+    }
 
-    // Get the first available odds (prefer pregame odds)
-    const pregameOdds = gameOdds.PregameOdds?.[0];
-    const liveOdds = gameOdds.LiveOdds?.[0];
-    const selectedOdds = pregameOdds || liveOdds;
+    // Check if odds are in PregameOdds/LiveOdds arrays (scores format)
+    if (game.PregameOdds || game.LiveOdds) {
+      const pregameOdds = game.PregameOdds?.[0];
+      const liveOdds = game.LiveOdds?.[0];
+      const selectedOdds = liveOdds || pregameOdds;
 
-    if (!selectedOdds) return null;
+      if (!selectedOdds) return null;
 
-    return {
-      homeMoneyLine: selectedOdds.HomeMoneyLine,
-      awayMoneyLine: selectedOdds.AwayMoneyLine,
-      homePointSpread: selectedOdds.HomePointSpread,
-      awayPointSpread: selectedOdds.AwayPointSpread,
-      overUnder: selectedOdds.OverUnder,
-      sportsbook: selectedOdds.Sportsbook || "Unknown",
-    };
+      return {
+        homeMoneyLine: selectedOdds.HomeTeamMoneyLine,
+        awayMoneyLine: selectedOdds.AwayTeamMoneyLine,
+        homePointSpread: selectedOdds.PointSpreadHomeTeamMoneyLine,
+        awayPointSpread: selectedOdds.PointSpreadAwayTeamMoneyLine,
+        overUnder: selectedOdds.OverUnder,
+        sportsbook: selectedOdds.Sportsbook || "Unknown",
+      };
+    }
+
+    return null;
   };
-
-  const gameOdds = getGameOdds();
 
   useEffect(() => {
     // Only fetch if we don't have the data
@@ -220,19 +235,22 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
     }
 
     // Use Redux thunk to fetch box score data
-    dispatch(fetchBoxScore({ league: "mlb", gameId }));
-  }, [gameId, dispatch, reduxBoxScore]);
+    dispatch(fetchBoxScore({ league: currentLeague, gameId }));
+  }, [gameId, dispatch, reduxBoxScore, currentLeague]);
 
   // Separate useEffect for supporting data to avoid dependency issues
   useEffect(() => {
     // Fetch supporting data - service layer will handle duplicate prevention
-    fetchTeamProfiles(selectedLeague);
-    fetchStadiums(selectedLeague);
-  }, []);
+    fetchTeamProfiles(currentLeague);
+    fetchStadiums(currentLeague);
+  }, [currentLeague, fetchTeamProfiles, fetchStadiums]);
 
   // Use Redux data if available, otherwise use local data
   const gameData = reduxBoxScore || mlbBoxScore;
   const game = gameData?.data?.Game;
+
+  // Get odds for this game
+  const gameOdds = getGameOdds();
 
   // Helper function to get stadium information
   const getStadiumInfo = () => {
@@ -245,19 +263,15 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
   const stadium = getStadiumInfo();
 
   // Get team profiles for colors and logos
-  console.log(">> teamProfiles:", teamProfiles);
-  console.log(">> game teams:", game?.AwayTeam, game?.HomeTeam);
   const awayTeamProfile = teamProfiles?.data?.find(
     (team) => team.Key === game?.AwayTeam,
   );
   const homeTeamProfile = teamProfiles?.data?.find(
     (team) => team.Key === game?.HomeTeam,
   );
-  console.log(">> found profiles:", awayTeamProfile, homeTeamProfile);
 
   // Reddit thread request when game data is available
   useEffect(() => {
-    console.log(">> foo ", game, awayTeamProfile, homeTeamProfile);
     if (game && awayTeamProfile && homeTeamProfile) {
       // Find subreddits for both teams using the new function
       const awaySubreddit = getTeamSubredditByName(
@@ -271,10 +285,20 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
 
       // Search for game threads for both teams
       if (awaySubreddit) {
-        dispatch(findRedditGameThread(awaySubreddit.replace("r/", "")));
+        dispatch(
+          findRedditGameThread({
+            subreddit: awaySubreddit.replace("r/", ""),
+            league: currentLeague,
+          }),
+        );
       }
       if (homeSubreddit) {
-        dispatch(findRedditGameThread(homeSubreddit.replace("r/", "")));
+        dispatch(
+          findRedditGameThread({
+            subreddit: homeSubreddit.replace("r/", ""),
+            league: currentLeague,
+          }),
+        );
       }
     }
   }, [game, awayTeamProfile, homeTeamProfile, dispatch]);
@@ -354,13 +378,15 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         <HStack justify="center" mb="4">
           <Box bg="text.100" borderRadius="lg" p="1" display="flex" gap="0">
             <Button
-              size="sm"
+              size="xs"
               variant="ghost"
               onClick={() => handleViewToggle("stats")}
               bg={boxscoreView === "stats" ? "white" : "transparent"}
               color={boxscoreView === "stats" ? "text.600" : "text.400"}
               borderRadius="md"
-              px="6"
+              px="2"
+              fontSize="xs"
+              height="6"
               _hover={{
                 bg: boxscoreView === "stats" ? "white" : "text.50",
               }}
@@ -372,13 +398,15 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
               Stats
             </Button>
             <Button
-              size="sm"
+              size="xs"
               variant="ghost"
               onClick={() => handleViewToggle("social")}
               bg={boxscoreView === "social" ? "white" : "transparent"}
               color={boxscoreView === "social" ? "text.600" : "text.400"}
               borderRadius="md"
-              px="6"
+              px="2"
+              fontSize="xs"
+              height="6"
               _hover={{
                 bg: boxscoreView === "social" ? "white" : "text.50",
               }}
@@ -393,31 +421,92 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
         </HStack>
 
         {/* Scoreboard */}
-        <Flex justify="space-between" align="center" mb="4">
-          {/* Away Team */}
-          <VStack gap="2" align="center" flex="1">
-            {awayTeamProfile?.WikipediaLogoUrl ? (
-              <Image
-                src={awayTeamProfile.WikipediaLogoUrl}
-                alt={game.AwayTeam}
-                boxSize="12"
-              />
-            ) : (
-              <Box boxSize="12" bg="primary.25" borderRadius="full" />
-            )}
-            <VStack gap="0" align="center">
-              <Text fontSize="xs" color="text.400">
-                5 {game.AwayTeam}
-              </Text>
-              <Text fontSize="xs" color="text.400">
-                90-72
+        <VStack gap="4" mb="4">
+          {/* Top row - Team info and scores */}
+          <Flex justify="space-between" align="center" w="full">
+            {/* Away Team */}
+            <VStack gap="2" align="center" flex="1">
+              {awayTeamProfile?.WikipediaLogoUrl ? (
+                <Image
+                  src={awayTeamProfile.WikipediaLogoUrl}
+                  alt={game.AwayTeam}
+                  boxSize="12"
+                />
+              ) : (
+                <Box boxSize="12" bg="primary.25" borderRadius="full" />
+              )}
+              <VStack gap="0" align="center">
+                <Text fontSize="xs" color="text.400">
+                  5 {game.AwayTeam}
+                </Text>
+                <Text fontSize="xs" color="text.400">
+                  90-72
+                </Text>
+              </VStack>
+              <Text fontSize="4xl" fontWeight="bold" color="text.400">
+                {game.AwayTeamRuns || 0}
               </Text>
             </VStack>
-            <Text fontSize="4xl" fontWeight="bold" color="text.400">
-              {game.AwayTeamRuns || 0}
-            </Text>
+
+            {/* Center - Game State */}
+            <VStack gap="3" align="center" flex="1">
+              {game.Status === "Final" ? (
+                <Text fontSize="sm" color="text.400" fontWeight="medium">
+                  Final
+                </Text>
+              ) : game.Inning && game.InningHalf ? (
+                <InningBadge
+                  inningNumber={game.Inning}
+                  inningHalf={game.InningHalf}
+                  league={selectedLeague as League}
+                  size="md"
+                />
+              ) : (
+                <Text fontSize="sm" color="text.400" fontWeight="medium">
+                  {game.InningDescription ||
+                    getStatusDisplayText(
+                      mapApiStatusToGameStatus(game.Status || ""),
+                    )}
+                </Text>
+              )}
+              {/* Baseball Diamond with Base Runners */}
+              <Bases
+                runnerOnFirst={game.RunnerOnFirst}
+                runnerOnSecond={game.RunnerOnSecond}
+                runnerOnThird={game.RunnerOnThird}
+                size="md"
+              />
+            </VStack>
+
+            {/* Home Team */}
+            <VStack gap="2" align="center" flex="1">
+              {homeTeamProfile?.WikipediaLogoUrl ? (
+                <Image
+                  src={homeTeamProfile.WikipediaLogoUrl}
+                  alt={game.HomeTeam}
+                  boxSize="12"
+                />
+              ) : (
+                <Box boxSize="12" bg="text.200" borderRadius="full" />
+              )}
+              <VStack gap="0" align="center">
+                <Text fontSize="xs" color="text.400">
+                  4 {game.HomeTeam}
+                </Text>
+                <Text fontSize="xs" color="text.400">
+                  92-70
+                </Text>
+              </VStack>
+              <Text fontSize="4xl" fontWeight="bold" color="text.400">
+                {game.HomeTeamRuns || 0}
+              </Text>
+            </VStack>
+          </Flex>
+
+          {/* Bottom row - Balls, Outs, Strikes */}
+          <Flex justify="space-between" align="center" w="full">
             {/* Strikes for Away Team (left side) */}
-            <VStack gap="0.5" align="center">
+            <VStack gap="0.5" align="center" flex="1">
               <HStack gap="0.5">
                 {[1, 2].map((i) => (
                   <Box
@@ -435,62 +524,27 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 Strikes
               </Text>
             </VStack>
-          </VStack>
 
-          {/* Center - Game State */}
-          <VStack gap="3" align="center" flex="1">
-            {game.Status === "Final" ? (
-              <Text fontSize="sm" color="text.400" fontWeight="medium">
-                Final
-              </Text>
-            ) : game.Inning && game.InningHalf ? (
-              <InningBadge
-                inningNumber={game.Inning}
-                inningHalf={game.InningHalf}
-                league={selectedLeague as League}
-                size="md"
-              />
-            ) : (
-              <Text fontSize="sm" color="text.400" fontWeight="medium">
-                {game.InningDescription ||
-                  getStatusDisplayText(
-                    mapApiStatusToGameStatus(game.Status || ""),
-                  )}
-              </Text>
-            )}
-            {/* Baseball Diamond with Base Runners */}
-            <Bases
-              runnerOnFirst={game.RunnerOnFirst}
-              runnerOnSecond={game.RunnerOnSecond}
-              runnerOnThird={game.RunnerOnThird}
-              size="md"
-            />
-          </VStack>
-
-          {/* Home Team */}
-          <VStack gap="2" align="center" flex="1">
-            {homeTeamProfile?.WikipediaLogoUrl ? (
-              <Image
-                src={homeTeamProfile.WikipediaLogoUrl}
-                alt={game.HomeTeam}
-                boxSize="12"
-              />
-            ) : (
-              <Box boxSize="12" bg="text.200" borderRadius="full" />
-            )}
-            <VStack gap="0" align="center">
-              <Text fontSize="xs" color="text.400">
-                4 {game.HomeTeam}
-              </Text>
-              <Text fontSize="xs" color="text.400">
-                92-70
+            {/* Outs - centered */}
+            <VStack gap="0.5" align="center" flex="1">
+              <HStack gap="0.5">
+                {[1, 2].map((i) => (
+                  <Box
+                    key={i}
+                    w="2"
+                    h="2"
+                    borderRadius="full"
+                    bg={game.Outs && game.Outs >= i ? "yellow.500" : "text.300"}
+                  />
+                ))}
+              </HStack>
+              <Text fontSize="xs" color="text.500">
+                Outs
               </Text>
             </VStack>
-            <Text fontSize="4xl" fontWeight="bold" color="text.400">
-              {game.HomeTeamRuns || 0}
-            </Text>
+
             {/* Balls for Home Team (right side) */}
-            <VStack gap="0.5" align="center">
+            <VStack gap="0.5" align="center" flex="1">
               <HStack gap="0.5">
                 {[1, 2, 3, 4].map((i) => (
                   <Box
@@ -506,8 +560,8 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                 Balls
               </Text>
             </VStack>
-          </VStack>
-        </Flex>
+          </Flex>
+        </VStack>
 
         {/* Game Metadata - 3 Sections */}
         <VStack gap="2" mb="6">
@@ -668,7 +722,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
 
           <VStack gap="3" align="stretch">
             {/* Starting Pitchers */}
-            {/* <Box bg="text.200" p="4" borderRadius="lg">
+            <Box bg="primary.50" p="4" borderRadius="lg" mb="4">
               <Text fontSize="md" fontWeight="bold" mb="3">
                 Starting Pitchers
               </Text>
@@ -690,7 +744,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
                   </Text>
                 </HStack>
               </VStack>
-            </Box> */}
+            </Box>
 
             {/* {(game.WinningPitcher ||
               game.LosingPitcher ||
@@ -810,7 +864,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             {/* Team Selection Toggle */}
             <Box mb="6">
               <Flex
-                bg="primary.400"
+                // bg="primary.300"
                 borderRadius="xl"
                 p="1"
                 position="relative"
@@ -891,7 +945,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             <Box>
               <VStack gap="3" align="stretch">
                 {/* Team Stats */}
-                <Box bg="primary.25" p="4" borderRadius="lg">
+                <Box bg="primary.50" p="4" borderRadius="lg">
                   <Text fontSize="md" fontWeight="bold" mb="3">
                     {selectedTeam === "away" ? game.AwayTeam : game.HomeTeam}{" "}
                     Team Stats
@@ -957,7 +1011,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
             )} */}
 
                 {/* Game Status */}
-                <Box bg="primary.25" p="4" borderRadius="lg">
+                <Box bg="primary.50" p="4" borderRadius="lg">
                   <Text fontSize="md" fontWeight="bold" mb="3">
                     Game Status
                   </Text>

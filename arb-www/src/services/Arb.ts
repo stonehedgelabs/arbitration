@@ -1,24 +1,19 @@
-// React imports
 import { useCallback, useState } from "react";
 
-// Internal imports - config
-import { buildApiUrl, isPostseasonDate as configIsPostseasonDate, League } from '../config';
-
-// Internal imports - schema
-import { 
-  BoxScoreResponse
-} from '../schema';
-
-// Internal imports - store
+import { buildApiUrl } from '../config';
+import { BoxScoreResponse } from '../schema';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { setLeagueTeamProfiles, setLeagueStadiums, setLeagueError } from '../store/slices/sportsDataSlice';
+import { 
+  setLeagueScores,
+  setLeagueTeamProfiles, 
+  setLeagueStadiums, 
+  setLeagueSchedule,
+  setLeagueOdds,
+  setLeagueCurrentGames,
+  setLeagueLoading,
+  setLeagueError 
+} from '../store/slices/sportsDataSlice';
 
-/**
- * Determines if a given date is in the postseason for a given league
- */
-const isPostseasonDate = (league: League, dateString: string): boolean => {
-  return configIsPostseasonDate(league, dateString);
-};
 
 
 /**
@@ -37,29 +32,29 @@ const useArb = () => {
   
   // Generic state accessors
   const scores = currentLeagueData?.scores || null;
-  const scoresLoading = currentLeagueData?.loading || false;
-  const scoresError = currentLeagueData?.error || null;
+  const scoresLoading = currentLeagueData?.scoresLoading || false;
+  const scoresError = currentLeagueData?.scoresError || null;
   
   const teamProfiles = currentLeagueData?.teamProfiles || null;
-  const teamProfilesLoading = currentLeagueData?.loading || false;
-  const teamProfilesError = currentLeagueData?.error || null;
+  const teamProfilesLoading = currentLeagueData?.teamProfilesLoading || false;
+  const teamProfilesError = currentLeagueData?.teamProfilesError || null;
   
   const stadiums = currentLeagueData?.stadiums || null;
-  const stadiumsLoading = currentLeagueData?.loading || false;
-  const stadiumsError = currentLeagueData?.error || null;
+  const stadiumsLoading = currentLeagueData?.stadiumsLoading || false;
+  const stadiumsError = currentLeagueData?.stadiumsError || null;
   
   const schedule = currentLeagueData?.schedule || null;
-  const scheduleLoading = currentLeagueData?.loading || false;
-  const scheduleError = currentLeagueData?.error || null;
+  const scheduleLoading = currentLeagueData?.scheduleLoading || false;
+  const scheduleError = currentLeagueData?.scheduleError || null;
   
   const odds = currentLeagueData?.odds || null;
-  const oddsLoading = currentLeagueData?.loading || false;
-  const oddsError = currentLeagueData?.error || null;
+  const oddsLoading = currentLeagueData?.oddsLoading || false;
+  const oddsError = currentLeagueData?.oddsError || null;
   
-  // Current games (this might need to be updated based on your current implementation)
-  const currentGames = null; // TODO: Update this based on your current games implementation
-  const currentGamesLoading = false;
-  const currentGamesError = null;
+  // Current games
+  const currentGames = currentLeagueData?.currentGames || null;
+  const currentGamesLoading = currentLeagueData?.currentGamesLoading || false;
+  const currentGamesError = currentLeagueData?.currentGamesError || null;
 
   /**
    * Fetch scores for a specific league and date
@@ -71,6 +66,9 @@ const useArb = () => {
     }
 
     try {
+      // Set loading state
+      dispatch(setLeagueLoading({ league, dataType: 'scores', loading: true }));
+      
       const params: Record<string, string> = { league };
       if (date) {
         params.date = date;
@@ -81,13 +79,19 @@ const useArb = () => {
         throw new Error(`Failed to fetch scores: ${response.status}`);
       }
       const data = await response.json();
-      console.log(`✅ Scores received for ${league}:`, data);
+      
+      // Update Redux state
+      dispatch(setLeagueScores({ league, data }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'scores', loading: false }));
     } catch (err) {
       console.error('Failed to fetch scores:', err);
       // Set error state
-      dispatch(setLeagueError({ league, error: err instanceof Error ? err.message : 'Failed to fetch scores' }));
+      dispatch(setLeagueError({ league, dataType: 'scores', error: err instanceof Error ? err.message : 'Failed to fetch scores' }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'scores', loading: false }));
     }
-  }, [scoresLoading]);
+  }, [dispatch]);
 
   /**
    * Fetch team profiles for a specific league
@@ -99,22 +103,28 @@ const useArb = () => {
     }
 
     try {
+      // Set loading state
+      dispatch(setLeagueLoading({ league, dataType: 'teamProfiles', loading: true }));
+      
       const apiUrl = buildApiUrl('/api/team-profile', { league });
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch team profiles: ${response.status}`);
       }
       const data = await response.json();
-      console.log(`✅ Team profiles received for ${league}:`, data);
       
       // Update Redux state
       dispatch(setLeagueTeamProfiles({ league, data }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'teamProfiles', loading: false }));
     } catch (err) {
       console.error('Failed to fetch team profiles:', err);
       // Set error state
-      dispatch(setLeagueError({ league, error: err instanceof Error ? err.message : 'Failed to fetch team profiles' }));
+      dispatch(setLeagueError({ league, dataType: 'teamProfiles', error: err instanceof Error ? err.message : 'Failed to fetch team profiles' }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'teamProfiles', loading: false }));
     }
-  }, [teamProfilesLoading, teamProfiles, dispatch]);
+  }, [teamProfiles, dispatch]);
 
   /**
    * Fetch box score for a specific game ID and league
@@ -152,46 +162,49 @@ const useArb = () => {
    */
   const fetchStadiums = useCallback(async (league: string): Promise<void> => {
     // Don't fetch if already loading or data exists
-    if (stadiumsLoading || stadiums) {
+    if (stadiumsLoading || stadiums || !league || !selectedLeague) {
       return;
     }
-
     try {
+      // Set loading state
+      dispatch(setLeagueLoading({ league, dataType: 'stadiums', loading: true }));
+      
       const apiUrl = buildApiUrl('/api/v1/venues', { league });
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch stadiums: ${response.status}`);
       }
       const data = await response.json();
-      console.log(`✅ Stadiums received for ${league}:`, data);
       
       // Update Redux state
       dispatch(setLeagueStadiums({ league, data }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'stadiums', loading: false }));
     } catch (err) {
       console.error('Failed to fetch stadiums:', err);
       // Set error state
-      dispatch(setLeagueError({ league, error: err instanceof Error ? err.message : 'Failed to fetch stadiums' }));
+      dispatch(setLeagueError({ league, dataType: 'stadiums', error: err instanceof Error ? err.message : 'Failed to fetch stadiums' }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'stadiums', loading: false }));
     }
-  }, [stadiumsLoading, stadiums, dispatch]);
+  }, [dispatch]);
 
   /**
    * Fetch schedule for specific league and dates (both regular season and postseason)
    */
   const fetchSchedule = useCallback(async (league: string, date?: string): Promise<void> => {
-    // Don't fetch if already loading
-    if (scheduleLoading) {
+    // Don't fetch if already loading or data exists
+    if (scheduleLoading || schedule) {
       return;
     }
 
     try {
+      // Set loading state
+      dispatch(setLeagueLoading({ league, dataType: 'schedule', loading: true }));
+      
       const params: Record<string, string> = { league };
       if (date) {
         params.date = date;
-      }
-      // Determine if this is a postseason date using config
-      const isPostseason = date ? isPostseasonDate(league as League, date) : false;
-      if (isPostseason) {
-        params.post = 'true';
       }
       
       const apiUrl = buildApiUrl('/api/v1/schedule', params);
@@ -200,50 +213,80 @@ const useArb = () => {
         throw new Error(`Failed to fetch schedule: ${response.status}`);
       }
       const data = await response.json();
-      console.log(`✅ Schedule received for ${league}:`, data);
+      
+      // Update Redux state
+      dispatch(setLeagueSchedule({ league, data }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'schedule', loading: false }));
     } catch (err) {
       console.error('Failed to fetch schedule:', err);
+      // Set error state
+      dispatch(setLeagueError({ league, dataType: 'schedule', error: err instanceof Error ? err.message : 'Failed to fetch schedule' }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'schedule', loading: false }));
     }
-  }, [scheduleLoading]);
+  }, [schedule, dispatch]);
 
   /**
    * Fetch odds for a specific league and date
    */
   const fetchOdds = useCallback(async (league: string, date: string): Promise<void> => {
-    // Don't fetch if already loading
-    if (oddsLoading) {
+    // Don't fetch if already loading or data exists
+    if (oddsLoading || odds) {
       return;
     }
 
     try {
+      // Set loading state
+      dispatch(setLeagueLoading({ league, dataType: 'odds', loading: true }));
+      
       const apiUrl = buildApiUrl('/api/v1/odds-by-date', { league, date });
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch odds: ${response.status}`);
       }
       const data = await response.json();
-      console.log(`✅ Odds received for ${league}:`, data);
+      
+      // Update Redux state
+      dispatch(setLeagueOdds({ league, data }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'odds', loading: false }));
     } catch (err) {
       console.error('Failed to fetch odds by date:', err);
+      // Set error state
+      dispatch(setLeagueError({ league, dataType: 'odds', error: err instanceof Error ? err.message : 'Failed to fetch odds' }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'odds', loading: false }));
     }
-  }, [oddsLoading]);
+  }, [odds, dispatch]);
 
   /**
    * Fetch current games for a date range
    */
   const fetchCurrentGames = useCallback(async (league: string, start: string, end: string): Promise<void> => {
     try {
+      // Set loading state
+      dispatch(setLeagueLoading({ league, dataType: 'currentGames', loading: true }));
+      
       const apiUrl = buildApiUrl('/api/v1/current-games', { league, start, end });
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch current games: ${response.status}`);
       }
       const data = await response.json();
-      console.log(`✅ Current games received for ${league}:`, data);
+      
+      // Update Redux state
+      dispatch(setLeagueCurrentGames({ league, data }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'currentGames', loading: false }));
     } catch (err) {
       console.error('Failed to fetch current games:', err);
+      // Set error state
+      dispatch(setLeagueError({ league, dataType: 'currentGames', error: err instanceof Error ? err.message : 'Failed to fetch current games' }));
+      // Reset loading state
+      dispatch(setLeagueLoading({ league, dataType: 'currentGames', loading: false }));
     }
-  }, []);
+  }, [dispatch]);
 
   return {
     // State

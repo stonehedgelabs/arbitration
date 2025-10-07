@@ -1,7 +1,5 @@
-// Third-party library imports
 import { Badge } from "@chakra-ui/react";
 
-// Internal imports - config
 import { League } from "../../config";
 
 interface InningBadgeProps {

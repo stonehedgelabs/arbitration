@@ -3,6 +3,7 @@ import { Box, HStack, VStack, Text } from "@chakra-ui/react";
 import { useAppSelector } from "../store/hooks.ts";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ThemeToggleSimple } from "./ThemeToggle";
+import { Tab } from "../config";
 
 export function BottomNav() {
   const navigate = useNavigate();
@@ -13,19 +14,19 @@ export function BottomNav() {
 
   const handleTabChange = (tabId: string) => {
     switch (tabId) {
-      // case "for-you":
+      // case Tab.FOR_YOU:
       //   navigate("/fyp");
       //   break;
-      case "scores":
+      case Tab.SCORES:
         navigate(`/scores/${selectedLeague}`);
         break;
-      case "live":
+      case Tab.LIVE:
         navigate(`/live/${selectedLeague}`);
         break;
-      case "social":
+      case Tab.SOCIAL:
         navigate(`/social/${selectedLeague}`);
         break;
-      // case "bet":
+      // case Tab.BET:
       //   navigate("/bet");
       //   break;
     }
@@ -34,21 +35,21 @@ export function BottomNav() {
   // Determine active tab from current location
   const getActiveTab = () => {
     const path = location.pathname;
-    // if (path === "/fyp") return "for-you"; // Commented out - For You tab is hidden
-    if (path.startsWith("/scores")) return "scores";
-    if (path.startsWith("/live")) return "live";
-    if (path.startsWith("/social")) return "social";
-    // if (path === "/bet") return "bet"; // Commented out - Bet tab is hidden
-    return "scores"; // default to scores since for-you is hidden
+    // if (path === "/fyp") return Tab.FOR_YOU; // Commented out - For You tab is hidden
+    if (path.startsWith("/scores")) return Tab.SCORES;
+    if (path.startsWith("/live")) return Tab.LIVE;
+    if (path.startsWith("/social")) return Tab.SOCIAL;
+    // if (path === "/bet") return Tab.BET; // Commented out - Bet tab is hidden
+    return Tab.SCORES; // default to scores since for-you is hidden
   };
 
   const activeTab = getActiveTab();
   const tabs = [
-    // { id: "for-you", label: "For You", icon: User },
-    { id: "scores", label: "Scores", icon: Trophy },
-    { id: "live", label: "Live", icon: Play },
-    { id: "social", label: "Social", icon: Users },
-    // { id: "bet", label: "Bet", icon: DollarSign },
+    // { id: Tab.FOR_YOU, label: "For You", icon: User },
+    { id: Tab.SCORES, label: "Scores", icon: Trophy },
+    { id: Tab.LIVE, label: "Live", icon: Play },
+    { id: Tab.SOCIAL, label: "Social", icon: Users },
+    // { id: Tab.BET, label: "Bet", icon: DollarSign },
   ];
 
   return (

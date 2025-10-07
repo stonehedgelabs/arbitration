@@ -1,7 +1,4 @@
-// React imports
 import { useState, memo } from "react";
-
-// Third-party library imports
 import { Box, Input } from "@chakra-ui/react";
 import { Search } from "lucide-react";
 

@@ -11,6 +11,7 @@ import {
   Text,
   VStack,
   IconButton,
+  Switch,
 } from "@chakra-ui/react";
 import { MessageCircle, Twitter, RefreshCw } from "lucide-react";
 import { Tweet } from "react-tweet";
@@ -27,6 +28,7 @@ import {
   loadMoreTwitterData,
   setTwitterHasSearched,
   setTwitterSearchQuery,
+  setTwitterSortKind,
 } from "../store/slices/sportsDataSlice";
 
 interface TwitterContentProps {
@@ -45,6 +47,7 @@ export const TwitterContent = memo(function TwitterContent({
     twitterError,
     twitterHasSearched,
     twitterSearchQuery,
+    twitterSortKind,
   } = useAppSelector((state) => state.sportsData);
 
   const [isSearching, setIsSearching] = useState(false);
@@ -77,7 +80,7 @@ export const TwitterContent = memo(function TwitterContent({
           dispatch(
             loadMoreTwitterData({
               query: twitterSearchQuery,
-              filter: "latest",
+              filter: twitterSortKind,
               cursor: twitterData.next_cursor,
             }),
           );
@@ -100,6 +103,7 @@ export const TwitterContent = memo(function TwitterContent({
     twitterLoadingMore,
     twitterData?.next_cursor,
     twitterSearchQuery,
+    twitterSortKind,
   ]);
 
   const handleSearch = useCallback(async () => {
@@ -115,7 +119,7 @@ export const TwitterContent = memo(function TwitterContent({
       const result = await dispatch(
         fetchTwitterData({
           query: twitterSearchQuery.trim(),
-          filter: "latest",
+          filter: twitterSortKind,
         }),
       );
 
@@ -128,7 +132,7 @@ export const TwitterContent = memo(function TwitterContent({
     } finally {
       setIsSearching(false);
     }
-  }, [twitterSearchQuery, dispatch]);
+  }, [twitterSearchQuery, twitterSortKind, dispatch]);
 
   // Debounced search effect
   useEffect(() => {
@@ -157,6 +161,13 @@ export const TwitterContent = memo(function TwitterContent({
     };
   }, [twitterSearchQuery, handleSearch, dispatch]);
 
+  // Trigger new search when sort kind changes
+  useEffect(() => {
+    if (twitterHasSearched && twitterSearchQuery.trim()) {
+      handleSearch();
+    }
+  }, [twitterSortKind, twitterHasSearched, twitterSearchQuery, handleSearch]);
+
   const handleClearSearch = () => {
     dispatch(setTwitterSearchQuery(""));
     dispatch(setTwitterHasSearched(false));
@@ -168,7 +179,7 @@ export const TwitterContent = memo(function TwitterContent({
       dispatch(
         fetchTwitterData({
           query: twitterSearchQuery.trim(),
-          filter: "latest",
+          filter: twitterSortKind,
         }),
       );
     }
@@ -184,6 +195,43 @@ export const TwitterContent = memo(function TwitterContent({
         onSearch={() => {}} // No-op since we're using debounced search
         isLoading={isSearching}
       />
+
+      {/* Twitter Header with Sort Toggle and Refresh */}
+      {twitterHasSearched && (
+        <HStack justify="space-between" align="center" py="2">
+          {/* Twitter Sort Toggle */}
+          <HStack gap="2" align="center">
+            <Text fontSize="xs" color="text.400">
+              Top
+            </Text>
+            <Switch.Root
+              size="xs"
+              checked={twitterSortKind === "latest"}
+              onCheckedChange={(e) => {
+                const newSort = e.checked ? "latest" : "top";
+                dispatch(setTwitterSortKind(newSort));
+              }}
+            >
+              <Switch.HiddenInput />
+              <Switch.Control />
+            </Switch.Root>
+            <Text fontSize="xs" color="text.400">
+              Latest
+            </Text>
+          </HStack>
+          {/* Refresh Button */}
+          <IconButton
+            aria-label="Refresh tweets"
+            size="sm"
+            variant="ghost"
+            color="text.400"
+            onClick={handleRefresh}
+            loading={twitterLoading}
+          >
+            <RefreshCw size={16} />
+          </IconButton>
+        </HStack>
+      )}
 
       {/* Content */}
       {!twitterHasSearched ? (
@@ -254,26 +302,15 @@ export const TwitterContent = memo(function TwitterContent({
         // Results state
         <VStack align="stretch">
           {/* Search Results Header */}
-          <HStack justify="space-between" align="start">
-            <VStack gap="2" align="start">
-              <Text fontSize="xs" color="text.500">
-                Results for "{twitterSearchQuery}"
-              </Text>
-              <Text fontSize="xs" color="text.500">
-                {twitterData.tweets.length} tweet
-                {twitterData.tweets.length !== 1 ? "s" : ""} found
-              </Text>
-            </VStack>
-            <IconButton
-              aria-label="Refresh tweets"
-              icon={<RefreshCw size={16} />}
-              size="sm"
-              variant="ghost"
-              color="text.400"
-              onClick={handleRefresh}
-              isLoading={twitterLoading}
-            />
-          </HStack>
+          <VStack gap="2" align="start">
+            <Text fontSize="xs" color="text.500">
+              Results for "{twitterSearchQuery}"
+            </Text>
+            <Text fontSize="xs" color="text.500">
+              {twitterData.tweets.length} tweet
+              {twitterData.tweets.length !== 1 ? "s" : ""} found
+            </Text>
+          </VStack>
 
           {/* Tweets */}
           {twitterData.tweets.map((tweet: any, index: number) => (

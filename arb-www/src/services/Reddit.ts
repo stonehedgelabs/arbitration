@@ -13,13 +13,14 @@ const useReddit = () => {
   /**
    * Find Reddit game thread for a subreddit
    */
-  const findGameThread = useCallback(async (subreddit: string): Promise<void> => {
+  const findGameThread = useCallback(async (subreddit: string, league: string): Promise<void> => {
     setLoading(true);
     setError(null);
 
     try {
       const url = buildApiUrl('/api/v1/reddit-thread', { 
-        subreddit: subreddit
+        subreddit: subreddit,
+        league: league
       });
 
       const response = await fetch(url, {
@@ -54,7 +55,7 @@ const useReddit = () => {
   /**
    * Get Reddit comments for a game thread
    */
-  const getGameThreadComments = useCallback(async (subreddit: string, gameId: string): Promise<void> => {
+  const getGameThreadComments = useCallback(async (subreddit: string, gameId: string, bypassCache: boolean = false): Promise<void> => {
     setLoading(true);
     setError(null);
 
@@ -62,7 +63,8 @@ const useReddit = () => {
       const url = buildApiUrl('/api/v1/reddit-thread-comments', { 
         subreddit: subreddit, 
         game_id: gameId,
-        limit: REDDIT_CONFIG.defaultCommentLimit.toString()
+        limit: REDDIT_CONFIG.defaultCommentLimit.toString(),
+        cache: bypassCache ? 'false' : 'true'
       });
 
       const response = await fetch(url, {

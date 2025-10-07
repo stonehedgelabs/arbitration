@@ -1,7 +1,4 @@
-// React imports
 import { useEffect, useState, useRef, useCallback } from "react";
-
-// Third-party library imports
 import {
   Badge,
   Box,
@@ -16,12 +13,10 @@ import {
 } from "@chakra-ui/react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
-// Internal imports - components
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { Bases } from "../Bases.tsx";
 import { InningBadge, LiveBadge } from "../badge";
 
-// Internal imports - config
 import {
   buildApiUrl,
   League,
@@ -30,19 +25,15 @@ import {
   getStatusDisplayText,
 } from "../../config.ts";
 
-// Internal imports - schema
 import { Play } from "../../schema/mlb/playbyplay.ts";
 
-// Internal imports - services
 import useArb from "../../services/Arb.ts";
 
-// Internal imports - store
 import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
-// Internal imports - utils
 import {
-  formatRelativeTime,
+  formatRelativeESTTime,
   getPlayLabel,
   getPlayTitle,
   orEmpty,
@@ -313,7 +304,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
   const formatTimestamp = (timestamp: string): string => {
     // Debug logging to see what's happening
 
-    return formatRelativeTime(timestamp);
+    return formatRelativeESTTime(timestamp);
   };
 
   // Fetch play-by-play data
@@ -341,10 +332,10 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
 
       // Debug logging
 
-      // Limit to latest events
+      // Limit to latest events (keep the most recent events, not the oldest)
       const limitedData = {
         ...data,
-        data: data.data.slice(0, PLAY_BY_PLAY_CONFIG.maxEventsInMemory),
+        data: data.data.slice(-PLAY_BY_PLAY_CONFIG.maxEventsInMemory),
       };
       setPlayByPlayData(limitedData);
 
@@ -495,46 +486,128 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
         </HStack>
 
         {/* Team vs Team Layout */}
-        <Flex justify="space-between" align="center" gap="4">
-          {/* Away Team */}
-          <VStack gap="2" align="center" flex="1">
-            {loading ? (
-              <SkeletonCircle size="12" />
-            ) : teamIdToLogo[awayTeamId] ? (
-              <Image
-                src={teamIdToLogo[awayTeamId]}
-                alt={orEmpty(currentGame?.AwayTeam)}
-                boxSize="12"
-              />
-            ) : (
-              <Box boxSize="12" bg="gray.200" borderRadius="full" />
-            )}
-            <VStack gap="0.5" align="center">
+        <VStack gap="4">
+          {/* Top row - Team info and scores */}
+          <Flex justify="space-between" align="center" w="full">
+            {/* Away Team */}
+            <VStack gap="2" align="center" flex="1">
               {loading ? (
-                <>
-                  <Skeleton w="20" h="3" />
-                  <Skeleton w="8" h="3" />
-                </>
+                <SkeletonCircle size="12" />
+              ) : teamIdToLogo[awayTeamId] ? (
+                <Image
+                  src={teamIdToLogo[awayTeamId]}
+                  alt={orEmpty(currentGame?.AwayTeam)}
+                  boxSize="12"
+                />
               ) : (
-                <>
-                  <Text fontSize="xs" color="text.400">
-                    {orEmpty(currentGame?.AwayTeam)}
-                  </Text>
-                  <Text fontSize="xs" color="text.400">
-                    --
-                  </Text>
-                </>
+                <Box boxSize="12" bg="gray.200" borderRadius="full" />
+              )}
+              <VStack gap="0.5" align="center">
+                {loading ? (
+                  <>
+                    <Skeleton w="20" h="3" />
+                    <Skeleton w="8" h="3" />
+                  </>
+                ) : (
+                  <>
+                    <Text fontSize="xs" color="text.400">
+                      {orEmpty(currentGame?.AwayTeam)}
+                    </Text>
+                    <Text fontSize="xs" color="text.400">
+                      --
+                    </Text>
+                  </>
+                )}
+              </VStack>
+              {loading ? (
+                <Skeleton w="16" h="12" />
+              ) : (
+                <Text fontSize="4xl" fontWeight="bold" color="text.400">
+                  {currentGame?.AwayTeamRuns || 0}
+                </Text>
               )}
             </VStack>
-            {loading ? (
-              <Skeleton w="16" h="12" />
-            ) : (
-              <Text fontSize="4xl" fontWeight="bold" color="text.400">
-                {currentGame?.AwayTeamRuns || 0}
-              </Text>
-            )}
-            {/* Strikes for Away Team */}
-            <VStack gap="0.5" align="center">
+
+            {/* Center - Game State */}
+            <VStack gap="3" align="center" flex="1">
+              {loading ? (
+                <Skeleton w="24" h="4" />
+              ) : currentGame?.Status === "Final" ? (
+                <Text fontSize="sm" color="text.400" fontWeight="medium">
+                  Final
+                </Text>
+              ) : currentGame?.Inning && currentGame?.InningHalf ? (
+                <InningBadge
+                  inningNumber={currentGame.Inning}
+                  inningHalf={currentGame.InningHalf}
+                  league={currentLeague as League}
+                  size="md"
+                />
+              ) : (
+                <Text fontSize="sm" color="text.400" fontWeight="medium">
+                  {currentGame?.InningDescription ||
+                    getStatusDisplayText(
+                      mapApiStatusToGameStatus(currentGame?.Status || ""),
+                    )}
+                </Text>
+              )}
+              {/* Baseball Diamond with Base Runners */}
+              {loading ? (
+                <Skeleton w="16" h="16" borderRadius="md" />
+              ) : (
+                <Bases
+                  runnerOnFirst={currentGame?.RunnerOnFirst}
+                  runnerOnSecond={currentGame?.RunnerOnSecond}
+                  runnerOnThird={currentGame?.RunnerOnThird}
+                  size="md"
+                />
+              )}
+            </VStack>
+
+            {/* Home Team */}
+            <VStack gap="2" align="center" flex="1">
+              {loading ? (
+                <SkeletonCircle size="12" />
+              ) : teamIdToLogo[homeTeamId] ? (
+                <Image
+                  src={teamIdToLogo[homeTeamId]}
+                  alt={orEmpty(currentGame?.HomeTeam)}
+                  boxSize="12"
+                />
+              ) : (
+                <Box boxSize="12" bg="gray.200" borderRadius="full" />
+              )}
+              <VStack gap="0.5" align="center">
+                {loading ? (
+                  <>
+                    <Skeleton w="20" h="3" />
+                    <Skeleton w="8" h="3" />
+                  </>
+                ) : (
+                  <>
+                    <Text fontSize="xs" color="text.400">
+                      {orEmpty(currentGame?.HomeTeam)}
+                    </Text>
+                    <Text fontSize="xs" color="text.400">
+                      --
+                    </Text>
+                  </>
+                )}
+              </VStack>
+              {loading ? (
+                <Skeleton w="16" h="12" />
+              ) : (
+                <Text fontSize="4xl" fontWeight="bold" color="text.400">
+                  {currentGame?.HomeTeamRuns || 0}
+                </Text>
+              )}
+            </VStack>
+          </Flex>
+
+          {/* Bottom row - Balls, Outs, Strikes */}
+          <Flex justify="space-between" align="center" w="full">
+            {/* Strikes for Away Team (left side) */}
+            <VStack gap="0.5" align="center" flex="1">
               {loading ? (
                 <>
                   <HStack gap="0.5">
@@ -566,74 +639,43 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                 </>
               )}
             </VStack>
-          </VStack>
 
-          {/* Center - Game State */}
-          <VStack gap="3" align="center" flex="1">
-            {loading ? (
-              <Skeleton w="24" h="4" />
-            ) : (
-              <Text fontSize="sm" color="text.400" fontWeight="medium">
-                {currentGame?.Status === "Final"
-                  ? "Final"
-                  : currentGame?.InningDescription ||
-                    getStatusDisplayText(
-                      mapApiStatusToGameStatus(currentGame?.Status || ""),
-                    )}
-              </Text>
-            )}
-            {/* Baseball Diamond with Base Runners */}
-            {loading ? (
-              <Skeleton w="16" h="16" borderRadius="md" />
-            ) : (
-              <Bases
-                runnerOnFirst={currentGame?.RunnerOnFirst}
-                runnerOnSecond={currentGame?.RunnerOnSecond}
-                runnerOnThird={currentGame?.RunnerOnThird}
-                size="md"
-              />
-            )}
-          </VStack>
-
-          {/* Home Team */}
-          <VStack gap="2" align="center" flex="1">
-            {loading ? (
-              <SkeletonCircle size="12" />
-            ) : teamIdToLogo[homeTeamId] ? (
-              <Image
-                src={teamIdToLogo[homeTeamId]}
-                alt={orEmpty(currentGame?.HomeTeam)}
-                boxSize="12"
-              />
-            ) : (
-              <Box boxSize="12" bg="gray.200" borderRadius="full" />
-            )}
-            <VStack gap="0.5" align="center">
+            {/* Outs - centered */}
+            <VStack gap="0.5" align="center" flex="1">
               {loading ? (
                 <>
-                  <Skeleton w="20" h="3" />
+                  <HStack gap="0.5">
+                    <Skeleton w="2" h="2" borderRadius="full" />
+                    <Skeleton w="2" h="2" borderRadius="full" />
+                  </HStack>
                   <Skeleton w="8" h="3" />
                 </>
               ) : (
                 <>
+                  <HStack gap="0.5">
+                    {[1, 2].map((i) => (
+                      <Box
+                        key={i}
+                        w="2"
+                        h="2"
+                        borderRadius="full"
+                        bg={
+                          currentGame?.Outs && currentGame.Outs >= i
+                            ? "yellow.500"
+                            : "text.400"
+                        }
+                      />
+                    ))}
+                  </HStack>
                   <Text fontSize="xs" color="text.400">
-                    {orEmpty(currentGame?.HomeTeam)}
-                  </Text>
-                  <Text fontSize="xs" color="text.400">
-                    --
+                    Outs
                   </Text>
                 </>
               )}
             </VStack>
-            {loading ? (
-              <Skeleton w="16" h="12" />
-            ) : (
-              <Text fontSize="4xl" fontWeight="bold" color="text.400">
-                {currentGame?.HomeTeamRuns || 0}
-              </Text>
-            )}
-            {/* Balls for Home Team */}
-            <VStack gap="0.5" align="center">
+
+            {/* Balls for Home Team (right side) */}
+            <VStack gap="0.5" align="center" flex="1">
               {loading ? (
                 <>
                   <HStack gap="0.5">
@@ -667,8 +709,8 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                 </>
               )}
             </VStack>
-          </VStack>
-        </Flex>
+          </Flex>
+        </VStack>
       </Box>
 
       {/* Game Status */}
@@ -810,7 +852,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
                       {/* Right side info */}
                       <VStack align="end" gap="1">
                         <Text fontSize="xs" color="text.400">
-                          {formatTimestamp(play.Updated)}
+                          {formatRelativeESTTime(play.Updated)}
                         </Text>
                         <InningBadge
                           inningNumber={play.InningNumber}

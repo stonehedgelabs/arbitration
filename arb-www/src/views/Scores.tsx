@@ -1,11 +1,7 @@
-// React imports
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-// Third-party library imports
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Box, Card, HStack, Text, VStack } from "@chakra-ui/react";
 
-// Internal imports - components
 import { Skeleton, SkeletonCircle } from "../components/Skeleton";
 import {
   MLBScoreCard,
@@ -15,30 +11,25 @@ import {
   GenericScoreCard,
 } from "../components/cards/score";
 import { ErrorState } from "../components/ErrorStates";
+import { DatePicker } from "../components/DatePicker";
+import { HideVerticalScroll } from "../components/containers";
 
-// Internal imports - config
 import {
   isPostseasonDate,
   League,
   GameStatus,
   mapApiStatusToGameStatus,
-  buildApiUrl,
 } from "../config";
 
-// Internal imports - components
-import { DatePicker } from "../components/DatePicker";
-
-// Internal imports - containers
-import { HideVerticalScroll } from "../components/containers";
-
-// Internal imports - schema
-// import { MLBScheduleGame } from "../schema"; // No longer needed as we use generic types
-
-// Internal imports - store
 import { useAppSelector, useAppDispatch } from "../store/hooks";
-import { setSelectedDate } from "../store/slices/sportsDataSlice";
+import {
+  setSelectedDate,
+  setSelectedLeague,
+  fetchBoxScore,
+} from "../store/slices/sportsDataSlice";
 
-// Internal imports - utils
+import useArb from "../services/Arb";
+
 import {
   convertUtcToLocalDate,
   getCurrentLocalDate,
@@ -102,7 +93,31 @@ interface Game {
 }
 
 // Helper function to get game odds
-const getGameOdds = (gameId: string, oddsData: any) => {
+const getGameOdds = (gameId: string, oddsData: any, gameData?: any) => {
+  // First, check if odds are directly on the game object (schedule format)
+  if (gameData && gameData.HomeTeamMoneyLine !== undefined) {
+    return {
+      homeMoneyLine: gameData.HomeTeamMoneyLine,
+      awayMoneyLine: gameData.AwayTeamMoneyLine,
+      homePointSpread: gameData.PointSpreadHomeTeamMoneyLine,
+      awayPointSpread: gameData.PointSpreadAwayTeamMoneyLine,
+      overUnder: gameData.OverUnder,
+      sportsbook: gameData.Sportsbook,
+      homeTeam: {
+        moneyLine: gameData.HomeTeamMoneyLine,
+        pointSpread: gameData.PointSpreadHomeTeamMoneyLine,
+      },
+      awayTeam: {
+        moneyLine: gameData.AwayTeamMoneyLine,
+        pointSpread: gameData.PointSpreadAwayTeamMoneyLine,
+      },
+      total: gameData.OverUnder,
+      totalOverOdds: gameData.OverPayout,
+      totalUnderOdds: gameData.UnderPayout,
+    };
+  }
+
+  // Otherwise, check the odds data (scores format)
   if (!oddsData?.data) return null;
 
   const gameOdds = oddsData.data.find(
@@ -111,133 +126,34 @@ const getGameOdds = (gameId: string, oddsData: any) => {
 
   if (!gameOdds) return null;
 
+  // Check for PregameOdds/LiveOdds arrays (scores format)
+  const pregameOdd = gameOdds.PregameOdds?.[0];
+  const liveOdd = gameOdds.LiveOdds?.[0];
+
+  // Use live odds if available, otherwise use pregame odds
+  const oddsEntry = liveOdd || pregameOdd;
+
+  if (!oddsEntry) return null;
+
   return {
-    homeMoneyLine: gameOdds.HomeMoneyLine,
-    awayMoneyLine: gameOdds.AwayMoneyLine,
-    homePointSpread: gameOdds.HomePointSpread,
-    awayPointSpread: gameOdds.AwayPointSpread,
-    overUnder: gameOdds.OverUnder,
-    sportsbook: gameOdds.Sportsbook,
+    homeMoneyLine: oddsEntry.HomeTeamMoneyLine,
+    awayMoneyLine: oddsEntry.AwayTeamMoneyLine,
+    homePointSpread: oddsEntry.PointSpreadHomeTeamMoneyLine,
+    awayPointSpread: oddsEntry.PointSpreadAwayTeamMoneyLine,
+    overUnder: oddsEntry.OverUnder,
+    sportsbook: oddsEntry.Sportsbook,
     homeTeam: {
-      moneyLine: gameOdds.HomeMoneyLine,
-      pointSpread: gameOdds.HomePointSpread,
+      moneyLine: oddsEntry.HomeTeamMoneyLine,
+      pointSpread: oddsEntry.PointSpreadHomeTeamMoneyLine,
     },
     awayTeam: {
-      moneyLine: gameOdds.AwayMoneyLine,
-      pointSpread: gameOdds.AwayPointSpread,
+      moneyLine: oddsEntry.AwayTeamMoneyLine,
+      pointSpread: oddsEntry.PointSpreadAwayTeamMoneyLine,
     },
-    total: gameOdds.OverUnder,
-    totalOverOdds: gameOdds.OverOdds,
-    totalUnderOdds: gameOdds.UnderOdds,
+    total: oddsEntry.OverUnder,
+    totalOverOdds: oddsEntry.OverPayout,
+    totalUnderOdds: oddsEntry.UnderPayout,
   };
-};
-
-// Helper component for team odds display
-const TeamOddsDisplay = ({
-  odds,
-  isAway = false,
-  isLoading = false,
-}: {
-  odds: Game["odds"];
-  isAway?: boolean;
-  isLoading?: boolean;
-}) => {
-  if (isLoading) {
-    return (
-      <VStack gap="1" align="stretch" fontSize="xs" w="full">
-        {/* Money Line skeleton */}
-        <HStack justify="space-between" align="center" w="full">
-          <Skeleton w="30%" h="2.5" />
-          <Skeleton w="40%" h="2.5" />
-        </HStack>
-        {/* Point Spread skeleton */}
-        <HStack justify="space-between" align="center" w="full">
-          <Skeleton w="35%" h="2.5" />
-          <Skeleton w="25%" h="2.5" />
-        </HStack>
-      </VStack>
-    );
-  }
-
-  if (!odds) {
-    return (
-      <VStack gap="1" align="stretch" fontSize="xs" w="full">
-        <Text color="text.500" textAlign="center">
-          No odds
-        </Text>
-      </VStack>
-    );
-  }
-
-  const teamOdds = isAway ? odds.awayTeam : odds.homeTeam;
-  const total = odds.total;
-
-  return (
-    <VStack gap="1" align="stretch" fontSize="xs" w="full">
-      {/* Money Line */}
-      <HStack justify="space-between" align="center" w="full">
-        <Text color="text.500">ML</Text>
-        <Text
-          color={teamOdds?.moneyLine > 0 ? "green.500" : "text.400"}
-          fontWeight="medium"
-        >
-          {teamOdds?.moneyLine > 0 ? "+" : ""}
-          {teamOdds?.moneyLine || "—"}
-        </Text>
-      </HStack>
-      {/* Point Spread */}
-      <HStack justify="space-between" align="center" w="full">
-        <Text color="text.500">Spread</Text>
-        <Text
-          color={teamOdds?.pointSpread > 0 ? "green.500" : "text.400"}
-          fontWeight="medium"
-        >
-          {teamOdds?.pointSpread > 0 ? "+" : ""}
-          {teamOdds?.pointSpread || "—"}
-        </Text>
-      </HStack>
-    </VStack>
-  );
-};
-
-// Helper component for game odds display
-const GameOddsDisplay = ({
-  odds,
-  isLoading = false,
-}: {
-  odds: Game["odds"];
-  isLoading?: boolean;
-}) => {
-  if (isLoading) {
-    return (
-      <HStack justify="space-between" align="center" fontSize="xs" w="full">
-        {/* Total skeleton */}
-        <Skeleton w="50%" h="2.5" />
-        {/* Sportsbook skeleton */}
-        <Skeleton w="35%" h="2.5" />
-      </HStack>
-    );
-  }
-
-  if (!odds) {
-    return (
-      <HStack justify="space-between" align="center" fontSize="xs" w="full">
-        <Text color="text.500">No odds available</Text>
-      </HStack>
-    );
-  }
-
-  return (
-    <HStack justify="space-between" align="center" fontSize="xs" w="full">
-      <Text color="text.500">
-        Total: {odds.total || "—"} ({odds.totalOverOdds > 0 ? "+" : ""}
-        {odds.totalOverOdds || "—"})
-      </Text>
-      <Text color="text.500" fontSize="2xs">
-        {odds.sportsbook || "—"}
-      </Text>
-    </HStack>
-  );
 };
 
 // Game Card Skeleton Component
@@ -317,6 +233,7 @@ const convertGameToGame = (
   stadiums: any,
   league: League,
   oddsData?: any,
+  boxScoreData?: any,
 ): Game | null => {
   // Map API status to our status format
   const getStatus = (apiStatus: string): GameStatus => {
@@ -324,11 +241,9 @@ const convertGameToGame = (
   };
 
   // Helper functions to get team profiles and stadiums
-  const getTeamProfile = (teamName: string) => {
+  const getTeamProfile = (teamId: number) => {
     if (!teamProfiles?.data) return null;
-    return teamProfiles.data.find(
-      (team: any) => team.Name === teamName || team.Key === teamName,
-    );
+    return teamProfiles.data.find((team: any) => team.TeamID === teamId);
   };
 
   const getStadium = (stadiumId?: number) => {
@@ -339,8 +254,8 @@ const convertGameToGame = (
   };
 
   // Get team profiles
-  const homeTeamProfile = getTeamProfile(rawGame.HomeTeam);
-  const awayTeamProfile = getTeamProfile(rawGame.AwayTeam);
+  const homeTeamProfile = getTeamProfile(rawGame.HomeTeamID);
+  const awayTeamProfile = getTeamProfile(rawGame.AwayTeamID);
 
   // Get stadium
   const stadium = getStadium(rawGame.StadiumID);
@@ -351,25 +266,31 @@ const convertGameToGame = (
 
   const gameId = rawGame.GameID.toString();
 
+  // Check if we have more accurate box score data for this game
+  const boxScoreGame = boxScoreData?.[gameId]?.data?.Game;
+
+  // Use box score data if available, otherwise use raw game data
+  const gameData = boxScoreGame || rawGame;
+
   const convertedGame: Game = {
     id: gameId,
     homeTeam: {
       name: homeTeamProfile.Name,
-      score: rawGame.HomeTeamRuns || 0,
+      score: gameData.HomeTeamRuns || 0,
       logo: homeTeamProfile.WikipediaLogoUrl,
     },
     awayTeam: {
       name: awayTeamProfile.Name,
-      score: rawGame.AwayTeamRuns || 0,
+      score: gameData.AwayTeamRuns || 0,
       logo: awayTeamProfile.WikipediaLogoUrl,
     },
-    status: getStatus(rawGame.Status),
-    time: rawGame.DateTime || "",
-    date: rawGame.DateTime
-      ? convertUtcToLocalDate(rawGame.DateTime)
+    status: getStatus(gameData.Status),
+    time: gameData.DateTime || "",
+    date: gameData.DateTime
+      ? convertUtcToLocalDate(gameData.DateTime)
       : new Date().toISOString().split("T")[0],
-    quarter: rawGame.Inning || undefined,
-    inningHalf: rawGame.InningHalf || undefined,
+    quarter: gameData.Inning || undefined,
+    inningHalf: gameData.InningHalf || undefined,
     // Location/Venue information
     stadium: stadium?.Name,
     city: stadium?.City,
@@ -377,23 +298,23 @@ const convertGameToGame = (
     country: stadium?.Country,
     capacity: stadium?.Capacity,
     surface: stadium?.Surface,
-    weather: rawGame.Weather,
-    temperature: rawGame.Temperature,
-    stadiumId: rawGame.StadiumID, // Store stadium ID for potential future lookup
+    weather: gameData.Weather,
+    temperature: gameData.Temperature,
+    stadiumId: gameData.StadiumID, // Store stadium ID for potential future lookup
     division: homeTeamProfile?.Division, // Store division for display
     // Postseason flag - determine based on the game date using config
     isPostseason: isPostseasonDate(
       league,
-      rawGame.DateTime
-        ? convertUtcToLocalDate(rawGame.DateTime)
+      gameData.DateTime
+        ? convertUtcToLocalDate(gameData.DateTime)
         : new Date().toISOString().split("T")[0],
     ),
     // Base runners
-    runnerOnFirst: rawGame.RunnerOnFirst || false,
-    runnerOnSecond: rawGame.RunnerOnSecond || false,
-    runnerOnThird: rawGame.RunnerOnThird || false,
+    runnerOnFirst: gameData.RunnerOnFirst || false,
+    runnerOnSecond: gameData.RunnerOnSecond || false,
+    runnerOnThird: gameData.RunnerOnThird || false,
     // Odds information
-    odds: getGameOdds(gameId, oddsData) || undefined,
+    odds: getGameOdds(gameId, oddsData, gameData) || undefined,
     // League
     league: league,
   };
@@ -408,6 +329,7 @@ const convertScheduleGameToGame = (
   stadiums: any,
   league: League,
   oddsData?: any,
+  boxScoreData?: any,
 ): Game | null => {
   // Map API status to our status format
   const getStatus = (apiStatus: string): GameStatus => {
@@ -415,11 +337,9 @@ const convertScheduleGameToGame = (
   };
 
   // Helper functions to get team profiles and stadiums
-  const getTeamProfile = (teamName: string) => {
+  const getTeamProfile = (teamId: number) => {
     if (!teamProfiles?.data) return null;
-    return teamProfiles.data.find(
-      (team: any) => team.Name === teamName || team.Key === teamName,
-    );
+    return teamProfiles.data.find((team: any) => team.TeamID === teamId);
   };
 
   const getStadium = (stadiumId?: number) => {
@@ -430,8 +350,8 @@ const convertScheduleGameToGame = (
   };
 
   // Get team profiles
-  const homeTeamProfile = getTeamProfile(scheduleGame.HomeTeam || "");
-  const awayTeamProfile = getTeamProfile(scheduleGame.AwayTeam || "");
+  const homeTeamProfile = getTeamProfile(scheduleGame.HomeTeamID);
+  const awayTeamProfile = getTeamProfile(scheduleGame.AwayTeamID);
 
   // Get stadium
   const stadium = getStadium(scheduleGame.StadiumID);
@@ -441,27 +361,34 @@ const convertScheduleGameToGame = (
   }
 
   const gameId = scheduleGame.GameID.toString();
-  const convertedDate = scheduleGame.DateTime
-    ? convertUtcToLocalDate(scheduleGame.DateTime)
+
+  // Check if we have more accurate box score data for this game
+  const boxScoreGame = boxScoreData?.[gameId]?.data?.Game;
+
+  // Use box score data if available, otherwise use schedule game data
+  const gameData = boxScoreGame || scheduleGame;
+
+  const convertedDate = gameData.DateTime
+    ? convertUtcToLocalDate(gameData.DateTime)
     : new Date().toISOString().split("T")[0];
 
   const convertedGame: Game = {
     id: gameId,
     homeTeam: {
       name: homeTeamProfile.Name,
-      score: scheduleGame.HomeTeamRuns || 0,
+      score: gameData.HomeTeamRuns || 0,
       logo: homeTeamProfile.WikipediaLogoUrl,
     },
     awayTeam: {
       name: awayTeamProfile.Name,
-      score: scheduleGame.AwayTeamRuns || 0,
+      score: gameData.AwayTeamRuns || 0,
       logo: awayTeamProfile.WikipediaLogoUrl,
     },
-    status: getStatus(scheduleGame.Status || ""),
-    time: scheduleGame.DateTime || "",
+    status: getStatus(gameData.Status || ""),
+    time: gameData.DateTime || "",
     date: convertedDate,
-    quarter: scheduleGame.Inning?.toString() || undefined,
-    inningHalf: scheduleGame.InningHalf || undefined,
+    quarter: gameData.Inning?.toString() || undefined,
+    inningHalf: gameData.InningHalf || undefined,
     // Location/Venue information
     stadium: stadium?.Name,
     city: stadium?.City,
@@ -471,16 +398,16 @@ const convertScheduleGameToGame = (
     surface: stadium?.Surface,
     weather: undefined, // Weather not available in schedule data
     temperature: undefined, // Temperature not available in schedule data
-    stadiumId: scheduleGame.StadiumID, // Store stadium ID for potential future lookup
+    stadiumId: gameData.StadiumID, // Store stadium ID for potential future lookup
     division: homeTeamProfile?.Division, // Store division for display
     // Postseason flag - determine based on the game date using config
     isPostseason: isPostseasonDate(league, convertedDate),
     // Base runners
-    runnerOnFirst: scheduleGame.RunnerOnFirst || false,
-    runnerOnSecond: scheduleGame.RunnerOnSecond || false,
-    runnerOnThird: scheduleGame.RunnerOnThird || false,
+    runnerOnFirst: gameData.RunnerOnFirst || false,
+    runnerOnSecond: gameData.RunnerOnSecond || false,
+    runnerOnThird: gameData.RunnerOnThird || false,
     // Odds information
-    odds: getGameOdds(gameId, oddsData) || undefined,
+    odds: getGameOdds(gameId, oddsData, gameData) || undefined,
     // League
     league: league,
   };
@@ -550,195 +477,46 @@ const ScoreCard = ({
 };
 
 export function Scores() {
+  // Get league from URL parameter
+  const { league } = useParams<{ league: string }>();
+
   // Get selectedLeague from Redux
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
   );
 
-  // Generic league data state (replaces MLB-specific state)
-  const [leagueData, setLeagueData] = useState<{
-    [league: string]: {
-      scores: any;
-      teamProfiles: any;
-      stadiums: any;
-      schedule: any;
-      odds: any;
-      loading: boolean;
-      error: string | null;
-    };
-  }>({});
+  // Use the generic Arb service
+  const {
+    scores,
+    teamProfiles,
+    stadiums,
+    schedule,
+    odds,
+    scoresLoading,
+    teamProfilesLoading,
+    stadiumsLoading,
+    scheduleLoading,
+    oddsLoading,
+    scoresError,
+    teamProfilesError,
+    stadiumsError,
+    scheduleError,
+    fetchScores,
+    fetchTeamProfiles,
+    fetchStadiums,
+    fetchSchedule,
+    // fetchOddsByDate: fetchOdds, // Commented out - not using odds-by-date endpoint anymore
+  } = useArb();
 
   // Redux state
   const dispatch = useAppDispatch();
   const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
+  const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
   const navigate = useNavigate();
 
   // Handle game click for box score navigation
   const handleGameClick = (gameId: string) => {
     navigate(`/scores/${selectedLeague}/${gameId}`);
-  };
-
-  // Generic fetch functions for all leagues
-  const fetchScoresForLeague = async (league: string, date: string) => {
-    console.log(`🏀 Fetching scores for ${league.toUpperCase()}`);
-
-    // Set loading state
-    setLeagueData((prev) => ({
-      ...prev,
-      [league]: {
-        ...prev[league],
-        loading: true,
-        error: null,
-      },
-    }));
-
-    try {
-      const apiUrl = buildApiUrl("/api/v1/scores", { league, date });
-      console.log(`🌐 Making request to: ${apiUrl}`);
-      const response = await fetch(apiUrl);
-      console.log(`📡 Response status: ${response.status}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ Scores received for ${league}:`, data);
-        setLeagueData((prev) => ({
-          ...prev,
-          [league]: {
-            ...prev[league],
-            scores: data,
-            loading: false,
-            error: null,
-          },
-        }));
-      } else {
-        console.log(
-          `ℹ️ Scores not supported for ${league}: ${response.status}`,
-        );
-        setLeagueData((prev) => ({
-          ...prev,
-          [league]: {
-            ...prev[league],
-            loading: false,
-            error: `Scores not supported for ${league}`,
-          },
-        }));
-      }
-    } catch (error) {
-      console.error(`❌ Error fetching scores for ${league}:`, error);
-      setLeagueData((prev) => ({
-        ...prev,
-        [league]: {
-          ...prev[league],
-          loading: false,
-          error: `Error fetching scores for ${league}`,
-        },
-      }));
-    }
-  };
-
-  const fetchTeamProfilesForLeague = async (league: string) => {
-    console.log(`🏀 Fetching team profiles for ${league.toUpperCase()}`);
-    try {
-      const apiUrl = buildApiUrl("/api/team-profile", { league });
-      console.log(`🌐 Making request to: ${apiUrl}`);
-      const response = await fetch(apiUrl);
-      console.log(`📡 Response status: ${response.status}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ Team profiles received for ${league}:`, data);
-        setLeagueData((prev) => ({
-          ...prev,
-          [league]: {
-            ...prev[league],
-            teamProfiles: data,
-          },
-        }));
-      } else {
-        console.log(
-          `ℹ️ Team profiles not supported for ${league}: ${response.status}`,
-        );
-      }
-    } catch (error) {
-      console.error(`❌ Error fetching team profiles for ${league}:`, error);
-    }
-  };
-
-  const fetchStadiumsForLeague = async (league: string) => {
-    console.log(`🏀 Fetching stadiums for ${league.toUpperCase()}`);
-    try {
-      const apiUrl = buildApiUrl("/api/v1/venues", { league });
-      console.log(`🌐 Making request to: ${apiUrl}`);
-      const response = await fetch(apiUrl);
-      console.log(`📡 Response status: ${response.status}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ Stadiums received for ${league}:`, data);
-        setLeagueData((prev) => ({
-          ...prev,
-          [league]: {
-            ...prev[league],
-            stadiums: data,
-          },
-        }));
-      } else {
-        console.log(
-          `ℹ️ Stadiums not supported for ${league}: ${response.status}`,
-        );
-      }
-    } catch (error) {
-      console.error(`❌ Error fetching stadiums for ${league}:`, error);
-    }
-  };
-
-  const fetchOddsForLeague = async (league: string, date: string) => {
-    console.log(`🏀 Fetching odds for ${league.toUpperCase()}`);
-    try {
-      const apiUrl = buildApiUrl("/api/v1/odds-by-date", { league, date });
-      console.log(`🌐 Making request to: ${apiUrl}`);
-      const response = await fetch(apiUrl);
-      console.log(`📡 Response status: ${response.status}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ Odds received for ${league}:`, data);
-        setLeagueData((prev) => ({
-          ...prev,
-          [league]: {
-            ...prev[league],
-            odds: data,
-          },
-        }));
-      } else {
-        console.log(`ℹ️ Odds not supported for ${league}: ${response.status}`);
-      }
-    } catch (error) {
-      console.error(`❌ Error fetching odds for ${league}:`, error);
-    }
-  };
-
-  const fetchScheduleForLeague = async (league: string, date: string) => {
-    console.log(`🏀 Fetching schedule for ${league.toUpperCase()}`);
-    try {
-      const apiUrl = buildApiUrl("/api/v1/schedule", { league, date });
-      console.log(`🌐 Making request to: ${apiUrl}`);
-      const response = await fetch(apiUrl);
-      console.log(`📡 Response status: ${response.status}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ Schedule received for ${league}:`, data);
-        setLeagueData((prev) => ({
-          ...prev,
-          [league]: {
-            ...prev[league],
-            schedule: data,
-          },
-        }));
-      } else {
-        console.log(
-          `ℹ️ Schedule not supported for ${league}: ${response.status}`,
-        );
-      }
-    } catch (error) {
-      console.error(`❌ Error fetching schedule for ${league}:`, error);
-    }
   };
 
   // Initialize selected date to today only on first load (when selectedDate is empty)
@@ -749,77 +527,109 @@ export function Scores() {
     }
   }, [selectedDate, dispatch]);
 
+  // Update selectedLeague when URL parameter changes
+  useEffect(() => {
+    if (league && league !== selectedLeague) {
+      dispatch(setSelectedLeague(league));
+    }
+  }, [league, selectedLeague, dispatch]);
+
   // Fetch data when component mounts or league/date changes
   useEffect(() => {
-    if (selectedDate) {
-      // Always attempt to fetch data for the selected league
-      // The backend will return errors for non-MLB leagues, which we handle gracefully
+    if (selectedDate && league) {
+      const today = getCurrentLocalDate();
+      const isFutureDate = selectedDate > today;
 
-      // Fetch scores for the selected league
-      fetchScoresForLeague(selectedLeague, selectedDate);
+      // Use scores endpoint for past/current dates, schedule endpoint for future dates
+      if (isFutureDate) {
+        fetchSchedule(league, selectedDate);
+      } else {
+        fetchScores(league, selectedDate);
+      }
 
-      // Fetch team profiles for the selected league
-      fetchTeamProfilesForLeague(selectedLeague);
-
-      // Fetch stadiums for the selected league (if supported)
-      fetchStadiumsForLeague(selectedLeague);
-
-      // Fetch odds for the selected league (if supported)
-      fetchOddsForLeague(selectedLeague, selectedDate);
-
-      // Fetch schedule for the selected league (if supported)
-      fetchScheduleForLeague(selectedLeague, selectedDate);
+      fetchTeamProfiles(league);
+      fetchStadiums(league);
+      // fetchOdds(league, selectedDate); // Commented out - not using odds-by-date endpoint anymore
     }
-  }, [selectedLeague, selectedDate]);
+  }, [
+    league,
+    selectedDate,
+    fetchScores,
+    fetchTeamProfiles,
+    fetchStadiums,
+    // fetchOdds, // Commented out - not using odds-by-date endpoint anymore
+    fetchSchedule,
+  ]);
+
+  // Fetch box score data for live games to get more accurate scores
+  useEffect(() => {
+    if (scores?.data && selectedDate && league) {
+      // Fetch box score data for each live game to get accurate scores
+      scores.data.forEach((game: any) => {
+        const gameId = game.GameID.toString();
+        const gameStatus = mapApiStatusToGameStatus(game.Status);
+
+        // Only fetch box score for live games that we don't already have
+        if (gameStatus === GameStatus.LIVE && !boxScoreData[gameId]) {
+          dispatch(fetchBoxScore({ league, gameId }));
+        }
+      });
+    }
+  }, [scores?.data, selectedDate, league, dispatch, boxScoreData]);
 
   // Get all games based on the selected date and league
   const getAllGames = (): Game[] => {
-    const currentLeagueData = leagueData[selectedLeague];
-
-    if (!currentLeagueData) {
+    if (!scores && !schedule) {
       return [];
     }
 
-    // Check if this is a postseason date (only for MLB)
-    const isPostseason =
-      selectedLeague === League.MLB && selectedDate
-        ? isPostseasonDate(selectedLeague as League, selectedDate)
-        : false;
+    // Determine which data source to use based on whether it's a future date
+    const today = getCurrentLocalDate();
+    const isFutureDate = selectedDate && selectedDate > today;
 
-    if (isPostseason) {
-      // Use schedule data for postseason
-      if (currentLeagueData.schedule?.data && selectedDate) {
-        const scheduleGames = currentLeagueData.schedule.data
-          .map((game) =>
-            convertScheduleGameToGame(
-              game,
-              currentLeagueData.teamProfiles,
-              currentLeagueData.stadiums,
-              selectedLeague as League,
-              currentLeagueData.odds,
-            ),
-          )
-          .filter((game): game is Game => game !== null);
+    // Use scores data for past/current dates, schedule data for future dates
+    if (isFutureDate && schedule?.data) {
+      const scheduleGames = schedule.data
+        .map((game: any) =>
+          convertScheduleGameToGame(
+            game,
+            teamProfiles,
+            stadiums,
+            selectedLeague as League,
+            odds,
+            boxScoreData,
+          ),
+        )
+        .filter((game: any): game is Game => {
+          if (!game) return false;
 
-        return scheduleGames;
-      }
-    } else {
-      // Use regular scores data for regular season
-      if (currentLeagueData.scores?.data) {
-        const scoresGames = currentLeagueData.scores.data
-          .map((game) =>
-            convertGameToGame(
-              game,
-              currentLeagueData.teamProfiles,
-              currentLeagueData.stadiums,
-              selectedLeague as League,
-              currentLeagueData.odds,
-            ),
-          )
-          .filter((game): game is Game => game !== null);
+          // Filter games to only show those that actually start on the selected date
+          const gameDate = game.date; // This is already converted to YYYY-MM-DD format
+          return gameDate === selectedDate;
+        });
 
-        return scoresGames;
-      }
+      return scheduleGames;
+    } else if (!isFutureDate && scores?.data) {
+      const scoresGames = scores.data
+        .map((game: any) =>
+          convertGameToGame(
+            game,
+            teamProfiles,
+            stadiums,
+            selectedLeague as League,
+            odds,
+            boxScoreData,
+          ),
+        )
+        .filter((game: any): game is Game => {
+          if (!game) return false;
+
+          // Filter games to only show those that actually start on the selected date
+          const gameDate = game.date; // This is already converted to YYYY-MM-DD format
+          return gameDate === selectedDate;
+        });
+
+      return scoresGames;
     }
 
     return [];
@@ -845,35 +655,34 @@ export function Scores() {
 
   // Retry function for error state
   const handleRetry = () => {
-    if (selectedDate) {
-      // Clear the error and refetch all data for the current league
-      setLeagueData((prev) => ({
-        ...prev,
-        [selectedLeague]: {
-          ...prev[selectedLeague],
-          error: null,
-          loading: true,
-        },
-      }));
+    if (selectedDate && league) {
+      const today = getCurrentLocalDate();
+      const isFutureDate = selectedDate > today;
 
-      console.log("> selected", selectedLeague);
+      // Use the appropriate endpoint based on date
+      if (isFutureDate) {
+        fetchSchedule(league, selectedDate);
+      } else {
+        fetchScores(league, selectedDate);
+      }
 
-      // Refetch all data
-      fetchScoresForLeague(selectedLeague, selectedDate);
-      fetchTeamProfilesForLeague(selectedLeague);
-      fetchStadiumsForLeague(selectedLeague);
-      fetchOddsForLeague(selectedLeague, selectedDate);
-      fetchScheduleForLeague(selectedLeague, selectedDate);
+      fetchTeamProfiles(league);
+      fetchStadiums(league);
+      // Only retry odds if there's no critical error
+      // if (!hasCriticalError) {
+      //   fetchOdds(league, selectedDate); // Commented out - not using odds-by-date endpoint anymore
+      // }
     }
   };
 
-  // Show error state if there's an error
-  const currentLeagueData = leagueData[selectedLeague];
-  if (currentLeagueData?.error) {
+  // Show error state if there's a critical error (odds errors are non-blocking)
+  const hasCriticalError =
+    scoresError || teamProfilesError || stadiumsError || scheduleError;
+  if (hasCriticalError) {
     return (
       <ErrorState
         title="Error Loading Scores"
-        message={`Failed to load ${selectedLeague.toUpperCase()} scores. ${currentLeagueData.error}`}
+        message={`Failed to load ${selectedLeague.toUpperCase()} scores. ${hasCriticalError}`}
         onRetry={handleRetry}
         showRetry={true}
         showBack={false}
@@ -892,7 +701,11 @@ export function Scores() {
         <VStack gap="4" align="stretch">
           {sortedGames.length === 0 ? (
             // Show loading state if we're fetching data, otherwise show no games
-            currentLeagueData?.loading || !currentLeagueData ? (
+            scoresLoading ||
+            teamProfilesLoading ||
+            stadiumsLoading ||
+            scheduleLoading ||
+            oddsLoading ? (
               // Show skeleton cards while loading
               Array.from({ length: 3 }, (_, index) => (
                 <GameCardSkeleton key={`skeleton-${index}`} />
@@ -959,7 +772,11 @@ export function Scores() {
             )
           ) : (
             <VStack gap="4" align="stretch">
-              {currentLeagueData?.loading
+              {scoresLoading ||
+              teamProfilesLoading ||
+              stadiumsLoading ||
+              scheduleLoading ||
+              oddsLoading
                 ? // Show skeleton cards while loading
                   Array.from({ length: 3 }, (_, index) => (
                     <GameCardSkeleton key={`skeleton-${index}`} />
@@ -969,8 +786,8 @@ export function Scores() {
                       key={game.id}
                       game={game}
                       onGameClick={handleGameClick}
-                      oddsLoading={currentLeagueData?.loading || false}
-                      oddsByDate={currentLeagueData?.odds}
+                      oddsLoading={oddsLoading || false}
+                      oddsByDate={odds}
                     />
                   ))}
             </VStack>

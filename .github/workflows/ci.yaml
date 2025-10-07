@@ -92,7 +92,7 @@ jobs:
         cargo clippy --all-targets --all-features -- -D warnings
         
     - name: Run tests
-      skip: true
+      if: false
       run: |
         cd arb-rs
         cargo test

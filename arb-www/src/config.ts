@@ -20,6 +20,17 @@ export enum League {
 }
 
 /**
+ * Navigation tabs enum
+ */
+export enum Tab {
+  FOR_YOU = 'for-you',
+  SCORES = 'scores',
+  LIVE = 'live',
+  SOCIAL = 'social',
+  BET = 'bet',
+}
+
+/**
  * League type for type safety
  */
 export type LeagueType = `${League}`;
@@ -157,16 +168,16 @@ export const CACHE_CONFIG = {
   // Specific TTL values matching backend config (in milliseconds)
   ttlValues: {
     team_profiles: 3600 * 1000,      // 1 hour
-    schedule: 1800 * 1000,           // 30 minutes
-    postseason_schedule: 1800 * 1000, // 30 minutes
-    scores: 120 * 1000,              // 2 minutes
-    play_by_play: 20 * 1000,         // 20 seconds
+    schedule: 3600 * 1000,           // 1 hour
+    postseason_schedule: 3600 * 1000, // 1 hour
+    scores: 60 * 1000,               // 1 minute
+    play_by_play: 60 * 1000,         // 1 minute
     box_scores: 60 * 1000,           // 1 minute
-    stadiums: 7200 * 1000,           // 2 hours
+    stadiums: 21600 * 1000,          // 6 hours
     twitter_search: 60 * 1000,       // 1 minute
     reddit_thread: 21600 * 1000,     // 6 hours
-    reddit_thread_comments: 120 * 1000, // 2 minutes
-    odds: 86400 * 1000,              // 24 hours
+    reddit_thread_comments: 60 * 1000, // 1 minute
+    odds: 3600 * 1000,               // 1 hour
     user_auth: 604800 * 1000,        // 1 week (7 days)
   },
 } as const;
@@ -226,6 +237,9 @@ export const REDDIT_CONFIG = {
   
   // Supported search sorts
   supportedSorts: ['new', 'top', 'hot'] as const,
+  
+  // Cache bypass configuration
+  bypassCacheOnRefresh: true,
 } as const;
 
 /**

@@ -8,6 +8,7 @@ export interface Team {
   leagueColor: string;
   city?: string;
   subreddit?: string;
+  abbreviation?: string;
 }
 
 // Helper function to generate team ID in format: league--city-team
@@ -27,6 +28,7 @@ export const allTeams: Team[] = [
     leagueColor: "#97233F",
     city: "Arizona",
     subreddit: "r/AZCardinals",
+    abbreviation: "ARI",
   },
   {
     id: generateTeamId("NFL", "Atlanta", "falcons"),
@@ -35,6 +37,7 @@ export const allTeams: Team[] = [
     leagueColor: "#A71930",
     city: "Atlanta",
     subreddit: "r/falcons",
+    abbreviation: "ATL",
   },
   {
     id: generateTeamId("NFL", "Baltimore", "ravens"),
@@ -43,6 +46,7 @@ export const allTeams: Team[] = [
     leagueColor: "#241773",
     city: "Baltimore",
     subreddit: "r/ravens",
+    abbreviation: "BAL",
   },
   {
     id: generateTeamId("NFL", "Buffalo", "bills"),
@@ -51,6 +55,7 @@ export const allTeams: Team[] = [
     leagueColor: "#00338D",
     city: "Buffalo",
     subreddit: "r/buffalobills",
+    abbreviation: "BUF",
   },
   {
     id: generateTeamId("NFL", "Carolina", "panthers"),
@@ -59,6 +64,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0085CA",
     city: "Carolina",
     subreddit: "r/panthers",
+    abbreviation: "CAR",
   },
   {
     id: generateTeamId("NFL", "Chicago", "bears"),
@@ -67,6 +73,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0B162A",
     city: "Chicago",
     subreddit: "r/chibears",
+    abbreviation: "CHI",
   },
   {
     id: generateTeamId("NFL", "Cincinnati", "bengals"),
@@ -75,6 +82,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FB4F14",
     city: "Cincinnati",
     subreddit: "r/bengals",
+    abbreviation: "CIN",
   },
   {
     id: generateTeamId("NFL", "Cleveland", "browns"),
@@ -83,6 +91,7 @@ export const allTeams: Team[] = [
     leagueColor: "#311D00",
     city: "Cleveland",
     subreddit: "r/browns",
+    abbreviation: "CLE",
   },
   {
     id: generateTeamId("NFL", "Dallas", "cowboys"),
@@ -91,6 +100,7 @@ export const allTeams: Team[] = [
     leagueColor: "#003594",
     city: "Dallas",
     subreddit: "r/cowboys",
+    abbreviation: "DAL",
   },
   {
     id: generateTeamId("NFL", "Denver", "broncos"),
@@ -99,6 +109,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FB4F14",
     city: "Denver",
     subreddit: "r/denverbroncos",
+    abbreviation: "DEN",
   },
   {
     id: generateTeamId("NFL", "Detroit", "lions"),
@@ -107,6 +118,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0076B6",
     city: "Detroit",
     subreddit: "r/detroitlions",
+    abbreviation: "DET",
   },
   {
     id: generateTeamId("NFL", "Green Bay", "packers"),
@@ -115,6 +127,7 @@ export const allTeams: Team[] = [
     leagueColor: "#203731",
     city: "Green Bay",
     subreddit: "r/GreenBayPackers",
+    abbreviation: "GB",
   },
   {
     id: generateTeamId("NFL", "Houston", "texans"),
@@ -123,6 +136,7 @@ export const allTeams: Team[] = [
     leagueColor: "#03202F",
     city: "Houston",
     subreddit: "r/texans",
+    abbreviation: "HOU",
   },
   {
     id: generateTeamId("NFL", "Indianapolis", "colts"),
@@ -131,6 +145,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002C5F",
     city: "Indianapolis",
     subreddit: "r/colts",
+    abbreviation: "IND",
   },
   {
     id: generateTeamId("NFL", "Jacksonville", "jaguars"),
@@ -139,6 +154,7 @@ export const allTeams: Team[] = [
     leagueColor: "#006778",
     city: "Jacksonville",
     subreddit: "r/jaguars",
+    abbreviation: "JAX",
   },
   {
     id: generateTeamId("NFL", "Kansas City", "chiefs"),
@@ -147,6 +163,7 @@ export const allTeams: Team[] = [
     leagueColor: "#E31837",
     city: "Kansas City",
     subreddit: "r/kansascitychiefs",
+    abbreviation: "KC",
   },
   {
     id: generateTeamId("NFL", "Las Vegas", "raiders"),
@@ -155,6 +172,7 @@ export const allTeams: Team[] = [
     leagueColor: "#000000",
     city: "Las Vegas",
     subreddit: "r/raiders",
+    abbreviation: "LV",
   },
   {
     id: generateTeamId("NFL", "Los Angeles", "chargers"),
@@ -163,6 +181,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0080C6",
     city: "Los Angeles",
     subreddit: "r/chargers",
+    abbreviation: "LAC",
   },
   {
     id: generateTeamId("NFL", "Los Angeles", "rams"),
@@ -171,6 +190,7 @@ export const allTeams: Team[] = [
     leagueColor: "#003594",
     city: "Los Angeles",
     subreddit: "r/losangelesrams",
+    abbreviation: "LAR",
   },
   {
     id: generateTeamId("NFL", "Miami", "dolphins"),
@@ -179,6 +199,7 @@ export const allTeams: Team[] = [
     leagueColor: "#008E97",
     city: "Miami",
     subreddit: "r/miamidolphins",
+    abbreviation: "MIA",
   },
   {
     id: generateTeamId("NFL", "Minneapolis", "vikings"),
@@ -187,6 +208,7 @@ export const allTeams: Team[] = [
     leagueColor: "#4F2683",
     city: "Minneapolis",
     subreddit: "r/minnesotavikings",
+    abbreviation: "MIN",
   },
   {
     id: generateTeamId("NFL", "New England", "patriots"),
@@ -195,6 +217,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002244",
     city: "New England",
     subreddit: "r/patriots",
+    abbreviation: "NE",
   },
   {
     id: generateTeamId("NFL", "New Orleans", "saints"),
@@ -203,6 +226,7 @@ export const allTeams: Team[] = [
     leagueColor: "#D3BC8D",
     city: "New Orleans",
     subreddit: "r/saints",
+    abbreviation: "NO",
   },
   {
     id: generateTeamId("NFL", "New York", "giants"),
@@ -211,6 +235,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0B2265",
     city: "New York",
     subreddit: "r/nygiants",
+    abbreviation: "NYG",
   },
   {
     id: generateTeamId("NFL", "New York", "jets"),
@@ -219,6 +244,7 @@ export const allTeams: Team[] = [
     leagueColor: "#125740",
     city: "New York",
     subreddit: "r/nyjets",
+    abbreviation: "NYJ",
   },
   {
     id: generateTeamId("NFL", "Philadelphia", "eagles"),
@@ -227,6 +253,7 @@ export const allTeams: Team[] = [
     leagueColor: "#004C54",
     city: "Philadelphia",
     subreddit: "r/eagles",
+    abbreviation: "PHI",
   },
   {
     id: generateTeamId("NFL", "Pittsburgh", "steelers"),
@@ -235,6 +262,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FFB612",
     city: "Pittsburgh",
     subreddit: "r/steelers",
+    abbreviation: "PIT",
   },
   {
     id: generateTeamId("NFL", "San Francisco", "49ers"),
@@ -243,6 +271,7 @@ export const allTeams: Team[] = [
     leagueColor: "#AA0000",
     city: "San Francisco",
     subreddit: "r/49ers",
+    abbreviation: "SF",
   },
   {
     id: generateTeamId("NFL", "Seattle", "seahawks"),
@@ -251,6 +280,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002244",
     city: "Seattle",
     subreddit: "r/seahawks",
+    abbreviation: "SEA",
   },
   {
     id: generateTeamId("NFL", "Tampa Bay", "buccaneers"),
@@ -259,6 +289,7 @@ export const allTeams: Team[] = [
     leagueColor: "#D50A0A",
     city: "Tampa Bay",
     subreddit: "r/buccaneers",
+    abbreviation: "TB",
   },
   {
     id: generateTeamId("NFL", "Nashville", "titans"),
@@ -267,6 +298,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0C2340",
     city: "Nashville",
     subreddit: "r/tennesseetitans",
+    abbreviation: "TEN",
   },
   {
     id: generateTeamId("NFL", "Washington", "commanders"),
@@ -275,6 +307,7 @@ export const allTeams: Team[] = [
     leagueColor: "#5A1414",
     city: "Washington",
     subreddit: "r/commanders",
+    abbreviation: "WAS",
   },
 
   // NBA Teams (30 teams)
@@ -285,6 +318,7 @@ export const allTeams: Team[] = [
     leagueColor: "#E03A3E",
     city: "Atlanta",
     subreddit: "r/AtlantaHawks",
+    abbreviation: "ATL",
   },
   {
     id: generateTeamId("NBA", "Boston", "celtics"),
@@ -293,6 +327,7 @@ export const allTeams: Team[] = [
     leagueColor: "#007A33",
     city: "Boston",
     subreddit: "r/bostonceltics",
+    abbreviation: "BOS",
   },
   {
     id: generateTeamId("NBA", "Brooklyn", "nets"),
@@ -301,6 +336,7 @@ export const allTeams: Team[] = [
     leagueColor: "#000000",
     city: "Brooklyn",
     subreddit: "r/GoNets",
+    abbreviation: "BKN",
   },
   {
     id: generateTeamId("NBA", "Charlotte", "hornets"),
@@ -309,6 +345,7 @@ export const allTeams: Team[] = [
     leagueColor: "#1D1160",
     city: "Charlotte",
     subreddit: "r/CharlotteHornets",
+    abbreviation: "CHA",
   },
   {
     id: generateTeamId("NBA", "Chicago", "bulls"),
@@ -317,6 +354,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CE1141",
     city: "Chicago",
     subreddit: "r/chicagobulls",
+    abbreviation: "CHI",
   },
   {
     id: generateTeamId("NBA", "Cleveland", "cavaliers"),
@@ -325,6 +363,7 @@ export const allTeams: Team[] = [
     leagueColor: "#860038",
     city: "Cleveland",
     subreddit: "r/clevelandcavs",
+    abbreviation: "CLE",
   },
   {
     id: generateTeamId("NBA", "Dallas", "mavericks"),
@@ -333,6 +372,7 @@ export const allTeams: Team[] = [
     leagueColor: "#00538C",
     city: "Dallas",
     subreddit: "r/Mavericks",
+    abbreviation: "DAL",
   },
   {
     id: generateTeamId("NBA", "Denver", "nuggets"),
@@ -341,6 +381,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0E2240",
     city: "Denver",
     subreddit: "r/DenverNuggets",
+    abbreviation: "DEN",
   },
   {
     id: generateTeamId("NBA", "Detroit", "pistons"),
@@ -349,6 +390,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C8102E",
     city: "Detroit",
     subreddit: "r/DetroitPistons",
+    abbreviation: "DET",
   },
   {
     id: generateTeamId("NBA", "San Francisco", "warriors"),
@@ -357,6 +399,7 @@ export const allTeams: Team[] = [
     leagueColor: "#1D428A",
     city: "San Francisco",
     subreddit: "r/warriors",
+    abbreviation: "GSW",
   },
   {
     id: generateTeamId("NBA", "Houston", "rockets"),
@@ -365,6 +408,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CE1141",
     city: "Houston",
     subreddit: "r/rockets",
+    abbreviation: "HOU",
   },
   {
     id: generateTeamId("NBA", "Indianapolis", "pacers"),
@@ -373,6 +417,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002D62",
     city: "Indianapolis",
     subreddit: "r/pacers",
+    abbreviation: "IND",
   },
   {
     id: generateTeamId("NBA", "Los Angeles", "clippers"),
@@ -381,6 +426,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C8102E",
     city: "Los Angeles",
     subreddit: "r/LAClippers",
+    abbreviation: "LAC",
   },
   {
     id: generateTeamId("NBA", "Los Angeles", "lakers"),
@@ -389,6 +435,7 @@ export const allTeams: Team[] = [
     leagueColor: "#552583",
     city: "Los Angeles",
     subreddit: "r/lakers",
+    abbreviation: "LAL",
   },
   {
     id: generateTeamId("NBA", "Memphis", "grizzlies"),
@@ -397,6 +444,7 @@ export const allTeams: Team[] = [
     leagueColor: "#5D76A9",
     city: "Memphis",
     subreddit: "r/memphisgrizzlies",
+    abbreviation: "MEM",
   },
   {
     id: generateTeamId("NBA", "Miami", "heat"),
@@ -405,6 +453,7 @@ export const allTeams: Team[] = [
     leagueColor: "#98002E",
     city: "Miami",
     subreddit: "r/heat",
+    abbreviation: "MIA",
   },
   {
     id: generateTeamId("NBA", "Milwaukee", "bucks"),
@@ -413,6 +462,7 @@ export const allTeams: Team[] = [
     leagueColor: "#00471B",
     city: "Milwaukee",
     subreddit: "r/MkeBucks",
+    abbreviation: "MIL",
   },
   {
     id: generateTeamId("NBA", "Minneapolis", "timberwolves"),
@@ -421,6 +471,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0C2340",
     city: "Minneapolis",
     subreddit: "r/timberwolves",
+    abbreviation: "MIN",
   },
   {
     id: generateTeamId("NBA", "New Orleans", "pelicans"),
@@ -429,6 +480,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0C2340",
     city: "New Orleans",
     subreddit: "r/NOLAPelicans",
+    abbreviation: "NOP",
   },
   {
     id: generateTeamId("NBA", "New York", "knicks"),
@@ -437,6 +489,7 @@ export const allTeams: Team[] = [
     leagueColor: "#F58426",
     city: "New York",
     subreddit: "r/NYKnicks",
+    abbreviation: "NYK",
   },
   {
     id: generateTeamId("NBA", "Oklahoma City", "thunder"),
@@ -445,6 +498,7 @@ export const allTeams: Team[] = [
     leagueColor: "#007AC1",
     city: "Oklahoma City",
     subreddit: "r/Thunder",
+    abbreviation: "OKC",
   },
   {
     id: generateTeamId("NBA", "Orlando", "magic"),
@@ -453,6 +507,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0077C0",
     city: "Orlando",
     subreddit: "r/orlandomagic",
+    abbreviation: "ORL",
   },
   {
     id: generateTeamId("NBA", "Philadelphia", "76ers"),
@@ -493,6 +548,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C4CED4",
     city: "San Antonio",
     subreddit: "r/nbaspurs",
+    abbreviation: "SAS",
   },
   {
     id: generateTeamId("NBA", "Toronto", "raptors"),
@@ -501,6 +557,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CE1141",
     city: "Toronto",
     subreddit: "r/torontoraptors",
+    abbreviation: "TOR",
   },
   {
     id: generateTeamId("NBA", "Salt Lake City", "jazz"),
@@ -509,6 +566,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002B5C",
     city: "Salt Lake City",
     subreddit: "r/UtahJazz",
+    abbreviation: "UTA",
   },
   {
     id: generateTeamId("NBA", "Washington", "wizards"),
@@ -517,6 +575,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002B5C",
     city: "Washington",
     subreddit: "r/washingtonwizards",
+    abbreviation: "WAS",
   },
 
   // MLB Teams (30 teams)
@@ -527,6 +586,7 @@ export const allTeams: Team[] = [
     leagueColor: "#A71930",
     city: "Phoenix",
     subreddit: "r/azdiamondbacks",
+    abbreviation: "ARI",
   },
   {
     id: generateTeamId("MLB", "Atlanta", "braves"),
@@ -535,6 +595,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CE1141",
     city: "Atlanta",
     subreddit: "r/Braves",
+    abbreviation: "ATL",
   },
   {
     id: generateTeamId("MLB", "Baltimore", "orioles"),
@@ -543,6 +604,7 @@ export const allTeams: Team[] = [
     leagueColor: "#DF4601",
     city: "Baltimore",
     subreddit: "r/Orioles",
+    abbreviation: "BAL",
   },
   {
     id: generateTeamId("MLB", "Boston", "red-sox"),
@@ -551,6 +613,7 @@ export const allTeams: Team[] = [
     leagueColor: "#BD3039",
     city: "Boston",
     subreddit: "r/RedSox",
+    abbreviation: "BOS",
   },
   {
     id: generateTeamId("MLB", "Chicago", "cubs"),
@@ -559,6 +622,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0E3386",
     city: "Chicago",
     subreddit: "r/CHICubs",
+    abbreviation: "CHC",
   },
   {
     id: generateTeamId("MLB", "Chicago", "white-sox"),
@@ -567,6 +631,7 @@ export const allTeams: Team[] = [
     leagueColor: "#27251F",
     city: "Chicago",
     subreddit: "r/WhiteSox",
+    abbreviation: "CWS",
   },
   {
     id: generateTeamId("MLB", "Cincinnati", "reds"),
@@ -575,6 +640,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C6011F",
     city: "Cincinnati",
     subreddit: "r/Reds",
+    abbreviation: "CIN",
   },
   {
     id: generateTeamId("MLB", "Cleveland", "guardians"),
@@ -583,6 +649,7 @@ export const allTeams: Team[] = [
     leagueColor: "#E31937",
     city: "Cleveland",
     subreddit: "r/ClevelandGuardians",
+    abbreviation: "CLE",
   },
   {
     id: generateTeamId("MLB", "Denver", "rockies"),
@@ -591,6 +658,7 @@ export const allTeams: Team[] = [
     leagueColor: "#33006F",
     city: "Denver",
     subreddit: "r/ColoradoRockies",
+    abbreviation: "COL",
   },
   {
     id: generateTeamId("MLB", "Detroit", "tigers"),
@@ -599,6 +667,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0C2340",
     city: "Detroit",
     subreddit: "r/MotorCityKitties",
+    abbreviation: "DET",
   },
   {
     id: generateTeamId("MLB", "Houston", "astros"),
@@ -607,6 +676,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002D62",
     city: "Houston",
     subreddit: "r/Astros",
+    abbreviation: "HOU",
   },
   {
     id: generateTeamId("MLB", "Kansas City", "royals"),
@@ -615,6 +685,7 @@ export const allTeams: Team[] = [
     leagueColor: "#004687",
     city: "Kansas City",
     subreddit: "r/Royals",
+    abbreviation: "KC",
   },
   {
     id: generateTeamId("MLB", "Anaheim", "angels"),
@@ -623,6 +694,7 @@ export const allTeams: Team[] = [
     leagueColor: "#BA0021",
     city: "Anaheim",
     subreddit: "r/AngelsBaseball",
+    abbreviation: "LAA",
   },
   {
     id: generateTeamId("MLB", "Los Angeles", "dodgers"),
@@ -631,6 +703,7 @@ export const allTeams: Team[] = [
     leagueColor: "#005A9C",
     city: "Los Angeles",
     subreddit: "r/Dodgers",
+    abbreviation: "LAD",
   },
   {
     id: generateTeamId("MLB", "Miami", "marlins"),
@@ -639,6 +712,7 @@ export const allTeams: Team[] = [
     leagueColor: "#00A3E0",
     city: "Miami",
     subreddit: "r/letsgofish",
+    abbreviation: "MIA",
   },
   {
     id: generateTeamId("MLB", "Milwaukee", "brewers"),
@@ -647,6 +721,7 @@ export const allTeams: Team[] = [
     leagueColor: "#12284B",
     city: "Milwaukee",
     subreddit: "r/Brewers",
+    abbreviation: "MIL",
   },
   {
     id: generateTeamId("MLB", "Minneapolis", "twins"),
@@ -655,6 +730,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002B5C",
     city: "Minneapolis",
     subreddit: "r/minnesotatwins",
+    abbreviation: "MIN",
   },
   {
     id: generateTeamId("MLB", "New York", "mets"),
@@ -663,6 +739,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002D72",
     city: "New York",
     subreddit: "r/NewYorkMets",
+    abbreviation: "NYM",
   },
   {
     id: generateTeamId("MLB", "New York", "yankees"),
@@ -670,7 +747,8 @@ export const allTeams: Team[] = [
     league: "MLB",
     leagueColor: "#132448",
     city: "New York",
-    subreddit: "r/Yankees",
+    subreddit: "r/NYYankees",
+    abbreviation: "NYY",
   },
   {
     id: generateTeamId("MLB", "Oakland", "athletics"),
@@ -679,6 +757,7 @@ export const allTeams: Team[] = [
     leagueColor: "#003831",
     city: "Oakland",
     subreddit: "r/OaklandAthletics",
+    abbreviation: "OAK",
   },
   {
     id: generateTeamId("MLB", "Philadelphia", "phillies"),
@@ -687,6 +766,7 @@ export const allTeams: Team[] = [
     leagueColor: "#E81828",
     city: "Philadelphia",
     subreddit: "r/Phillies",
+    abbreviation: "PHI",
   },
   {
     id: generateTeamId("MLB", "Pittsburgh", "pirates"),
@@ -695,6 +775,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FDB827",
     city: "Pittsburgh",
     subreddit: "r/Buccos",
+    abbreviation: "PIT",
   },
   {
     id: generateTeamId("MLB", "San Diego", "padres"),
@@ -703,6 +784,7 @@ export const allTeams: Team[] = [
     leagueColor: "#2F241D",
     city: "San Diego",
     subreddit: "r/Padres",
+    abbreviation: "SD",
   },
   {
     id: generateTeamId("MLB", "San Francisco", "giants"),
@@ -711,6 +793,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FD5A1E",
     city: "San Francisco",
     subreddit: "r/SFGiants",
+    abbreviation: "SF",
   },
   {
     id: generateTeamId("MLB", "Seattle", "mariners"),
@@ -719,6 +802,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0C2C56",
     city: "Seattle",
     subreddit: "r/Mariners",
+    abbreviation: "SEA",
   },
   {
     id: generateTeamId("MLB", "St. Louis", "cardinals"),
@@ -727,6 +811,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C41E3A",
     city: "St. Louis",
     subreddit: "r/Cardinals",
+    abbreviation: "STL",
   },
   {
     id: generateTeamId("MLB", "St. Petersburg", "rays"),
@@ -735,6 +820,7 @@ export const allTeams: Team[] = [
     leagueColor: "#092C5C",
     city: "St. Petersburg",
     subreddit: "r/TampaBayRays",
+    abbreviation: "TB",
   },
   {
     id: generateTeamId("MLB", "Arlington", "rangers"),
@@ -743,6 +829,7 @@ export const allTeams: Team[] = [
     leagueColor: "#003278",
     city: "Arlington",
     subreddit: "r/texasrangers",
+    abbreviation: "TEX",
   },
   {
     id: generateTeamId("MLB", "Toronto", "blue-jays"),
@@ -751,6 +838,7 @@ export const allTeams: Team[] = [
     leagueColor: "#134A8E",
     city: "Toronto",
     subreddit: "r/Torontobluejays",
+    abbreviation: "TOR",
   },
   {
     id: generateTeamId("MLB", "Washington", "nationals"),
@@ -759,6 +847,7 @@ export const allTeams: Team[] = [
     leagueColor: "#AB0003",
     city: "Washington",
     subreddit: "r/Nationals",
+    abbreviation: "WSH",
   },
 
   // NHL Teams (32 teams)
@@ -769,6 +858,7 @@ export const allTeams: Team[] = [
     leagueColor: "#F47A38",
     city: "Anaheim",
     subreddit: "r/anaheimducks",
+    abbreviation: "ANA",
   },
   {
     id: generateTeamId("NHL", "Tempe", "coyotes"),
@@ -777,6 +867,7 @@ export const allTeams: Team[] = [
     leagueColor: "#8C2633",
     city: "Tempe",
     subreddit: "r/coyotes",
+    abbreviation: "ARI",
   },
   {
     id: generateTeamId("NHL", "Boston", "bruins"),
@@ -785,6 +876,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FFB81C",
     city: "Boston",
     subreddit: "r/bostonbruins",
+    abbreviation: "BOS",
   },
   {
     id: generateTeamId("NHL", "Buffalo", "sabres"),
@@ -793,6 +885,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002654",
     city: "Buffalo",
     subreddit: "r/sabres",
+    abbreviation: "BUF",
   },
   {
     id: generateTeamId("NHL", "Calgary", "flames"),
@@ -801,6 +894,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C8102E",
     city: "Calgary",
     subreddit: "r/calgaryflames",
+    abbreviation: "CGY",
   },
   {
     id: generateTeamId("NHL", "Raleigh", "hurricanes"),
@@ -809,6 +903,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CC0000",
     city: "Raleigh",
     subreddit: "r/canes",
+    abbreviation: "CAR",
   },
   {
     id: generateTeamId("NHL", "Chicago", "blackhawks"),
@@ -817,6 +912,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CF0A2C",
     city: "Chicago",
     subreddit: "r/hawks",
+    abbreviation: "CHI",
   },
   {
     id: generateTeamId("NHL", "Denver", "avalanche"),
@@ -825,6 +921,7 @@ export const allTeams: Team[] = [
     leagueColor: "#6F263D",
     city: "Denver",
     subreddit: "r/coloradoavalanche",
+    abbreviation: "COL",
   },
   {
     id: generateTeamId("NHL", "Columbus", "blue-jackets"),
@@ -833,6 +930,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002654",
     city: "Columbus",
     subreddit: "r/bluejackets",
+    abbreviation: "CBJ",
   },
   {
     id: generateTeamId("NHL", "Dallas", "stars"),
@@ -841,6 +939,7 @@ export const allTeams: Team[] = [
     leagueColor: "#006847",
     city: "Dallas",
     subreddit: "r/dallasstars",
+    abbreviation: "DAL",
   },
   {
     id: generateTeamId("NHL", "Detroit", "red-wings"),
@@ -849,6 +948,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CE1126",
     city: "Detroit",
     subreddit: "r/detroitredwings",
+    abbreviation: "DET",
   },
   {
     id: generateTeamId("NHL", "Edmonton", "oilers"),
@@ -857,6 +957,7 @@ export const allTeams: Team[] = [
     leagueColor: "#041E42",
     city: "Edmonton",
     subreddit: "r/edmontonoilers",
+    abbreviation: "EDM",
   },
   {
     id: generateTeamId("NHL", "Sunrise", "panthers"),
@@ -865,6 +966,7 @@ export const allTeams: Team[] = [
     leagueColor: "#041E42",
     city: "Sunrise",
     subreddit: "r/floridapanthers",
+    abbreviation: "FLA",
   },
   {
     id: generateTeamId("NHL", "Los Angeles", "kings"),
@@ -873,6 +975,7 @@ export const allTeams: Team[] = [
     leagueColor: "#111111",
     city: "Los Angeles",
     subreddit: "r/losangeleskings",
+    abbreviation: "LAK",
   },
   {
     id: generateTeamId("NHL", "Saint Paul", "wild"),
@@ -881,6 +984,7 @@ export const allTeams: Team[] = [
     leagueColor: "#154734",
     city: "Saint Paul",
     subreddit: "r/wildhockey",
+    abbreviation: "MIN",
   },
   {
     id: generateTeamId("NHL", "Montreal", "canadiens"),
@@ -889,6 +993,7 @@ export const allTeams: Team[] = [
     leagueColor: "#AF1E2D",
     city: "Montreal",
     subreddit: "r/habs",
+    abbreviation: "MTL",
   },
   {
     id: generateTeamId("NHL", "Nashville", "predators"),
@@ -897,6 +1002,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FFB81C",
     city: "Nashville",
     subreddit: "r/predators",
+    abbreviation: "NSH",
   },
   {
     id: generateTeamId("NHL", "Newark", "devils"),
@@ -905,6 +1011,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CE1126",
     city: "Newark",
     subreddit: "r/devils",
+    abbreviation: "NJD",
   },
   {
     id: generateTeamId("NHL", "Elmont", "islanders"),
@@ -913,6 +1020,7 @@ export const allTeams: Team[] = [
     leagueColor: "#F47A38",
     city: "Elmont",
     subreddit: "r/newyorkislanders",
+    abbreviation: "NYI",
   },
   {
     id: generateTeamId("NHL", "New York", "rangers"),
@@ -921,6 +1029,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0038A8",
     city: "New York",
     subreddit: "r/rangers",
+    abbreviation: "NYR",
   },
   {
     id: generateTeamId("NHL", "Ottawa", "senators"),
@@ -929,6 +1038,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C52032",
     city: "Ottawa",
     subreddit: "r/ottawasenators",
+    abbreviation: "OTT",
   },
   {
     id: generateTeamId("NHL", "Philadelphia", "flyers"),
@@ -937,6 +1047,7 @@ export const allTeams: Team[] = [
     leagueColor: "#F74902",
     city: "Philadelphia",
     subreddit: "r/flyers",
+    abbreviation: "PHI",
   },
   {
     id: generateTeamId("NHL", "Pittsburgh", "penguins"),
@@ -945,6 +1056,7 @@ export const allTeams: Team[] = [
     leagueColor: "#CFC493",
     city: "Pittsburgh",
     subreddit: "r/penguins",
+    abbreviation: "PIT",
   },
   {
     id: generateTeamId("NHL", "San Jose", "sharks"),
@@ -953,6 +1065,7 @@ export const allTeams: Team[] = [
     leagueColor: "#006D75",
     city: "San Jose",
     subreddit: "r/sanjosesharks",
+    abbreviation: "SJS",
   },
   {
     id: generateTeamId("NHL", "Seattle", "kraken"),
@@ -961,6 +1074,7 @@ export const allTeams: Team[] = [
     leagueColor: "#001628",
     city: "Seattle",
     subreddit: "r/seattlekraken",
+    abbreviation: "SEA",
   },
   {
     id: generateTeamId("NHL", "St. Louis", "blues"),
@@ -969,6 +1083,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002F87",
     city: "St. Louis",
     subreddit: "r/stlouisblues",
+    abbreviation: "STL",
   },
   {
     id: generateTeamId("NHL", "Tampa", "lightning"),
@@ -977,6 +1092,7 @@ export const allTeams: Team[] = [
     leagueColor: "#002868",
     city: "Tampa",
     subreddit: "r/tampabaylightning",
+    abbreviation: "TBL",
   },
   {
     id: generateTeamId("NHL", "Toronto", "maple-leafs"),
@@ -985,6 +1101,7 @@ export const allTeams: Team[] = [
     leagueColor: "#003E7E",
     city: "Toronto",
     subreddit: "r/leafs",
+    abbreviation: "TOR",
   },
   {
     id: generateTeamId("NHL", "Vancouver", "canucks"),
@@ -993,6 +1110,7 @@ export const allTeams: Team[] = [
     leagueColor: "#001F5B",
     city: "Vancouver",
     subreddit: "r/canucks",
+    abbreviation: "VAN",
   },
   {
     id: generateTeamId("NHL", "Las Vegas", "golden-knights"),
@@ -1001,6 +1119,7 @@ export const allTeams: Team[] = [
     leagueColor: "#B4975A",
     city: "Las Vegas",
     subreddit: "r/goldenknights",
+    abbreviation: "VGK",
   },
   {
     id: generateTeamId("NHL", "Washington", "capitals"),
@@ -1009,6 +1128,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C8102E",
     city: "Washington",
     subreddit: "r/caps",
+    abbreviation: "WSH",
   },
   {
     id: generateTeamId("NHL", "Winnipeg", "jets"),
@@ -1017,6 +1137,7 @@ export const allTeams: Team[] = [
     leagueColor: "#041E42",
     city: "Winnipeg",
     subreddit: "r/winnipegjets",
+    abbreviation: "WPG",
   },
 
   // MLS Teams (29 teams)
@@ -1027,6 +1148,7 @@ export const allTeams: Team[] = [
     leagueColor: "#800F2F",
     city: "Atlanta",
     subreddit: "r/AtlantaUnitedFC",
+    abbreviation: "ATL",
   },
   {
     id: generateTeamId("MLS", "Austin", "fc"),
@@ -1035,6 +1157,7 @@ export const allTeams: Team[] = [
     leagueColor: "#00B140",
     city: "Austin",
     subreddit: "r/AustinFC",
+    abbreviation: "ATX",
   },
   {
     id: generateTeamId("MLS", "Charlotte", "fc"),
@@ -1043,6 +1166,7 @@ export const allTeams: Team[] = [
     leagueColor: "#1E1E1E",
     city: "Charlotte",
     subreddit: "r/CharlotteFC",
+    abbreviation: "CLT",
   },
   {
     id: generateTeamId("MLS", "Chicago", "fire-fc"),
@@ -1051,6 +1175,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0B5394",
     city: "Chicago",
     subreddit: "r/ChicagoFire",
+    abbreviation: "CHI",
   },
   {
     id: generateTeamId("MLS", "Cincinnati", "fc-cincinnati"),
@@ -1059,6 +1184,7 @@ export const allTeams: Team[] = [
     leagueColor: "#F6F6F6",
     city: "Cincinnati",
     subreddit: "r/FCCincinnati",
+    abbreviation: "CIN",
   },
   {
     id: generateTeamId("MLS", "Commerce City", "rapids"),
@@ -1067,6 +1193,7 @@ export const allTeams: Team[] = [
     leagueColor: "#862633",
     city: "Commerce City",
     subreddit: "r/ColoradoRapids",
+    abbreviation: "COL",
   },
   {
     id: generateTeamId("MLS", "Columbus", "crew"),
@@ -1075,6 +1202,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FDB913",
     city: "Columbus",
     subreddit: "r/TheMassive",
+    abbreviation: "CLB",
   },
   {
     id: generateTeamId("MLS", "Washington", "dc-united"),
@@ -1083,6 +1211,7 @@ export const allTeams: Team[] = [
     leagueColor: "#000000",
     city: "Washington",
     subreddit: "r/DCUnited",
+    abbreviation: "DC",
   },
   {
     id: generateTeamId("MLS", "Frisco", "fc-dallas"),
@@ -1091,6 +1220,7 @@ export const allTeams: Team[] = [
     leagueColor: "#D11241",
     city: "Frisco",
     subreddit: "r/FCDallas",
+    abbreviation: "DAL",
   },
   {
     id: generateTeamId("MLS", "Houston", "dynamo-fc"),
@@ -1099,6 +1229,7 @@ export const allTeams: Team[] = [
     leagueColor: "#F68712",
     city: "Houston",
     subreddit: "r/dynamo",
+    abbreviation: "HOU",
   },
   {
     id: generateTeamId("MLS", "Miami", "inter-miami-cf"),
@@ -1107,6 +1238,7 @@ export const allTeams: Team[] = [
     leagueColor: "#000000",
     city: "Miami",
     subreddit: "r/InterMiamiCF",
+    abbreviation: "MIA",
   },
   {
     id: generateTeamId("MLS", "Kansas City", "sporting-kansas-city"),
@@ -1115,6 +1247,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0C2340",
     city: "Kansas City",
     subreddit: "r/SportingKC",
+    abbreviation: "SKC",
   },
   {
     id: generateTeamId("MLS", "Carson", "la-galaxy"),
@@ -1123,6 +1256,7 @@ export const allTeams: Team[] = [
     leagueColor: "#00245D",
     city: "Carson",
     subreddit: "r/LAGalaxy",
+    abbreviation: "LAG",
   },
   {
     id: generateTeamId("MLS", "Los Angeles", "los-angeles-fc"),
@@ -1131,6 +1265,7 @@ export const allTeams: Team[] = [
     leagueColor: "#000000",
     city: "Los Angeles",
     subreddit: "r/LACity",
+    abbreviation: "LAFC",
   },
   {
     id: generateTeamId("MLS", "Saint Paul", "minnesota-united-fc"),
@@ -1139,6 +1274,7 @@ export const allTeams: Team[] = [
     leagueColor: "#7C0020",
     city: "Saint Paul",
     subreddit: "r/minnesotaunited",
+    abbreviation: "MIN",
   },
   {
     id: generateTeamId("MLS", "Montreal", "cf-montreal"),
@@ -1147,6 +1283,7 @@ export const allTeams: Team[] = [
     leagueColor: "#000000",
     city: "Montreal",
     subreddit: "r/CFMontreal",
+    abbreviation: "MTL",
   },
   {
     id: generateTeamId("MLS", "Nashville", "nashville-sc"),
@@ -1155,6 +1292,7 @@ export const allTeams: Team[] = [
     leagueColor: "#FFE500",
     city: "Nashville",
     subreddit: "r/NashvilleSC",
+    abbreviation: "NSH",
   },
   {
     id: generateTeamId("MLS", "Foxborough", "new-england-revolution"),
@@ -1163,6 +1301,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0C2340",
     city: "Foxborough",
     subreddit: "r/NewEnglandRevolution",
+    abbreviation: "NE",
   },
   {
     id: generateTeamId("MLS", "New York", "new-york-city-fc"),
@@ -1171,6 +1310,7 @@ export const allTeams: Team[] = [
     leagueColor: "#6CACE4",
     city: "New York",
     subreddit: "r/NYCFC",
+    abbreviation: "NYC",
   },
   {
     id: generateTeamId("MLS", "Harrison", "new-york-red-bulls"),
@@ -1179,6 +1319,7 @@ export const allTeams: Team[] = [
     leagueColor: "#ED1C24",
     city: "Harrison",
     subreddit: "r/NYRB",
+    abbreviation: "RBNY",
   },
   {
     id: generateTeamId("MLS", "Orlando", "orlando-city-sc"),
@@ -1187,6 +1328,7 @@ export const allTeams: Team[] = [
     leagueColor: "#6C1D45",
     city: "Orlando",
     subreddit: "r/OCLions",
+    abbreviation: "ORL",
   },
   {
     id: generateTeamId("MLS", "Chester", "philadelphia-union"),
@@ -1195,6 +1337,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0C2340",
     city: "Chester",
     subreddit: "r/PhillyUnion",
+    abbreviation: "PHI",
   },
   {
     id: generateTeamId("MLS", "Portland", "timbers"),
@@ -1203,6 +1346,7 @@ export const allTeams: Team[] = [
     leagueColor: "#004812",
     city: "Portland",
     subreddit: "r/timbers",
+    abbreviation: "POR",
   },
   {
     id: generateTeamId("MLS", "Sandy", "real-salt-lake"),
@@ -1211,6 +1355,7 @@ export const allTeams: Team[] = [
     leagueColor: "#A5051B",
     city: "Sandy",
     subreddit: "r/realSaltLake",
+    abbreviation: "RSL",
   },
   {
     id: generateTeamId("MLS", "San Jose", "earthquakes"),
@@ -1219,6 +1364,7 @@ export const allTeams: Team[] = [
     leagueColor: "#0066CC",
     city: "San Jose",
     subreddit: "r/SJEarthquakes",
+    abbreviation: "SJ",
   },
   {
     id: generateTeamId("MLS", "Seattle", "sounders-fc"),
@@ -1227,6 +1373,7 @@ export const allTeams: Team[] = [
     leagueColor: "#4F8A10",
     city: "Seattle",
     subreddit: "r/SoundersFC",
+    abbreviation: "SEA",
   },
   {
     id: generateTeamId("MLS", "St. Louis", "st-louis-city-sc"),
@@ -1235,6 +1382,7 @@ export const allTeams: Team[] = [
     leagueColor: "#C8102E",
     city: "St. Louis",
     subreddit: "r/StLouisCITY",
+    abbreviation: "STL",
   },
   {
     id: generateTeamId("MLS", "Toronto", "toronto-fc"),
@@ -1243,6 +1391,7 @@ export const allTeams: Team[] = [
     leagueColor: "#E31937",
     city: "Toronto",
     subreddit: "r/TorontoFC",
+    abbreviation: "TOR",
   },
   {
     id: generateTeamId("MLS", "Vancouver", "whitecaps-fc"),
@@ -1251,6 +1400,7 @@ export const allTeams: Team[] = [
     leagueColor: "#00245D",
     city: "Vancouver",
     subreddit: "r/whitecapsfc",
+    abbreviation: "VAN",
   },
 ];
 

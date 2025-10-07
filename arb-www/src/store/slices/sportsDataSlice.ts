@@ -1,10 +1,9 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { leagues, boxScoreData, MockLeague } from '../../services/MockData.ts';
-import { buildApiUrl } from '../../config';
+
+import { leagues, boxScoreData, MockLeague, forYouFeed } from '../../services/MockData.ts';
+import { buildApiUrl, Tab } from '../../config';
 import { TwitterSearchResponse } from '../../schema/twitterapi';
 import { RedditGameThreadCommentsResponse } from '../../schema/redditGameThreadComments';
-import { MLBOddsByDateResponse } from '../../schema/mlb/odds';
-import { MLBScoresResponse, MLBTeamProfilesResponse, StadiumsResponse, MLBScheduleResponse } from '../../schema/mlb';
 import { getCurrentLocalDate } from '../../utils.ts';
 
 // Async thunk for fetching box score data
@@ -25,7 +24,6 @@ export const fetchBoxScore = createAsyncThunk(
 export const fetchTwitterData = createAsyncThunk(
   'sportsData/fetchTwitterData',
   async ({ query, filter = 'latest' }: { query: string; filter?: 'top' | 'latest' }) => {
-    console.log('🔍 fetchTwitterData thunk called with:', { query, filter });
     
     const params: { query: string; queryType?: string } = { query };
     if (filter === 'top') {
@@ -35,10 +33,8 @@ export const fetchTwitterData = createAsyncThunk(
     }
     
     const apiUrl = buildApiUrl('/api/v1/twitter-search', params);
-    console.log('🌐 Making request to:', apiUrl);
     
     const response = await fetch(apiUrl);
-    console.log('📡 Response status:', response.status);
     
     if (!response.ok) {
       console.error('❌ API request failed:', response.status, response.statusText);
@@ -52,7 +48,6 @@ export const fetchTwitterData = createAsyncThunk(
     }
     
     const data = await response.json();
-    console.log('✅ Twitter data received:', data);
     return data;
   }
 );
@@ -61,9 +56,9 @@ export const fetchTwitterData = createAsyncThunk(
 // Async thunk for finding Reddit game thread
 export const findRedditGameThread = createAsyncThunk(
   'sportsData/findRedditGameThread',
-  async (subreddit: string, { rejectWithValue }) => {
+  async ({ subreddit, league }: { subreddit: string; league: string }, { rejectWithValue }) => {
     try {
-      const url = buildApiUrl('/api/v1/reddit-thread', { subreddit });
+      const url = buildApiUrl('/api/v1/reddit-thread', { subreddit, league });
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -83,7 +78,7 @@ export const findRedditGameThread = createAsyncThunk(
 // Async thunk for fetching Reddit game thread comments
 export const fetchRedditGameThreadComments = createAsyncThunk(
   'sportsData/fetchRedditGameThreadComments',
-  async ({ subreddit, gameId, kind }: { subreddit: string; gameId: string; kind?: string }, { rejectWithValue, getState }) => {
+  async ({ subreddit, gameId, kind, bypassCache }: { subreddit: string; gameId: string; kind?: string; bypassCache?: boolean }, { rejectWithValue, getState }) => {
     try {
       const state = getState() as { sportsData: SportsDataState };
       const sortKind = kind || state.sportsData.redditSortKind;
@@ -91,8 +86,11 @@ export const fetchRedditGameThreadComments = createAsyncThunk(
       const url = buildApiUrl('/api/v1/reddit-thread-comments', { 
         subreddit, 
         game_id: gameId,
-        kind: sortKind
+        kind: sortKind,
+        cache: bypassCache ? 'false' : 'true'
       });
+      
+      
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -103,7 +101,10 @@ export const fetchRedditGameThreadComments = createAsyncThunk(
       }
       
       const data = await response.json();
-      return RedditGameThreadCommentsResponse.fromJSON(data);
+      const redditResponse = RedditGameThreadCommentsResponse.fromJSON(data);
+      
+      
+      return redditResponse;
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
     }
@@ -150,99 +151,118 @@ export const fetchOddsByDate = createAsyncThunk(
   }
 );
 
-// Async thunk for fetching MLB scores
-export const fetchMLBScores = createAsyncThunk(
-  'sportsData/fetchMLBScores',
-  async ({ date }: { date?: string } = {}) => {
-    const params: Record<string, string> = { league: 'mlb' };
+// Generic async thunk for fetching scores
+export const fetchScores = createAsyncThunk(
+  'sportsData/fetchScores',
+  async ({ league, date }: { league: string; date?: string }) => {
+    const params: Record<string, string> = { league };
     if (date) {
       params.date = date;
     }
     const apiUrl = buildApiUrl('/api/v1/scores', params);
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error('Failed to fetch MLB scores');
+      throw new Error(`Failed to fetch ${league} scores`);
     }
     const data = await response.json();
-    return data;
+    return { league, data };
   }
 );
 
-// Async thunk for fetching MLB team profiles
-export const fetchMLBTeamProfiles = createAsyncThunk(
-  'sportsData/fetchMLBTeamProfiles',
-  async () => {
-    const apiUrl = buildApiUrl('/api/team-profile', { league: 'mlb' });
+// Generic async thunk for fetching team profiles
+export const fetchTeamProfiles = createAsyncThunk(
+  'sportsData/fetchTeamProfiles',
+  async ({ league }: { league: string }) => {
+    const apiUrl = buildApiUrl('/api/team-profile', { league });
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error('Failed to fetch MLB team profiles');
+      throw new Error(`Failed to fetch ${league} team profiles`);
     }
     const data = await response.json();
-    return data;
+    return { league, data };
   }
 );
 
-// Async thunk for fetching MLB stadiums
-export const fetchMLBStadiums = createAsyncThunk(
-  'sportsData/fetchMLBStadiums',
-  async () => {
-    const apiUrl = buildApiUrl('/api/v1/venues', { league: 'mlb' });
+// Generic async thunk for fetching stadiums
+export const fetchStadiums = createAsyncThunk(
+  'sportsData/fetchStadiums',
+  async ({ league }: { league: string }) => {
+    const apiUrl = buildApiUrl('/api/v1/venues', { league });
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error('Failed to fetch MLB stadiums');
+      throw new Error(`Failed to fetch ${league} stadiums`);
     }
     const data = await response.json();
-    return data;
+    return { league, data };
   }
 );
 
-// Async thunk for fetching MLB schedule
-export const fetchMLBSchedule = createAsyncThunk(
-  'sportsData/fetchMLBSchedule',
-  async ({ date, isPostseason = false }: { date?: string; isPostseason?: boolean } = {}) => {
-    const params: Record<string, string> = { league: 'mlb' };
-    if (isPostseason) {
-      params.post = 'true';
-    }
-    // Add date as a filter parameter if provided
+// Generic async thunk for fetching schedule
+export const fetchSchedule = createAsyncThunk(
+  'sportsData/fetchSchedule',
+  async ({ league, date }: { league: string; date?: string }) => {
+    const params: Record<string, string> = { league };
     if (date) {
       params.date = date;
     }
     const apiUrl = buildApiUrl('/api/v1/schedule', params);
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error('Failed to fetch MLB schedule');
+      throw new Error(`Failed to fetch ${league} schedule`);
     }
     const data = await response.json();
-    return data;
+    return { league, data };
   }
 );
 
-// Async thunk for fetching current games
+// Generic async thunk for fetching current games
 export const fetchCurrentGames = createAsyncThunk(
   'sportsData/fetchCurrentGames',
-  async ({ start, end }: { start: string; end: string }) => {
+  async ({ league, start, end }: { league: string; start: string; end: string }) => {
     const params: Record<string, string> = { 
-      league: 'mlb',
+      league,
       start,
       end
     };
     const apiUrl = buildApiUrl('/api/v1/current-games', params);
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error('Failed to fetch current games');
+      throw new Error(`Failed to fetch ${league} current games`);
     }
     const data = await response.json();
-    return data;
+    return { league, data };
   }
 );
+
+// Generic league data structure
+interface LeagueData {
+  scores: any | null;
+  scoresLoading: boolean;
+  scoresError: string | null;
+  teamProfiles: any | null;
+  teamProfilesLoading: boolean;
+  teamProfilesError: string | null;
+  stadiums: any | null;
+  stadiumsLoading: boolean;
+  stadiumsError: string | null;
+  schedule: any | null;
+  scheduleLoading: boolean;
+  scheduleError: string | null;
+  odds: any | null;
+  oddsLoading: boolean;
+  oddsError: string | null;
+  currentGames: any | null;
+  currentGamesLoading: boolean;
+  currentGamesError: string | null;
+  error: string | null;
+}
 
 interface SportsDataState {
   leagues: MockLeague[];
   selectedLeague: string;
   activeTab: string;
   selectedDate: string; // ISO date string (YYYY-MM-DD)
-  leagueData: typeof mockData;
+  leagueData: Record<string, LeagueData>; // Generic league data structure
   forYouFeed: typeof forYouFeed;
   boxScoreData: typeof boxScoreData;
   boxScoreLoading: boolean;
@@ -255,6 +275,7 @@ interface SportsDataState {
   twitterSearchQuery: string;
   twitterHasSearched: boolean;
   twitterLoadingMore: boolean;
+  twitterSortKind: 'top' | 'latest';
   // Reddit state
   redditCommentsData: RedditGameThreadCommentsResponse | null;
   redditCommentsLoading: boolean;
@@ -267,34 +288,18 @@ interface SportsDataState {
   // Boxscore view state
   boxscoreView: 'stats' | 'social';
   socialPlatform: 'reddit' | 'twitter';
-  // Odds state
-  oddsByDate: MLBOddsByDateResponse | null;
+  // Global odds state (for backward compatibility)
+  oddsByDate: any | null;
   oddsLoading: boolean;
   oddsError: string | null;
-  // MLB data state
-  mlbScores: MLBScoresResponse | null;
-  mlbScoresLoading: boolean;
-  mlbScoresError: string | null;
-  mlbTeamProfiles: MLBTeamProfilesResponse | null;
-  mlbTeamProfilesLoading: boolean;
-  mlbTeamProfilesError: string | null;
-  mlbStadiums: StadiumsResponse | null;
-  mlbStadiumsLoading: boolean;
-  mlbStadiumsError: string | null;
-  mlbSchedule: MLBScheduleResponse | null;
-  mlbScheduleLoading: boolean;
-  mlbScheduleError: string | null;
-  currentGames: MLBScheduleResponse | null;
-  currentGamesLoading: boolean;
-  currentGamesError: string | null;
 }
 
 const initialState: SportsDataState = {
   leagues,
-  selectedLeague: 'mlb',
-  activeTab: 'for-you',
+  selectedLeague: '',
+  activeTab: Tab.SCORES,
   selectedDate: getCurrentLocalDate(), // Today's date in YYYY-MM-DD format using centralized function
-  leagueData: {},
+  leagueData: {}, // Will be populated dynamically as leagues are accessed
   forYouFeed: [],
   boxScoreData,
   boxScoreLoading: false,
@@ -316,29 +321,14 @@ const initialState: SportsDataState = {
   redditGameThreadFound: false,
   redditHasSearched: false,
   redditSortKind: 'new' as const,
+  twitterSortKind: 'latest' as const,
   // Boxscore view state
   boxscoreView: 'stats',
   socialPlatform: 'reddit',
-  // Odds state
+  // Global odds state (for backward compatibility)
   oddsByDate: null,
   oddsLoading: false,
   oddsError: null,
-  // MLB data state
-  mlbScores: null,
-  mlbScoresLoading: false,
-  mlbScoresError: null,
-  mlbTeamProfiles: null,
-  mlbTeamProfilesLoading: false,
-  mlbTeamProfilesError: null,
-  mlbStadiums: null,
-  mlbStadiumsLoading: false,
-  mlbStadiumsError: null,
-  mlbSchedule: null,
-  mlbScheduleLoading: false,
-  mlbScheduleError: null,
-  currentGames: null,
-  currentGamesLoading: false,
-  currentGamesError: null,
 };
 
 const sportsDataSlice = createSlice({
@@ -385,41 +375,257 @@ const sportsDataSlice = createSlice({
     setRedditSortKind: (state, action: PayloadAction<'top' | 'new'>) => {
       state.redditSortKind = action.payload;
     },
-    clearOddsData: (state) => {
-      state.oddsByDate = null;
-      state.oddsError = null;
+    setTwitterSortKind: (state, action: PayloadAction<'top' | 'latest'>) => {
+      state.twitterSortKind = action.payload;
     },
-    clearMLBData: (state) => {
-      state.mlbScores = null;
-      state.mlbScoresError = null;
-      state.mlbTeamProfiles = null;
-      state.mlbTeamProfilesError = null;
-      state.mlbStadiums = null;
-      state.mlbStadiumsError = null;
-      state.mlbSchedule = null;
-      state.mlbScheduleError = null;
+    // Generic league data actions
+    setLeagueScores: (state, action: PayloadAction<{league: string, data: any}>) => {
+      const { league, data } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
+      }
+      state.leagueData[league].scores = data;
+      state.leagueData[league].scoresError = null;
     },
-    // League data actions
     setLeagueTeamProfiles: (state, action: PayloadAction<{league: string, data: any}>) => {
       const { league, data } = action.payload;
       if (!state.leagueData[league]) {
-        state.leagueData[league] = {};
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
       }
       state.leagueData[league].teamProfiles = data;
+      state.leagueData[league].teamProfilesError = null;
     },
     setLeagueStadiums: (state, action: PayloadAction<{league: string, data: any}>) => {
       const { league, data } = action.payload;
       if (!state.leagueData[league]) {
-        state.leagueData[league] = {};
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
       }
       state.leagueData[league].stadiums = data;
+      state.leagueData[league].stadiumsError = null;
     },
-    setLeagueError: (state, action: PayloadAction<{league: string, error: string}>) => {
-      const { league, error } = action.payload;
+    setLeagueSchedule: (state, action: PayloadAction<{league: string, data: any}>) => {
+      const { league, data } = action.payload;
       if (!state.leagueData[league]) {
-        state.leagueData[league] = {};
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
       }
-      state.leagueData[league].error = error;
+      state.leagueData[league].schedule = data;
+      state.leagueData[league].scheduleError = null;
+    },
+    setLeagueOdds: (state, action: PayloadAction<{league: string, data: any}>) => {
+      const { league, data } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
+      }
+      state.leagueData[league].odds = data;
+      state.leagueData[league].oddsError = null;
+    },
+    setLeagueCurrentGames: (state, action: PayloadAction<{league: string, data: any}>) => {
+      const { league, data } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
+      }
+      state.leagueData[league].currentGames = data;
+      state.leagueData[league].currentGamesError = null;
+    },
+    setLeagueLoading: (state, action: PayloadAction<{league: string, dataType: keyof LeagueData, loading: boolean}>) => {
+      const { league, dataType, loading } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
+      }
+      state.leagueData[league][`${dataType}Loading` as keyof LeagueData] = loading as any;
+    },
+    setLeagueError: (state, action: PayloadAction<{league: string, dataType: keyof LeagueData, error: string}>) => {
+      const { league, dataType, error } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
+      }
+      state.leagueData[league][`${dataType}Error` as keyof LeagueData] = error as any;
+    },
+    clearLeagueData: (state, action: PayloadAction<string>) => {
+      const league = action.payload;
+      if (state.leagueData[league]) {
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
+      }
     },
   },
   extraReducers: (builder) => {
@@ -571,70 +777,205 @@ const sportsDataSlice = createSlice({
         state.oddsLoading = false;
         state.oddsError = action.error.message || 'Failed to fetch odds data';
       })
-      .addCase(fetchMLBScores.pending, (state) => {
-        state.mlbScoresLoading = true;
-        state.mlbScoresError = null;
+      // Generic scores reducers
+      .addCase(fetchScores.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        state.leagueData[league].scoresLoading = true;
+        state.leagueData[league].scoresError = null;
       })
-      .addCase(fetchMLBScores.fulfilled, (state, action) => {
-        state.mlbScoresLoading = false;
-        state.mlbScores = action.payload;
-        state.mlbScoresError = null;
+      .addCase(fetchScores.fulfilled, (state, action) => {
+        const { league, data } = action.payload;
+        state.leagueData[league].scoresLoading = false;
+        state.leagueData[league].scores = data;
+        state.leagueData[league].scoresError = null;
       })
-      .addCase(fetchMLBScores.rejected, (state, action) => {
-        state.mlbScoresLoading = false;
-        state.mlbScoresError = action.error.message || 'Failed to fetch MLB scores';
+      .addCase(fetchScores.rejected, (state, action) => {
+        const { league } = action.meta.arg;
+        state.leagueData[league].scoresLoading = false;
+        state.leagueData[league].scoresError = action.error.message || 'Failed to fetch scores';
       })
-      .addCase(fetchMLBTeamProfiles.pending, (state) => {
-        state.mlbTeamProfilesLoading = true;
-        state.mlbTeamProfilesError = null;
+      // Generic team profiles reducers
+      .addCase(fetchTeamProfiles.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        state.leagueData[league].teamProfilesLoading = true;
+        state.leagueData[league].teamProfilesError = null;
       })
-      .addCase(fetchMLBTeamProfiles.fulfilled, (state, action) => {
-        state.mlbTeamProfilesLoading = false;
-        state.mlbTeamProfiles = action.payload;
-        state.mlbTeamProfilesError = null;
+      .addCase(fetchTeamProfiles.fulfilled, (state, action) => {
+        const { league, data } = action.payload;
+        state.leagueData[league].teamProfilesLoading = false;
+        state.leagueData[league].teamProfiles = data;
+        state.leagueData[league].teamProfilesError = null;
       })
-      .addCase(fetchMLBTeamProfiles.rejected, (state, action) => {
-        state.mlbTeamProfilesLoading = false;
-        state.mlbTeamProfilesError = action.error.message || 'Failed to fetch MLB team profiles';
+      .addCase(fetchTeamProfiles.rejected, (state, action) => {
+        const { league } = action.meta.arg;
+        state.leagueData[league].teamProfilesLoading = false;
+        state.leagueData[league].teamProfilesError = action.error.message || 'Failed to fetch team profiles';
       })
-      .addCase(fetchMLBStadiums.pending, (state) => {
-        state.mlbStadiumsLoading = true;
-        state.mlbStadiumsError = null;
+      // Generic stadiums reducers
+      .addCase(fetchStadiums.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        state.leagueData[league].stadiumsLoading = true;
+        state.leagueData[league].stadiumsError = null;
       })
-      .addCase(fetchMLBStadiums.fulfilled, (state, action) => {
-        state.mlbStadiumsLoading = false;
-        state.mlbStadiums = action.payload;
-        state.mlbStadiumsError = null;
+      .addCase(fetchStadiums.fulfilled, (state, action) => {
+        const { league, data } = action.payload;
+        state.leagueData[league].stadiumsLoading = false;
+        state.leagueData[league].stadiums = data;
+        state.leagueData[league].stadiumsError = null;
       })
-      .addCase(fetchMLBStadiums.rejected, (state, action) => {
-        state.mlbStadiumsLoading = false;
-        state.mlbStadiumsError = action.error.message || 'Failed to fetch MLB stadiums';
+      .addCase(fetchStadiums.rejected, (state, action) => {
+        const { league } = action.meta.arg;
+        state.leagueData[league].stadiumsLoading = false;
+        state.leagueData[league].stadiumsError = action.error.message || 'Failed to fetch stadiums';
       })
-      .addCase(fetchMLBSchedule.pending, (state) => {
-        state.mlbScheduleLoading = true;
-        state.mlbScheduleError = null;
+      // Generic schedule reducers
+      .addCase(fetchSchedule.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        state.leagueData[league].scheduleLoading = true;
+        state.leagueData[league].scheduleError = null;
       })
-      .addCase(fetchMLBSchedule.fulfilled, (state, action) => {
-        state.mlbScheduleLoading = false;
-        state.mlbSchedule = action.payload;
-        state.mlbScheduleError = null;
+      .addCase(fetchSchedule.fulfilled, (state, action) => {
+        const { league, data } = action.payload;
+        state.leagueData[league].scheduleLoading = false;
+        state.leagueData[league].schedule = data;
+        state.leagueData[league].scheduleError = null;
       })
-      .addCase(fetchMLBSchedule.rejected, (state, action) => {
-        state.mlbScheduleLoading = false;
-        state.mlbScheduleError = action.error.message || 'Failed to fetch MLB schedule';
+      .addCase(fetchSchedule.rejected, (state, action) => {
+        const { league } = action.meta.arg;
+        state.leagueData[league].scheduleLoading = false;
+        state.leagueData[league].scheduleError = action.error.message || 'Failed to fetch schedule';
       })
-      .addCase(fetchCurrentGames.pending, (state) => {
-        state.currentGamesLoading = true;
-        state.currentGamesError = null;
+      // Generic current games reducers
+      .addCase(fetchCurrentGames.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        state.leagueData[league].currentGamesLoading = true;
+        state.leagueData[league].currentGamesError = null;
       })
       .addCase(fetchCurrentGames.fulfilled, (state, action) => {
-        state.currentGamesLoading = false;
-        state.currentGames = action.payload;
-        state.currentGamesError = null;
+        const { league, data } = action.payload;
+        state.leagueData[league].currentGamesLoading = false;
+        state.leagueData[league].currentGames = data;
+        state.leagueData[league].currentGamesError = null;
       })
       .addCase(fetchCurrentGames.rejected, (state, action) => {
-        state.currentGamesLoading = false;
-        state.currentGamesError = action.error.message || 'Failed to fetch current games';
+        const { league } = action.meta.arg;
+        state.leagueData[league].currentGamesLoading = false;
+        state.leagueData[league].currentGamesError = action.error.message || 'Failed to fetch current games';
       });
   },
 });
@@ -651,10 +992,16 @@ export const {
   setBoxscoreView,
   setSocialPlatform,
   setRedditSortKind,
-  clearOddsData,
-  clearMLBData,
+  setTwitterSortKind,
+  // Generic league data actions
+  setLeagueScores,
   setLeagueTeamProfiles,
   setLeagueStadiums,
-  setLeagueError
+  setLeagueSchedule,
+  setLeagueOdds,
+  setLeagueCurrentGames,
+  setLeagueLoading,
+  setLeagueError,
+  clearLeagueData
 } = sportsDataSlice.actions;
 export default sportsDataSlice.reducer;

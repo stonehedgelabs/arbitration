@@ -1,7 +1,5 @@
-// Third-party library imports
 import { Box } from "@chakra-ui/react";
 
-// Internal imports - components
 import {
   PlayByPlayMLB,
   PlayByPlayNBA,
@@ -10,7 +8,6 @@ import {
   PlayByPlayGeneric,
 } from "../components/play-by-play";
 
-// Internal imports - config
 import { League } from "../config";
 
 interface PlayByPlayProps {

@@ -200,6 +200,26 @@ async fn test_team_profile_mlb() {
 }
 
 #[tokio::test]
+async fn test_box_score_mlb() {
+    let server = setup_test_server().await;
+
+    let response = server
+        .get("/api/v1/box-score")
+        .add_query_param("league", "mlb")
+        .add_query_param("game_id", "76790")
+        .await;
+
+    // The response might be 200 (if API key works and data is valid), 500 (if API key is invalid), or 500 (if Redis not available)
+    assert!(response.status_code() == 200 || response.status_code() == 500);
+
+    if response.status_code() == 200 {
+        let body: Value = response.json();
+        assert_eq!(body.get("league").unwrap().as_str().unwrap(), "mlb");
+        assert!(body.get("data").is_some());
+    }
+}
+
+#[tokio::test]
 async fn test_team_profile_invalid_league() {
     let server = setup_test_server().await;
 

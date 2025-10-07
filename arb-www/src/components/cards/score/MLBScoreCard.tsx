@@ -1,10 +1,6 @@
-// React imports
 import { useCallback } from "react";
-
-// Third-party library imports
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
-// Internal imports - components
 import { Skeleton } from "../../Skeleton";
 import { Bases } from "../../Bases";
 import {
@@ -17,17 +13,13 @@ import {
   InningBadge,
 } from "../../badge";
 
-// Internal imports - config
 import { GameStatus, League } from "../../../config";
 
-// Internal imports - utils
 import { orEmpty, toLocalTime } from "../../../utils";
 
-// Internal imports - Redux
 import { useAppDispatch } from "../../../store/hooks";
 import { findRedditGameThread } from "../../../store/slices/sportsDataSlice";
 
-// Internal imports - teams
 import { getTeamSubredditByName } from "../../../teams";
 
 interface Team {
@@ -107,10 +99,7 @@ const TeamOddsDisplay = ({
       {/* Money Line */}
       <HStack justify="space-between" align="center" w="full">
         <Text color="text.500">ML</Text>
-        <Text
-          color={teamOdds?.moneyLine > 0 ? "green.500" : "text.400"}
-          fontWeight="medium"
-        >
+        <Text color="text.400" fontWeight="medium">
           {teamOdds?.moneyLine > 0 ? "+" : ""}
           {teamOdds?.moneyLine || "—"}
         </Text>
@@ -118,10 +107,7 @@ const TeamOddsDisplay = ({
       {/* Point Spread */}
       <HStack justify="space-between" align="center" w="full">
         <Text color="text.500">Spread</Text>
-        <Text
-          color={teamOdds?.pointSpread > 0 ? "green.500" : "text.400"}
-          fontWeight="medium"
-        >
+        <Text color="text.400" fontWeight="medium">
           {teamOdds?.pointSpread > 0 ? "+" : ""}
           {teamOdds?.pointSpread || "—"}
         </Text>
@@ -224,10 +210,20 @@ export function MLBScoreCard({
 
     // Search for game threads for both teams
     if (awaySubreddit) {
-      dispatch(findRedditGameThread(awaySubreddit.replace("r/", "")));
+      dispatch(
+        findRedditGameThread({
+          subreddit: awaySubreddit.replace("r/", ""),
+          league: "mlb",
+        }),
+      );
     }
     if (homeSubreddit) {
-      dispatch(findRedditGameThread(homeSubreddit.replace("r/", "")));
+      dispatch(
+        findRedditGameThread({
+          subreddit: homeSubreddit.replace("r/", ""),
+          league: "mlb",
+        }),
+      );
     }
   }, [
     onGameClick,

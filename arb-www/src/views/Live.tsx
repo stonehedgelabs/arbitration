@@ -1,4 +1,3 @@
-// Third-party library imports
 import {
   Badge,
   Box,
@@ -10,7 +9,6 @@ import {
 } from "@chakra-ui/react";
 import { ChevronRight } from "lucide-react";
 
-// Internal imports - components
 import { Skeleton, SkeletonCircle } from "../components/Skeleton";
 import { ErrorState } from "../components/ErrorStates";
 import {
@@ -21,7 +19,6 @@ import {
   GenericLiveGameCard,
 } from "../components/cards/live";
 
-// Internal imports - config
 import { GameStatus, League } from "../config";
 
 interface Team {

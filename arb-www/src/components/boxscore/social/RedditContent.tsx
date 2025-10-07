@@ -1,7 +1,7 @@
 import { Box, VStack, HStack, Text } from "@chakra-ui/react";
 import { MessageCircle } from "lucide-react";
 import { RedditGameThreadCommentsResponse } from "../../../schema/redditGameThreadComments";
-import { formatRelativeTime } from "../../../utils";
+import { formatRelativeUTCTime } from "../../../utils";
 
 interface RedditContentProps {
   gameId: string;
@@ -27,49 +27,6 @@ export function RedditContent({
 
   // Use real Reddit data if available, otherwise show no comments message
   const comments = redditData?.posts?.[0]?.comments || [];
-
-  // Log comment distribution by team
-  if (comments.length > 0) {
-    const awaySubreddit = awayTeamSubreddit?.replace("r/", "").toLowerCase();
-    const homeSubreddit = homeTeamSubreddit?.replace("r/", "").toLowerCase();
-
-    const awayTeamComments = comments.filter(
-      (comment) => comment.subreddit.toLowerCase() === awaySubreddit,
-    );
-    const homeTeamComments = comments.filter(
-      (comment) => comment.subreddit.toLowerCase() === homeSubreddit,
-    );
-    const otherComments = comments.filter(
-      (comment) =>
-        comment.subreddit.toLowerCase() !== awaySubreddit &&
-        comment.subreddit.toLowerCase() !== homeSubreddit,
-    );
-
-    console.log("📊 Reddit Comment Distribution:", {
-      totalComments: comments.length,
-      awayTeam: {
-        name: awayTeam,
-        subreddit: awayTeamSubreddit,
-        subredditClean: awaySubreddit,
-        commentCount: awayTeamComments.length,
-      },
-      homeTeam: {
-        name: homeTeam,
-        subreddit: homeTeamSubreddit,
-        subredditClean: homeSubreddit,
-        commentCount: homeTeamComments.length,
-      },
-      otherComments: {
-        count: otherComments.length,
-        subreddits: [...new Set(otherComments.map((c) => c.subreddit))],
-      },
-      sampleComments: comments.slice(0, 3).map((c) => ({
-        subreddit: c.subreddit,
-        author: c.author,
-        content: c.content.substring(0, 50) + "...",
-      })),
-    });
-  }
 
   if (!redditData) {
     return (
@@ -192,7 +149,8 @@ export function RedditContent({
                         borderRadius="lg"
                         px="3"
                         py="2"
-                        maxW="full"
+                        maxW="280px"
+                        wordBreak="break-word"
                       >
                         <Text
                           fontSize="xs"
@@ -213,7 +171,7 @@ export function RedditContent({
                             •
                           </Text>
                           <Text fontSize="xs" color="text.500">
-                            {formatRelativeTime(comment.timestamp)}
+                            {formatRelativeUTCTime(comment.timestamp)}
                           </Text>
                         </HStack>
                       </Box>

@@ -150,8 +150,7 @@ pub struct PlayByPlayQuery {
 #[derive(Debug, Deserialize)]
 pub struct ScoresQuery {
     pub league: String,
-    pub date: Option<String>,   // YYYY-MM-DD format
-    pub days_back: Option<u32>, // Number of days to go back (default 3)
+    pub date: String, // YYYY-MM-DD format - always required
 }
 
 #[derive(Debug, Deserialize)]
@@ -908,84 +907,101 @@ async fn handle_scores_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    let days_back = params.days_back.unwrap_or(7);
-    let today = chrono::Utc::now().date_naive();
+    let date_str = params.date;
+    let response_date = date_str.clone();
 
-    let mut all_games = Vec::new();
+    // Automatically determine if this is a postseason date
+    let is_postseason = use_case_state
+        .config
+        .is_postseason_date(&league_str, &date_str);
 
-    for i in 0..days_back {
-        let target_date = today - chrono::Duration::days(i.into());
-        let date_str = target_date.format("%Y-%m-%d").to_string();
+    let api_url = if is_postseason {
+        tracing::info!(
+            "Date {} is postseason for league {}, using postseason endpoint",
+            date_str,
+            league_str
+        );
+        postseason_schedule_path(league.clone(), use_case_state.config.clone())
+            .to_string()
+    } else {
+        tracing::info!(
+            "Date {} is regular season for league {}, using regular season endpoint",
+            date_str,
+            league_str
+        );
+        games_by_date_path(league.clone(), Some(date_str.clone())).to_string()
+    };
 
-        let api_url = match league {
-            League::Mlb => {
-                games_by_date_path(league.clone(), Some(date_str.clone())).to_string()
-            }
-            _ => {
-                tracing::error!("Scores not yet supported for league: {}", league);
-                return Err(StatusCode::BAD_REQUEST.into());
-            }
-        };
-
-        let cache_key = CacheKey::scores(&league, &date_str);
-
-        let data = {
-            let mut cache = use_case_state.cache.lock().await;
-            if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
-                tracing::error!(
-                    "Failed to get scores data from cache for date {}: {}",
-                    date_str,
-                    e
-                );
-                StatusCode::INTERNAL_SERVER_ERROR
-            })? {
-                tracing::debug!("Returning cached scores data for date: {}", date_str);
-                cached_data
-            } else {
-                tracing::info!(
-                    "Cache miss for scores data, fetching from API: {} for date: {}",
-                    api_url,
-                    date_str
-                );
-                let fetched_data =
-                    fetch_games_by_date_from_api(&api_url, &league, &date_str)
-                        .await
-                        .map_err(|e| {
-                            tracing::error!(
-                                "Failed to fetch scores data for date {}: {}",
-                                date_str,
-                                e
-                            );
-                            StatusCode::INTERNAL_SERVER_ERROR
-                        })?;
-                cache
-                    .setx(
-                        &cache_key,
-                        &fetched_data,
-                        use_case_state.config.cache.ttl.scores,
-                    )
+    let cache_key = CacheKey::scores(&league, &date_str);
+    let data = {
+        let mut cache = use_case_state.cache.lock().await;
+        if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
+            tracing::error!(
+                "Failed to get scores data from cache for date {}: {}",
+                date_str,
+                e
+            );
+            StatusCode::INTERNAL_SERVER_ERROR
+        })? {
+            tracing::debug!("Returning cached scores data for date: {}", date_str);
+            cached_data
+        } else {
+            tracing::info!(
+                "Cache miss for scores data, fetching from API: {} for date: {}",
+                api_url,
+                date_str
+            );
+            let fetched_data = if is_postseason {
+                fetch_schedule_from_api(&api_url, &league, true)
                     .await
                     .map_err(|e| {
                         tracing::error!(
-                            "Failed to cache scores data for date {}: {}",
+                            "Failed to fetch postseason schedule data for date {}: {}",
                             date_str,
                             e
                         );
                         StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-                fetched_data
-            }
-        };
+                    })?
+            } else {
+                fetch_games_by_date_from_api(&api_url, &league, &date_str)
+                    .await
+                    .map_err(|e| {
+                        tracing::error!(
+                            "Failed to fetch scores data for date {}: {}",
+                            date_str,
+                            e
+                        );
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?
+            };
+            cache
+                .setx(
+                    &cache_key,
+                    &fetched_data,
+                    use_case_state.config.cache.ttl.scores,
+                )
+                .await
+                .map_err(|e| {
+                    tracing::error!(
+                        "Failed to cache scores data for date {}: {}",
+                        date_str,
+                        e
+                    );
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            fetched_data
+        }
+    };
 
-        let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
-            tracing::error!("Failed to parse JSON data for date {}: {}", date_str, e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
+        tracing::error!("Failed to parse JSON data for date {}: {}", date_str, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
-        if let Some(games_array) = json_data.as_array() {
-            for game in games_array {
-                all_games.push(game.clone());
-            }
+    let mut all_games = Vec::new();
+    if let Some(games_array) = json_data.as_array() {
+        for game in games_array {
+            all_games.push(game.clone());
         }
     }
 
@@ -994,7 +1010,7 @@ async fn handle_scores_request(
 
     Ok(Json(ScoresResponse {
         league: league.to_string(),
-        date: format!("{} days back", days_back),
+        date: response_date,
         data: serde_json::Value::Array(all_games),
         games_count,
         live_games_count,
@@ -1915,24 +1931,34 @@ pub async fn handle_reddit_search_request(
         .limit
         .unwrap_or(state.config.api.reddit_api.default_comment_limit);
     let sort_kind = params.kind.unwrap_or_else(|| "new".to_string());
+    let bypass_cache = params.cache.unwrap_or(true); // Default to using cache
 
     tracing::info!(
-        "Reddit search for subreddit: {}, game_id: {}, limit: {}",
+        "Reddit search for subreddit: {}, game_id: {}, limit: {}, bypass_cache: {}",
         subreddit_clean,
         game_id,
-        limit
+        limit,
+        !bypass_cache
     );
 
-    // Check cache first for comments
+    // Define cache key for comments (used for both checking and storing)
     let comments_cache_key = format!("reddit:thread_comments:{}", subreddit_clean);
-    if let Ok(Some(cached_data)) = state.cache.lock().await.get(&comments_cache_key).await
-    {
-        if let Ok(reddit_response) =
-            serde_json::from_str::<RedditSearchResponse>(&cached_data)
+
+    // Check cache first for comments (only if cache is enabled)
+    if bypass_cache {
+        let comments_cache_key = format!("reddit:thread_comments:{}", subreddit_clean);
+        if let Ok(Some(cached_data)) =
+            state.cache.lock().await.get(&comments_cache_key).await
         {
-            tracing::debug!("Returning cached Reddit comments result");
-            return Ok(Json(reddit_response));
+            if let Ok(reddit_response) =
+                serde_json::from_str::<RedditSearchResponse>(&cached_data)
+            {
+                tracing::debug!("Returning cached Reddit comments result");
+                return Ok(Json(reddit_response));
+            }
         }
+    } else {
+        tracing::info!("Cache bypass requested - fetching fresh data from Reddit API");
     }
 
     // Check cache for game thread ID
@@ -2175,7 +2201,8 @@ pub async fn handle_reddit_search_request(
 
 #[derive(Debug, Deserialize)]
 pub struct RedditThreadQuery {
-    pub subreddit: Option<String>,
+    pub subreddit: String,
+    pub league: String,
 }
 
 pub async fn handle_reddit_thread_request(
@@ -2184,15 +2211,13 @@ pub async fn handle_reddit_thread_request(
 ) -> Result<Json<serde_json::Value>> {
     tracing::info!("Reddit thread request received with params: {:?}", params);
 
-    // Get single subreddit
-    let subreddit = params.subreddit.ok_or_else(|| {
-        tracing::error!("Missing required parameter: subreddit");
-        StatusCode::BAD_REQUEST
-    })?;
+    let subreddit_clean = params.subreddit.trim().trim_start_matches("r/");
 
-    let subreddit_clean = subreddit.trim().trim_start_matches("r/");
-
-    tracing::info!("Reddit thread search for subreddit: {}", subreddit_clean);
+    tracing::info!(
+        "Reddit thread search for subreddit: {} (league: {})",
+        subreddit_clean,
+        params.league
+    );
 
     // Check cache first
     let cache_key = format!("reddit:thread:{}", subreddit_clean);
@@ -2248,8 +2273,14 @@ pub async fn handle_reddit_thread_request(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // Step 2: Search for game thread
-    let query = "Game Thread";
+    let query = match params.league.to_lowercase().as_str() {
+        "mlb" => match subreddit_clean.to_lowercase().as_str() {
+            "dodgers" => "Game Chat",
+            _ => "Game Thread",
+        },
+        _ => "Game Thread",
+    };
+
     let search_url = format!(
         "https://oauth.reddit.com/r/{}/search.json?q={}&restrict_sr=1&sort=new&limit=10",
         subreddit_clean,
@@ -2292,7 +2323,8 @@ pub async fn handle_reddit_thread_request(
     // Find the game thread
     if let Some(game_thread) = find_live_game_thread(&search_data) {
         tracing::info!(
-            "Found game thread: {} (ID: {})",
+            "Found game thread using query '{}': {} (ID: {})",
+            query,
             game_thread.title,
             game_thread.id
         );

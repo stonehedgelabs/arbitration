@@ -96,6 +96,7 @@ pub struct RedditSearchQuery {
     pub game_id: Option<String>,
     pub kind: Option<String>,
     pub limit: Option<u32>,
+    pub cache: Option<bool>,
 }
 
 // Helper functions for converting Reddit API responses to our simplified format

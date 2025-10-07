@@ -1,5 +1,15 @@
-import { Box, VStack, HStack, Button, Text, Spinner } from "@chakra-ui/react";
+import {
+  Box,
+  VStack,
+  HStack,
+  Button,
+  Text,
+  Spinner,
+  IconButton,
+  Switch,
+} from "@chakra-ui/react";
 import { motion, AnimatePresence } from "motion/react";
+import { RotateCcw } from "lucide-react";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import {
@@ -10,7 +20,7 @@ import {
 import { RedditContent } from "./RedditContent.tsx";
 import { TwitterContent } from "../../TwitterContent";
 import { getTeamSubredditByName } from "../../../teams";
-import { League } from "../../../config";
+import { League, REDDIT_CONFIG } from "../../../config";
 
 interface BoxScoreSocialProps {
   gameId: string;
@@ -63,6 +73,7 @@ export function BoxScoreSocial({
             subreddit: awaySubreddit.replace("r/", ""),
             gameId,
             kind: redditSortKind,
+            bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
           }),
         );
       }
@@ -72,6 +83,7 @@ export function BoxScoreSocial({
             subreddit: homeSubreddit.replace("r/", ""),
             gameId,
             kind: redditSortKind,
+            bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
           }),
         );
       }
@@ -94,6 +106,7 @@ export function BoxScoreSocial({
             subreddit: awaySubreddit.replace("r/", ""),
             gameId,
             kind: redditSortKind,
+            bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
           }),
         );
       }
@@ -103,6 +116,7 @@ export function BoxScoreSocial({
             subreddit: homeSubreddit.replace("r/", ""),
             gameId,
             kind: redditSortKind,
+            bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
           }),
         );
       }
@@ -113,22 +127,50 @@ export function BoxScoreSocial({
   // Generate a Twitter search query based on team names
   const twitterSearchQuery = `${homeTeam} vs ${awayTeam}`;
 
+  // Handle Reddit refresh
+  const handleRedditRefresh = () => {
+    const awaySubreddit = getTeamSubredditByName(awayTeam, league);
+    const homeSubreddit = getTeamSubredditByName(homeTeam, league);
+
+    if (awaySubreddit) {
+      dispatch(
+        fetchRedditGameThreadComments({
+          subreddit: awaySubreddit.replace("r/", ""),
+          gameId,
+          kind: redditSortKind,
+          bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
+        }),
+      );
+    }
+    if (homeSubreddit) {
+      dispatch(
+        fetchRedditGameThreadComments({
+          subreddit: homeSubreddit.replace("r/", ""),
+          gameId,
+          kind: redditSortKind,
+          bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
+        }),
+      );
+    }
+  };
+
   return (
     <VStack gap="4" align="stretch">
       {/* Reddit/Twitter Toggle */}
       <HStack justify="center">
         <Box bg="text.100" borderRadius="lg" p="1" display="flex">
           <Button
-            size="sm"
+            size="xs"
             variant="ghost"
             onClick={() => {
-              console.log("🔴 REDDIT BUTTON CLICKED!");
               handlePlatformToggle("reddit");
             }}
             bg={socialPlatform === "reddit" ? "white" : "transparent"}
             color={socialPlatform === "reddit" ? "text.600" : "text.400"}
             borderRadius="md"
-            px="6"
+            px="2"
+            fontSize="xs"
+            height="6"
             _hover={{
               bg: socialPlatform === "reddit" ? "white" : "text.50",
             }}
@@ -140,13 +182,15 @@ export function BoxScoreSocial({
             Reddit
           </Button>
           <Button
-            size="sm"
+            size="xs"
             variant="ghost"
             onClick={() => handlePlatformToggle("twitter")}
             bg={socialPlatform === "twitter" ? "white" : "transparent"}
             color={socialPlatform === "twitter" ? "text.600" : "text.400"}
             borderRadius="md"
-            px="6"
+            px="2"
+            fontSize="xs"
+            height="6"
             _hover={{
               bg: socialPlatform === "twitter" ? "white" : "text.50",
             }}
@@ -189,85 +233,68 @@ export function BoxScoreSocial({
                 </VStack>
               ) : redditCommentsData ? (
                 <VStack gap="4" align="stretch">
-                  {/* Reddit Sort Toggle */}
-                  <HStack justify="center" gap="2" py="2">
-                    <Text fontSize="sm" color="text.400">
-                      Sort by:
-                    </Text>
-                    <Button
+                  {/* Reddit Header with Sort Toggle and Refresh */}
+                  <HStack justify="space-between" align="center" py="2">
+                    {/* Reddit Sort Toggle */}
+                    <HStack gap="2" align="center">
+                      <Text fontSize="xs" color="text.400">
+                        Top
+                      </Text>
+                      <Switch.Root
+                        size="xs"
+                        checked={redditSortKind === "new"}
+                        onCheckedChange={(e) => {
+                          const newSort = e.checked ? "new" : "top";
+                          dispatch(setRedditSortKind(newSort));
+                          // Re-fetch comments with new sort
+                          const awaySubreddit = getTeamSubredditByName(
+                            awayTeam,
+                            league,
+                          );
+                          const homeSubreddit = getTeamSubredditByName(
+                            homeTeam,
+                            league,
+                          );
+                          if (awaySubreddit) {
+                            dispatch(
+                              fetchRedditGameThreadComments({
+                                subreddit: awaySubreddit.replace("r/", ""),
+                                gameId,
+                                kind: newSort,
+                                bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
+                              }),
+                            );
+                          }
+                          if (homeSubreddit) {
+                            dispatch(
+                              fetchRedditGameThreadComments({
+                                subreddit: homeSubreddit.replace("r/", ""),
+                                gameId,
+                                kind: newSort,
+                                bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
+                              }),
+                            );
+                          }
+                        }}
+                      >
+                        <Switch.HiddenInput />
+                        <Switch.Control />
+                      </Switch.Root>
+                      <Text fontSize="xs" color="text.400">
+                        Latest
+                      </Text>
+                    </HStack>
+                    {/* Refresh Button */}
+                    <IconButton
+                      aria-label="Refresh Reddit comments"
                       size="sm"
-                      variant={redditSortKind === "top" ? "solid" : "outline"}
-                      colorScheme={redditSortKind === "top" ? "blue" : "gray"}
-                      onClick={() => {
-                        dispatch(setRedditSortKind("top"));
-                        // Re-fetch comments with new sort
-                        const awaySubreddit = getTeamSubredditByName(
-                          awayTeam,
-                          league,
-                        );
-                        const homeSubreddit = getTeamSubredditByName(
-                          homeTeam,
-                          league,
-                        );
-                        if (awaySubreddit) {
-                          dispatch(
-                            fetchRedditGameThreadComments({
-                              subreddit: awaySubreddit.replace("r/", ""),
-                              gameId,
-                              kind: "top",
-                            }),
-                          );
-                        }
-                        if (homeSubreddit) {
-                          dispatch(
-                            fetchRedditGameThreadComments({
-                              subreddit: homeSubreddit.replace("r/", ""),
-                              gameId,
-                              kind: "top",
-                            }),
-                          );
-                        }
-                      }}
+                      variant="ghost"
+                      color="text.400"
+                      onClick={handleRedditRefresh}
+                      loading={redditCommentsLoading}
                     >
-                      Top
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={redditSortKind === "new" ? "solid" : "outline"}
-                      colorScheme={redditSortKind === "new" ? "blue" : "gray"}
-                      onClick={() => {
-                        dispatch(setRedditSortKind("new"));
-                        // Re-fetch comments with new sort
-                        const awaySubreddit = getTeamSubredditByName(
-                          awayTeam,
-                          league,
-                        );
-                        const homeSubreddit = getTeamSubredditByName(
-                          homeTeam,
-                          league,
-                        );
-                        if (awaySubreddit) {
-                          dispatch(
-                            fetchRedditGameThreadComments({
-                              subreddit: awaySubreddit.replace("r/", ""),
-                              gameId,
-                              kind: "new",
-                            }),
-                          );
-                        }
-                        if (homeSubreddit) {
-                          dispatch(
-                            fetchRedditGameThreadComments({
-                              subreddit: homeSubreddit.replace("r/", ""),
-                              gameId,
-                              kind: "new",
-                            }),
-                          );
-                        }
-                      }}
-                    >
-                      Latest
-                    </Button>
+                      <RotateCcw size={16} />
+                    </IconButton>
                   </HStack>
 
                   <RedditContent

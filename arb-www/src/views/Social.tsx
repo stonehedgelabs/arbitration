@@ -1,14 +1,9 @@
-// React imports
 import { memo } from "react";
-
-// Third-party library imports
 import { Box, Text, VStack } from "@chakra-ui/react";
 
-// Internal imports - components
 import { TwitterContent } from "../components/TwitterContent";
 import { NotImplemented } from "./NotImplemented";
 
-// Internal imports - config
 import { TWITTER_CONFIG, League } from "../config";
 
 interface SocialSectionProps {

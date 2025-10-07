@@ -8,22 +8,22 @@ client_url = "http://localhost:3000"
 
 [cache]
 enabled = true
-mode = "Infinite"
+mode = "TtlBased"
 redis_url = "redis://localhost:6379"
 default_ttl = 60
 
 [cache.ttl]
 team_profiles = 3600      # 1 hour
-schedule = 1800           # 30 minutes
-postseason_schedule = 1800 # 30 minutes
-scores = 120              # 1 minutes
-play_by_play = 20         # 20 seconds
+schedule = 3600           # 1 hour
+postseason_schedule = 3600 # 1 hour
+scores = 60               # 1 minute
+play_by_play = 60         # 1 minute
 box_scores = 60           # 1 minute
-stadiums = 7200           # 2 hours
+stadiums = 21600          # 6 hours
 twitter_search = 60       # 1 minute
 reddit_thread = 21600     # 6 hours
-reddit_thread_comments = 120 # 2 minutes
-odds = 86400              # 24 hours
+reddit_thread_comments = 60 # 1 minute
+odds = 3600               # 1 hour
 user_auth = 604800        # 1 week (7 days)
 
 [seasons.current_seasons.mlb]

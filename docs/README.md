@@ -1,6 +1,6 @@
 # Arbitration Sports Platform
 
-A comprehensive sports data platform featuring a Rust-based API proxy server, React frontend, and native iOS app. The platform provides real-time sports data, live scores, play-by-play coverage, and social integration across multiple professional sports leagues.
+A comprehensive sports data platform featuring a Rust-based API proxy server, React frontend, and native iOS app. The platform provides real-time sports data, live scores, play-by-play coverage, social media integration, and advanced caching strategies across multiple professional sports leagues.
 
 ## 📋 Table of Contents
 
@@ -100,13 +100,20 @@ The Arbitration platform follows a **microservices architecture** with clear sep
 
 #### 1. **Intelligent Caching System**
 ```rust
-// Different TTL strategies based on data type
+// Optimized TTL strategies based on data volatility
 pub struct CacheTtlConfig {
     pub team_profiles: u64,       // 1 hour - rarely changes
-    pub schedule: u64,            // 30 minutes - moderate updates
-    pub scores: u64,              // 2 minutes - frequent updates
-    pub play_by_play: u64,        // 20 seconds - real-time data
+    pub schedule: u64,            // 1 hour - moderate updates
+    pub postseason_schedule: u64, // 1 hour - playoff schedules
+    pub scores: u64,              // 1 minute - frequent updates
+    pub play_by_play: u64,        // 1 minute - real-time data
+    pub box_scores: u64,          // 1 minute - game results
+    pub stadiums: u64,            // 6 hours - rarely changes
     pub twitter_search: u64,      // 1 minute - social data
+    pub reddit_thread: u64,       // 6 hours - game threads
+    pub reddit_thread_comments: u64, // 1 minute - live comments
+    pub odds: u64,                // 1 hour - betting data
+    pub user_auth: u64,           // 1 week - authentication
 }
 ```
 
@@ -120,16 +127,25 @@ pub struct CacheTtlConfig {
 #### 3. **API Endpoints**
 ```
 GET /api/v1/health                    # Health check
-GET /api/v1/scores?league=mlb        # Live scores
+GET /api/v1/scores?league=mlb        # Historical scores (7 days back)
 GET /api/v1/schedule?league=nfl      # Game schedules
 GET /api/v1/play-by-play?game_id=123 # Live play-by-play
 GET /api/v1/box-score?game_id=123    # Detailed box scores
 GET /api/v1/teams?league=mlb         # Team information
 GET /api/v1/odds-by-date?league=nfl  # Betting odds
 GET /api/v1/twitter-search?query=nfl # Social media integration
+GET /api/v1/reddit-thread?subreddit=phillies&league=mlb # Game threads
+GET /api/v1/reddit-thread-comments?thread_id=123&cache=false # Comments
 ```
 
-#### 4. **Error Handling & Resilience**
+#### 4. **Social Media Integration**
+- **Reddit Integration**: Game thread discovery and live comments
+- **Twitter Integration**: Real-time sports tweets and discussions
+- **Team-Specific Logic**: Dodgers use "Game Chat", others use "Game Thread"
+- **Cache Bypass**: Fresh social data with `cache=false` parameter
+- **Sort Options**: Top/Latest toggle for both Reddit and Twitter content
+
+#### 5. **Error Handling & Resilience**
 - Comprehensive error types with `thiserror`
 - Graceful degradation when external APIs fail
 - Request timeouts and retry logic
@@ -190,10 +206,12 @@ src/
 ```
 
 #### 2. **State Management Strategy**
-- **Redux Toolkit**: Centralized state with RTK Query for caching
+- **Redux Toolkit**: Centralized state with generic multi-league support
+- **Generic State Structure**: `leagueData[league].scores` instead of `mlbScores`
 - **Feature Slices**: Organized by domain (auth, sports data, favorites)
 - **Optimistic Updates**: Immediate UI updates with rollback on failure
 - **Selective Re-rendering**: Memoized selectors prevent unnecessary renders
+- **URL-Driven State**: League selection driven by URL parameters (`/scores/nba`)
 
 #### 3. **Performance Optimizations**
 
@@ -304,8 +322,9 @@ export const SkeletonText: React.FC<SkeletonProps & { noOfLines?: number }> = ({
 #### 1. **Real-Time Updates**
 - Live scores with automatic refresh
 - Play-by-play updates during games
-- Social media integration
+- Social media integration (Reddit + Twitter)
 - Betting odds updates
+- Cache bypass for fresh social data
 
 #### 2. **User Experience**
 - **Splash Screen**: iOS-style app launch
@@ -319,6 +338,19 @@ export const SkeletonText: React.FC<SkeletonProps & { noOfLines?: number }> = ({
 - Play-by-play timelines
 - Team statistics
 - Betting odds display
+- Social media feeds (Reddit comments, Twitter posts)
+- Live game threads with real-time updates
+
+#### 4. **Social Media Features**
+- **Reddit Integration**: 
+  - Game thread discovery with team-specific logic
+  - Live comment feeds with Top/Latest sorting
+  - Refresh button for fresh comments
+  - UTC timestamp formatting for accurate time display
+- **Twitter Integration**:
+  - Real-time sports tweets
+  - Top/Latest sorting toggle
+  - Team and league-specific searches
 
 ## 📱 iOS Native App
 
@@ -440,6 +472,20 @@ port = 3000
 enabled = true
 redis_url = "redis://localhost:6379"
 default_ttl = 3600
+
+[cache.ttl]
+team_profiles = 3600      # 1 hour
+schedule = 3600           # 1 hour
+postseason_schedule = 3600 # 1 hour
+scores = 60               # 1 minute
+play_by_play = 60         # 1 minute
+box_scores = 60           # 1 minute
+stadiums = 21600          # 6 hours
+twitter_search = 60       # 1 minute
+reddit_thread = 21600     # 6 hours
+reddit_thread_comments = 60 # 1 minute
+odds = 3600               # 1 hour
+user_auth = 604800        # 1 week (7 days)
 
 [seasons.current_seasons.mlb]
 regular = "2025"
@@ -572,6 +618,37 @@ CMD ["arb-rs"]
 - **Partitioning**: Partition large tables by date/league
 - **Archiving**: Move old data to archive tables
 
+## 🆕 Recent Updates & Features
+
+### Multi-League State Management Refactor
+- **Generic State Structure**: Migrated from league-specific state (`mlbScores`, `nbaScores`) to generic `leagueData[league].scores`
+- **URL-Driven Navigation**: League selection now driven by URL parameters (`/scores/nba`, `/scores/mlb`)
+- **Eliminated Code Duplication**: Removed duplicate fetch functions in favor of centralized `useArb()` service
+- **Improved Caching**: Smart caching logic prevents unnecessary API calls while ensuring fresh data
+
+### Social Media Integration
+- **Reddit Game Threads**: Automatic discovery of game threads with team-specific search logic
+- **Live Comments**: Real-time Reddit comment feeds with proper UTC timestamp handling
+- **Twitter Integration**: Real-time sports tweets with Top/Latest sorting
+- **Cache Bypass**: Fresh social data with configurable cache bypass for live updates
+
+### Performance Optimizations
+- **Skeleton Loading**: Comprehensive skeleton states prevent layout shifts during data loading
+- **Memoized Components**: Strategic use of `React.memo` and `useCallback` for optimal re-rendering
+- **Loading State Management**: Granular loading states prevent infinite refetches
+- **Import Organization**: Clean, grouped imports without debug comments
+
+### Developer Experience
+- **Type Safety**: Full TypeScript coverage with proper enum usage (`Tab` enum for navigation)
+- **Error Handling**: Comprehensive error states with retry mechanisms
+- **Debug Cleanup**: Removed all debug console logs for production readiness
+- **Code Organization**: Consistent patterns across components and services
+
+### Cache Configuration
+- **Optimized TTL Values**: Data-specific cache durations (1 minute for live data, 6 hours for static data)
+- **Cache Bypass Support**: Configurable cache bypass for fresh data when needed
+- **Redis Integration**: Efficient caching with intelligent invalidation strategies
+
 ## 📚 API Documentation
 
 ### Authentication
@@ -584,6 +661,21 @@ Authorization: Bearer your_api_key_here
 - **Free Tier**: 100 requests/hour
 - **Pro Tier**: 1000 requests/hour
 - **Enterprise**: Custom limits
+
+### API Endpoint Purposes
+
+#### Core Data Endpoints
+- **`/api/v1/scores`**: Historical game scores for multiple days (default 7 days back)
+- **`/api/v1/schedule`**: Game schedules for a specific date
+- **`/api/v1/box-scores`**: Detailed box score data for a specific game
+- **`/api/v1/play-by-play`**: Live play-by-play events for a game
+- **`/api/v1/teams`**: Team information and profiles
+- **`/api/v1/odds-by-date`**: Betting odds for games on a specific date
+
+#### Social Media Endpoints
+- **`/api/v1/reddit-thread`**: Find game threads in team subreddits
+- **`/api/v1/reddit-thread-comments`**: Get comments from a specific thread
+- **`/api/v1/twitter-search`**: Search for sports-related tweets
 
 ### Response Format
 ```json
