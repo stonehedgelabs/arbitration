@@ -34,6 +34,7 @@ use crate::{
         twitterapi::tweet::TwitterSearchResponse,
     },
     services::auth::{AppleOAuth, GoogleOAuth},
+    zero_copy::ZeroCopyJson,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -758,45 +759,10 @@ fn filter_data_by_params(
     data: serde_json::Value,
     filters: &HashMap<String, String>,
 ) -> Result<(serde_json::Value, usize, usize)> {
-    let array = data.as_array().ok_or_else(|| {
-        tracing::error!("Expected array data for filtering");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-
-    let total_count = array.len();
-    let mut filtered_items = Vec::new();
-
-    for item in array {
-        let mut matches = true;
-
-        for (key, value) in filters {
-            if let Some(field_value) = item.get(key) {
-                let field_str = match field_value {
-                    serde_json::Value::String(s) => s.to_lowercase(),
-                    serde_json::Value::Number(n) => n.to_string(),
-                    serde_json::Value::Bool(b) => b.to_string(),
-                    _ => continue,
-                };
-
-                if !field_str.contains(&value.to_lowercase()) {
-                    matches = false;
-                    break;
-                }
-            } else {
-                matches = false;
-                break;
-            }
-        }
-
-        if matches {
-            filtered_items.push(item.clone());
-        }
-    }
-
-    let filtered_count = filtered_items.len();
-    let filtered_data = serde_json::Value::Array(filtered_items);
-
-    Ok((filtered_data, filtered_count, total_count))
+    ZeroCopyJson::filter_data_by_params(data, filters).map_err(|e| {
+        tracing::error!("Failed to filter data: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR.into()
+    })
 }
 
 async fn handle_play_by_play_request(
@@ -1879,9 +1845,6 @@ pub async fn handle_twitter_search_request(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // Log the raw response for debugging
-    tracing::info!("Twitter API raw response: {}", body);
-
     let twitter_response: TwitterSearchResponse =
         serde_json::from_str(&body).map_err(|e| {
             tracing::error!("Failed to parse Twitter API response: {}", e);
@@ -1927,17 +1890,20 @@ pub async fn handle_reddit_search_request(
 
     let subreddit_clean = subreddit.trim().trim_start_matches("r/");
     let game_id = params.game_id.unwrap_or_default();
-    let limit = params
+    // Always fetch 100 comments for better sampling, but limit final output to 20
+    let fetch_limit = 100;
+    let output_limit = params
         .limit
         .unwrap_or(state.config.api.reddit_api.default_comment_limit);
     let sort_kind = params.kind.unwrap_or_else(|| "new".to_string());
     let bypass_cache = params.cache.unwrap_or(true); // Default to using cache
 
     tracing::info!(
-        "Reddit search for subreddit: {}, game_id: {}, limit: {}, bypass_cache: {}",
+        "Reddit search for subreddit: {}, game_id: {}, fetch_limit: {}, output_limit: {}, bypass_cache: {}",
         subreddit_clean,
         game_id,
-        limit,
+        fetch_limit,
+        output_limit,
         !bypass_cache
     );
 
@@ -2041,7 +2007,7 @@ pub async fn handle_reddit_search_request(
     // Get comments for the cached game thread ID
     let search_url = format!(
         "https://oauth.reddit.com/r/{}/comments/{}.json?sort={}&limit={}",
-        subreddit_clean, game_thread_id, sort_kind, limit
+        subreddit_clean, game_thread_id, sort_kind, fetch_limit
     );
 
     let search_response = reqwest::Client::new()
@@ -2122,13 +2088,35 @@ pub async fn handle_reddit_search_request(
         // Parse comments from the second element
         if let Some(comments_array) = comments_listing["data"]["children"].as_array() {
             tracing::info!(
-                "Found {} comments for game thread {}",
+                "Found {} comments for game thread {}, sampling {} for output",
                 comments_array.len(),
-                game_thread_id
+                game_thread_id,
+                output_limit
             );
             let mut post_comments = Vec::new();
 
-            for comment_child in comments_array.iter().take(limit as usize) {
+            // Random sampling: get a random sample of comments
+            let sampled_comments = if comments_array.len() <= output_limit as usize {
+                // If we have fewer comments than needed, take all
+                comments_array.iter().collect::<Vec<_>>()
+            } else {
+                // Take a random sample
+                use rand::seq::SliceRandom;
+                use rand::thread_rng;
+
+                let mut rng = thread_rng();
+                comments_array
+                    .choose_multiple(&mut rng, output_limit as usize)
+                    .collect::<Vec<_>>()
+            };
+
+            tracing::info!(
+                "Sampled {} comments from {} total comments",
+                sampled_comments.len(),
+                comments_array.len()
+            );
+
+            for comment_child in sampled_comments {
                 if let Ok(comment_data) =
                     serde_json::from_value::<RedditChild>(comment_child.clone())
                 {
@@ -2275,7 +2263,7 @@ pub async fn handle_reddit_thread_request(
 
     let query = match params.league.to_lowercase().as_str() {
         "mlb" => match subreddit_clean.to_lowercase().as_str() {
-            "dodgers" => "Game Chat",
+            "dodgers" | "mariners" => "Game Chat",
             _ => "Game Thread",
         },
         _ => "Game Thread",

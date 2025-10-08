@@ -1,7 +1,8 @@
-import { Button, Box, HStack } from "@chakra-ui/react";
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
 import { setSelectedLeague } from "../store/slices/sportsDataSlice.ts";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Toggle } from "./Toggle";
+import { League as ConfigLeague } from "./../config.ts";
 
 export interface League {
   id: string;
@@ -35,56 +36,23 @@ export function LeagueSelector() {
       navigate(`/scores/${leagueId}`);
     }
   };
-  const getLeagueColors = (isSelected: boolean) => {
-    if (isSelected) {
-      // Active state - primary button background with primary text color
-      return {
-        bg: "buttons.primary.bg",
-        text: "buttons.primary.color",
-      };
-    } else {
-      // Default state - transparent background with text.400 outline
-      return {
-        bg: "transparent",
-        border: "text.400",
-        text: "text.400",
-      };
-    }
-  };
+
+  // Convert leagues to toggle items
+  const leagueItems = leagues.map((league) => ({
+    id: league.id,
+    label: league.name,
+    value: league.id,
+    abbreviation: league.abbreviation,
+    disabled: league.id === ConfigLeague.NHL || league.id === ConfigLeague.MLS, // Disable NHL and MLS
+  }));
 
   return (
-    <Box bg="primary.25" p="4">
-      {/* League selector buttons */}
-      <HStack gap="2" justify="space-between">
-        {leagues.map((league) => {
-          const isSelected = selectedLeague === league.id;
-          const colors = getLeagueColors(isSelected);
-
-          return (
-            <Button
-              key={league.id}
-              variant="outline"
-              onClick={() => handleLeagueChange(league.id)}
-              flex="1"
-              h="10"
-              borderRadius="xl"
-              fontSize="sm"
-              fontWeight="medium"
-              whiteSpace="nowrap"
-              bg={colors.bg}
-              borderColor={colors.border}
-              color={colors.text}
-              borderWidth="1px"
-              _active={{
-                transform: "scale(0.98)",
-              }}
-              transition="all 0.2s"
-            >
-              {league.abbreviation}
-            </Button>
-          );
-        })}
-      </HStack>
-    </Box>
+    <Toggle
+      variant="league-buttons"
+      connected={true}
+      items={leagueItems}
+      selectedValue={selectedLeague}
+      onSelectionChange={handleLeagueChange}
+    />
   );
 }

@@ -257,7 +257,7 @@ impl Default for ArbConfig {
                     box_scores: 1800,            // 30 minutes
                     stadiums: 7200,              // 2 hours
                     twitter_search: 60,          // 1 minute
-                    reddit_thread: 21600,        // 6 hours
+                    reddit_thread: 600,          // 10 minutes
                     reddit_thread_comments: 120, // 2 minutes
                     odds: 86400,                 // 24 hours
                     user_auth: 604800,           // 1 week (7 days)

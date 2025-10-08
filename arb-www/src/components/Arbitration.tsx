@@ -10,6 +10,9 @@ import { FavoritesManager } from "./favorites/FavoritesManager.tsx";
 import { ForYouSection } from "./ForYouSection.tsx";
 import { LeagueSelector } from "./LeagueSelector.tsx";
 import { Scores } from "../views/Scores.tsx";
+import { ScoresV2 } from "../views/ScoresV2.tsx";
+import { GameDetailV2 } from "../views/GameDetailV2.tsx";
+import { BoxScoreV2 } from "../views/BoxScoreV2.tsx";
 import { Live } from "../views/Live.tsx";
 import { PlayByPlay } from "../views/PlayByPlay";
 import { Social } from "../views/Social.tsx";
@@ -77,12 +80,23 @@ export const Arbitration = memo(function Arbitration() {
 
   // Determine current view and league from URL
   const isPlayByPlayView = location.pathname.endsWith("/pbp");
-  const isBoxScoreView = gameId && !isPlayByPlayView;
+  const isBoxScoreView =
+    gameId &&
+    !isPlayByPlayView &&
+    location.pathname.startsWith("/scores/") &&
+    league;
+  const isScoresV2View = location.pathname === "/scores" && !gameId;
+  const isGameDetailV2View =
+    gameId && location.pathname === `/scores/${gameId}`;
   const currentView = isPlayByPlayView
     ? ViewType.PLAYBYPLAY
     : isBoxScoreView
-      ? ViewType.BOXSCORE
-      : ViewType.MAIN;
+      ? ViewType.BOXSCOREV2 // Use BoxScoreV2 instead of old BoxScore
+      : isScoresV2View
+        ? ViewType.SCORESV2
+        : isGameDetailV2View
+          ? ViewType.GAMEDETAILV2
+          : ViewType.MAIN;
   const currentLeague = league || selectedLeague;
 
   // Update Redux state when URL league changes
@@ -370,7 +384,7 @@ export const Arbitration = memo(function Arbitration() {
     null,
   ]);
 
-  // Show box score detail view if selected
+  // Show box score detail view if selected (old view)
   if (currentView === ViewType.BOXSCORE && gameId) {
     return (
       <motion.div
@@ -409,6 +423,11 @@ export const Arbitration = memo(function Arbitration() {
     );
   }
 
+  // Show BoxScoreV2 view if selected (new unified view)
+  if (currentView === ViewType.BOXSCOREV2 && gameId) {
+    return <BoxScoreV2 onBack={handleBackFromPlayByPlay} />;
+  }
+
   // Show play-by-play view if selected
   if (currentView === ViewType.PLAYBYPLAY && gameId) {
     return (
@@ -425,6 +444,25 @@ export const Arbitration = memo(function Arbitration() {
         />
       </motion.div>
     );
+  }
+
+  // Show ScoresV2 view if selected
+  if (currentView === ViewType.SCORESV2) {
+    return (
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+      >
+        <ScoresV2 />
+      </motion.div>
+    );
+  }
+
+  // Show GameDetailV2 view if selected
+  if (currentView === ViewType.GAMEDETAILV2 && gameId) {
+    return <GameDetailV2 onBack={handleBackFromPlayByPlay} />;
   }
 
   return (

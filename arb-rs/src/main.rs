@@ -12,6 +12,7 @@ pub mod schema;
 pub mod server;
 pub mod services;
 pub mod uses;
+pub mod zero_copy;
 
 use crate::{cache::Cache, config::ArbConfig, error::Result, server::Server};
 

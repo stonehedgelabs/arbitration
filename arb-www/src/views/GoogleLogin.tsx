@@ -40,7 +40,7 @@ export default function GoogleLogin() {
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(setUserType("google"));
-    navigate(hasSeenWelcome ? "/onboarding" : "/welcome");
+    navigate("/scores/mlb"); // Skip onboarding, go directly to Scores
   };
 
   return (

@@ -1,0 +1,13 @@
+version: 3
+
+agent:
+  authtoken: INSERT_AUTH_TOKEN
+
+tunnels:
+  arb-rs:
+    proto: http
+    addr: 8000
+  arb-www:
+    proto: http
+    addr: 3000
+

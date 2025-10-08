@@ -201,10 +201,10 @@ export function Live({
                     <Text fontSize="2xl">📺</Text>
                   </Box>
                   <VStack gap="2">
-                    <Text fontSize="lg" fontWeight="semibold" color="text.400">
+                    <Text fontSize="lg" fontWeight="semibold" color="text.300">
                       No Live Games
                     </Text>
-                    <Text fontSize="sm" color="text.400" textAlign="center">
+                    <Text fontSize="sm" color="text.300" textAlign="center">
                       There are no live games at the moment.
                     </Text>
                   </VStack>

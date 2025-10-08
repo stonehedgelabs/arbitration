@@ -28,7 +28,7 @@ export default function AppleLogin() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(setUserType("apple"));
-    navigate(hasSeenWelcome ? "/onboarding" : "/welcome");
+    navigate("/scores/mlb"); // Skip onboarding, go directly to Scores
   };
 
   const handleBack = () => {

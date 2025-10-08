@@ -23,14 +23,9 @@ export const fetchBoxScore = createAsyncThunk(
 // Async thunk for fetching Twitter data
 export const fetchTwitterData = createAsyncThunk(
   'sportsData/fetchTwitterData',
-  async ({ query, filter = 'latest' }: { query: string; filter?: 'top' | 'latest' }) => {
+  async ({ query, queryType = 'Latest' }: { query: string; queryType?: 'Top' | 'Latest' }) => {
     
-    const params: { query: string; queryType?: string } = { query };
-    if (filter === 'top') {
-      params.queryType = 'Top';
-    } else {
-      params.queryType = 'Latest';
-    }
+    const params: { query: string; queryType?: string } = { query, queryType };
     
     const apiUrl = buildApiUrl('/api/v1/twitter-search', params);
     

@@ -171,6 +171,22 @@ export const formatRelativeUTCTime = (timestamp: string): string => {
 };
 
 /**
+ * Converts an EST/EDT timestamp to UTC
+ * @param estTimestamp - EST/EDT timestamp string (e.g., "2025-01-15T21:08:00")
+ * @returns {string} UTC timestamp string in ISO format
+ */
+export const estToUTC = (estTimestamp: string): string => {
+  try {
+    // Convert EST/EDT timestamp to UTC using date-fns-tz
+    const utcDate = fromZonedTime(estTimestamp, "America/New_York");
+    return utcDate.toISOString();
+  } catch (error) {
+    console.error("Error converting EST to UTC:", estTimestamp, error);
+    return estTimestamp; // Return original if conversion fails
+  }
+};
+
+/**
  * Converts a datetime string from EST/EDT to local time and formats it for display
  * @param estDateTime - EST/EDT datetime string (e.g., "2025-10-01T21:08:00")
  * @returns {string} Formatted local time string (e.g., "Wed. Oct 1st at 6:08 PM")

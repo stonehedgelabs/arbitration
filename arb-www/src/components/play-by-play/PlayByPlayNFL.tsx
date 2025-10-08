@@ -9,16 +9,16 @@ import {
   Card,
   Flex,
   HStack,
-  IconButton,
   Image,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { BackButton } from "../BackButton";
 
 // Internal imports - components
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { QuarterBadge } from "../badge";
+import { RefreshButton } from "../RefreshButton";
 
 // Internal imports - config
 import {
@@ -275,11 +275,7 @@ export function PlayByPlayNFL({ gameId, onBack }: PlayByPlayNFLProps) {
           zIndex="40"
         >
           <HStack gap="3" px="4" py="3">
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <Box w="4" h="4">
-                <ArrowLeft size={16} />
-              </Box>
-            </Button>
+            <BackButton onClick={onBack} size="sm" />
             <Box flex="1">
               <Text fontSize="lg" fontWeight="bold" textAlign="center">
                 Play-by-Play
@@ -302,7 +298,9 @@ export function PlayByPlayNFL({ gameId, onBack }: PlayByPlayNFLProps) {
             <Text color="text.400" textAlign="center">
               Play-by-play data is not available for this game.
             </Text>
-            <Button onClick={onBack}>Go Back</Button>
+            <BackButton onClick={onBack} variant="text">
+              Go Back
+            </BackButton>
           </VStack>
         </Box>
       </Box>
@@ -322,11 +320,7 @@ export function PlayByPlayNFL({ gameId, onBack }: PlayByPlayNFLProps) {
           zIndex="40"
         >
           <HStack gap="3" px="4" py="3">
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <Box w="4" h="4">
-                <ArrowLeft size={16} />
-              </Box>
-            </Button>
+            <BackButton onClick={onBack} size="sm" />
             <Box flex="1">
               <Text fontSize="lg" fontWeight="bold" textAlign="center">
                 Play-by-Play
@@ -367,17 +361,12 @@ export function PlayByPlayNFL({ gameId, onBack }: PlayByPlayNFLProps) {
               Play-by-Play
             </Text>
           </Box>
-          <IconButton
-            variant="ghost"
-            size="sm"
+          <RefreshButton
             onClick={handleRefresh}
-            isLoading={loading}
-            aria-label="Refresh"
-          >
-            <Box w="4" h="4">
-              <RefreshCw size={16} />
-            </Box>
-          </IconButton>
+            loading={loading}
+            size="sm"
+            ariaLabel="Refresh"
+          />
         </HStack>
       </Box>
 

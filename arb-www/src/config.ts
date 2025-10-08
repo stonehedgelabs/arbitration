@@ -17,6 +17,7 @@ export enum League {
   NBA = 'nba',
   NFL = 'nfl',
   NHL = 'nhl',
+  MLS = 'mls',
 }
 
 /**
@@ -85,6 +86,9 @@ export enum ViewType {
   MAIN = 'main',
   BOXSCORE = 'boxscore',
   PLAYBYPLAY = 'playbyplay',
+  SCORESV2 = 'scoresv2',
+  GAMEDETAILV2 = 'gamedetailv2',
+  BOXSCOREV2 = 'boxscorev2',
 }
 
 /**
@@ -175,7 +179,7 @@ export const CACHE_CONFIG = {
     box_scores: 60 * 1000,           // 1 minute
     stadiums: 21600 * 1000,          // 6 hours
     twitter_search: 60 * 1000,       // 1 minute
-    reddit_thread: 21600 * 1000,     // 6 hours
+    reddit_thread: 600 * 1000,       // 10 minutes
     reddit_thread_comments: 60 * 1000, // 1 minute
     odds: 3600 * 1000,               // 1 hour
     user_auth: 604800 * 1000,        // 1 week (7 days)

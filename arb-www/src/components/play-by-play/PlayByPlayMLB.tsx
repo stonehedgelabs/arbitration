@@ -11,11 +11,12 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { BackButton } from "../BackButton";
 
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { Bases } from "../Bases.tsx";
 import { InningBadge, LiveBadge } from "../badge";
+import { RefreshButton } from "../RefreshButton";
 
 import {
   buildApiUrl,
@@ -284,7 +285,9 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
           <Text color="text.400" textAlign="center">
             Please select a game to view play-by-play data.
           </Text>
-          <Button onClick={onBack}>Go Back</Button>
+          <BackButton onClick={onBack} variant="text">
+            Go Back
+          </BackButton>
         </VStack>
       </Box>
     );
@@ -401,7 +404,9 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
             No play-by-play data available for this game.
           </Text>
           <Text color="text.400">The game data is missing or incomplete.</Text>
-          <Button onClick={onBack}>Go Back</Button>
+          <BackButton onClick={onBack} variant="text">
+            Go Back
+          </BackButton>
         </VStack>
       </Box>
     );
@@ -451,15 +456,7 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
       <Box bg="primary.25" borderBottom="1px" borderColor="border.100" p="4">
         <HStack justify="space-between" align="center" mb="4">
           <HStack gap="3">
-            <IconButton
-              aria-label="Go back"
-              variant="ghost"
-              onClick={onBack}
-              color="text.400"
-              size="md"
-            >
-              <ArrowLeft size={20} />
-            </IconButton>
+            <BackButton onClick={onBack} size="md" />
             <VStack align="start" gap="0">
               {/* <Text fontSize="lg" fontWeight="bold">
                 Play-by-Play
@@ -473,15 +470,12 @@ export function PlayByPlayMLB({ gameId, onBack }: PlayByPlayMLBProps) {
             ) : (
               <LiveBadge size="sm" showIcon={true} text="Live" />
             )}
-            <IconButton
-              aria-label="Refresh"
-              size="sm"
-              variant="ghost"
+            <RefreshButton
               onClick={handleRefresh}
               loading={loading}
-            >
-              <RefreshCw size={16} />
-            </IconButton>
+              size="sm"
+              ariaLabel="Refresh"
+            />
           </HStack>
         </HStack>
 

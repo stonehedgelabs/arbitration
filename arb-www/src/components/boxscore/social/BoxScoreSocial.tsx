@@ -1,15 +1,5 @@
-import {
-  Box,
-  VStack,
-  HStack,
-  Button,
-  Text,
-  Spinner,
-  IconButton,
-  Switch,
-} from "@chakra-ui/react";
+import { Box, VStack, HStack, Text, Spinner } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "motion/react";
-import { RotateCcw } from "lucide-react";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import {
@@ -21,6 +11,8 @@ import { RedditContent } from "./RedditContent.tsx";
 import { TwitterContent } from "../../TwitterContent";
 import { getTeamSubredditByName } from "../../../teams";
 import { League, REDDIT_CONFIG } from "../../../config";
+import { RefreshButton } from "../../RefreshButton";
+import { Toggle } from "../../Toggle";
 
 interface BoxScoreSocialProps {
   gameId: string;
@@ -158,50 +150,16 @@ export function BoxScoreSocial({
     <VStack gap="4" align="stretch">
       {/* Reddit/Twitter Toggle */}
       <HStack justify="center">
-        <Box bg="text.100" borderRadius="lg" p="1" display="flex">
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => {
-              handlePlatformToggle("reddit");
-            }}
-            bg={socialPlatform === "reddit" ? "white" : "transparent"}
-            color={socialPlatform === "reddit" ? "text.600" : "text.400"}
-            borderRadius="md"
-            px="2"
-            fontSize="xs"
-            height="6"
-            _hover={{
-              bg: socialPlatform === "reddit" ? "white" : "text.50",
-            }}
-            _active={{
-              bg: socialPlatform === "reddit" ? "white" : "text.50",
-            }}
-            boxShadow={socialPlatform === "reddit" ? "sm" : "none"}
-          >
-            Reddit
-          </Button>
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => handlePlatformToggle("twitter")}
-            bg={socialPlatform === "twitter" ? "white" : "transparent"}
-            color={socialPlatform === "twitter" ? "text.600" : "text.400"}
-            borderRadius="md"
-            px="2"
-            fontSize="xs"
-            height="6"
-            _hover={{
-              bg: socialPlatform === "twitter" ? "white" : "text.50",
-            }}
-            _active={{
-              bg: socialPlatform === "twitter" ? "white" : "text.50",
-            }}
-            boxShadow={socialPlatform === "twitter" ? "sm" : "none"}
-          >
-            Twitter
-          </Button>
-        </Box>
+        <Toggle
+          variant="buttons"
+          size="xs"
+          items={[
+            { id: "reddit", label: "Reddit", value: "reddit" },
+            { id: "twitter", label: "Twitter", value: "twitter" },
+          ]}
+          selectedValue={socialPlatform}
+          onSelectionChange={handlePlatformToggle}
+        />
       </HStack>
 
       {/* Content Area with Animation */}
@@ -236,65 +194,55 @@ export function BoxScoreSocial({
                   {/* Reddit Header with Sort Toggle and Refresh */}
                   <HStack justify="space-between" align="center" py="2">
                     {/* Reddit Sort Toggle */}
-                    <HStack gap="2" align="center">
-                      <Text fontSize="xs" color="text.400">
-                        Top
-                      </Text>
-                      <Switch.Root
-                        size="xs"
-                        checked={redditSortKind === "new"}
-                        onCheckedChange={(e) => {
-                          const newSort = e.checked ? "new" : "top";
-                          dispatch(setRedditSortKind(newSort));
-                          // Re-fetch comments with new sort
-                          const awaySubreddit = getTeamSubredditByName(
-                            awayTeam,
-                            league,
+                    <Toggle
+                      variant="switch"
+                      leftLabel="Top"
+                      rightLabel="Latest"
+                      checked={redditSortKind === "new"}
+                      onCheckedChange={(checked) => {
+                        const newSort = checked ? "new" : "top";
+                        dispatch(setRedditSortKind(newSort));
+                        // Re-fetch comments with new sort
+                        const awaySubreddit = getTeamSubredditByName(
+                          awayTeam,
+                          league,
+                        );
+                        const homeSubreddit = getTeamSubredditByName(
+                          homeTeam,
+                          league,
+                        );
+                        if (awaySubreddit) {
+                          dispatch(
+                            fetchRedditGameThreadComments({
+                              subreddit: awaySubreddit.replace("r/", ""),
+                              gameId,
+                              kind: newSort,
+                              bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
+                            }),
                           );
-                          const homeSubreddit = getTeamSubredditByName(
-                            homeTeam,
-                            league,
+                        }
+                        if (homeSubreddit) {
+                          dispatch(
+                            fetchRedditGameThreadComments({
+                              subreddit: homeSubreddit.replace("r/", ""),
+                              gameId,
+                              kind: newSort,
+                              bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
+                            }),
                           );
-                          if (awaySubreddit) {
-                            dispatch(
-                              fetchRedditGameThreadComments({
-                                subreddit: awaySubreddit.replace("r/", ""),
-                                gameId,
-                                kind: newSort,
-                                bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
-                              }),
-                            );
-                          }
-                          if (homeSubreddit) {
-                            dispatch(
-                              fetchRedditGameThreadComments({
-                                subreddit: homeSubreddit.replace("r/", ""),
-                                gameId,
-                                kind: newSort,
-                                bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
-                              }),
-                            );
-                          }
-                        }}
-                      >
-                        <Switch.HiddenInput />
-                        <Switch.Control />
-                      </Switch.Root>
-                      <Text fontSize="xs" color="text.400">
-                        Latest
-                      </Text>
-                    </HStack>
+                        }
+                      }}
+                      items={[]} // Not used for switch variant
+                      selectedValue={redditSortKind}
+                      onSelectionChange={() => {}} // Not used for switch variant
+                    />
                     {/* Refresh Button */}
-                    <IconButton
-                      aria-label="Refresh Reddit comments"
-                      size="sm"
-                      variant="ghost"
-                      color="text.400"
+                    <RefreshButton
                       onClick={handleRedditRefresh}
                       loading={redditCommentsLoading}
-                    >
-                      <RotateCcw size={16} />
-                    </IconButton>
+                      size="xs"
+                      ariaLabel="Refresh Reddit comments"
+                    />
                   </HStack>
 
                   <RedditContent

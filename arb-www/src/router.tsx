@@ -30,6 +30,10 @@ export default function Router() {
         <Route path="/live/:league" element={<Main />} />
         <Route path="/social/:league" element={<Main />} />
         <Route path="/bet" element={<Main />} />
+
+        {/* New ScoresV2 routes */}
+        <Route path="/scores" element={<Main />} />
+        <Route path="/scores/:gameId" element={<Main />} />
       </Routes>
     </BrowserRouter>
   );

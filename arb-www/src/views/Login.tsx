@@ -41,7 +41,7 @@ export function Login() {
   const handleLogin = (method: "guest" | "apple" | "google") => {
     if (method === "guest") {
       dispatch(setUserType(method));
-      navigate(hasSeenWelcome ? "/onboarding" : "/welcome");
+      navigate("/scores/mlb"); // Skip onboarding, go directly to Scores
     } else if (method === "apple") {
       navigate("/signin/apple");
     } else if (method === "google") {

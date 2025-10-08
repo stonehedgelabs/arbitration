@@ -22,10 +22,12 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.4", features = ["derive"] }
 dotenv = "0.15"
 jsonwebtoken = "9.3"
+rand = "0.8"
 redis = { version = "0.32", features = ["tokio-comp"] }
 reqwest = { version = "0.12", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde_json = { version = "1.0", features = ["raw_value"] }
+simd-json = { version = "0.13", features = ["serde", "alloc"] }
 strum = { version = "0.27", features = ["derive"] }
 thiserror = "2.0"
 tokio = { version = "1.0", features = ["full"] }

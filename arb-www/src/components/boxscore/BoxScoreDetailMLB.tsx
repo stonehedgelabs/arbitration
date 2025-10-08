@@ -9,7 +9,7 @@ import {
   Image,
   Flex,
 } from "@chakra-ui/react";
-import { ArrowLeft } from "lucide-react";
+import { BackButton } from "../BackButton";
 import useArb from "../../services/Arb.ts";
 import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import {
@@ -22,6 +22,7 @@ import {
 import { Skeleton, SkeletonCircle } from "../Skeleton.tsx";
 import { Bases } from "../Bases.tsx";
 import { InningBadge } from "../badge";
+import { Toggle } from "../Toggle";
 
 // Internal imports - containers
 import { HideVerticalScroll, HideHorizontalScroll } from "../containers";
@@ -162,6 +163,7 @@ const BoxScoreGameInfoSkeleton = () => {
 };
 
 export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
+  // Original BoxScoreDetailMLB component - no V2 modifications
   const {
     mlbBoxScore,
     teamProfiles,
@@ -334,15 +336,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
       {/* Header with Back Button */}
       <Box px="4" py="3" borderBottom="1px" borderColor="border.100">
         <HStack justify="space-between" align="center">
-          <IconButton
-            aria-label="Go back"
-            variant="ghost"
-            size="sm"
-            onClick={onBack}
-            color="text.500"
-          >
-            <ArrowLeft size={20} />
-          </IconButton>
+          <BackButton onClick={onBack} />
           <Text fontSize="sm"></Text>
         </HStack>
       </Box>
@@ -351,73 +345,47 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
       <Box px="8" py="4">
         {/* Game Title */}
         {game.SeriesInfo && (
-          <Text textAlign="center" fontSize="sm" color="text.400" mb="4">
-            {(() => {
-              const series = game.SeriesInfo;
-              const awayWins = series.AwayTeamWins || 0;
-              const homeWins = series.HomeTeamWins || 0;
-              const gameNumber = series.GameNumber || 1;
-              const maxLength = series.MaxLength || 1;
+          <VStack gap="1" mb="4">
+            <Text textAlign="center" fontSize="sm" color="text.400">
+              {(() => {
+                const series = game.SeriesInfo;
+                const awayWins = series.AwayTeamWins || 0;
+                const homeWins = series.HomeTeamWins || 0;
+                const gameNumber = series.GameNumber || 1;
+                const maxLength = series.MaxLength || 1;
 
-              // Determine series leader
-              let leaderText = "";
-              if (awayWins > homeWins) {
-                leaderText = `${game.AwayTeam} lead series ${awayWins}-${homeWins}`;
-              } else if (homeWins > awayWins) {
-                leaderText = `${game.HomeTeam} lead series ${homeWins}-${awayWins}`;
-              } else {
-                leaderText = `Series tied ${awayWins}-${homeWins}`;
-              }
+                // Determine series leader
+                let leaderText = "";
+                if (awayWins > homeWins) {
+                  leaderText = `${game.AwayTeam} lead series ${awayWins}-${homeWins}`;
+                } else if (homeWins > awayWins) {
+                  leaderText = `${game.HomeTeam} lead series ${homeWins}-${awayWins}`;
+                } else {
+                  leaderText = `Series tied ${awayWins}-${homeWins}`;
+                }
 
-              return `Game ${gameNumber} of ${maxLength}, ${leaderText}`;
-            })()}
-          </Text>
+                return `Game ${gameNumber} of ${maxLength}, ${leaderText}`;
+              })()}
+            </Text>
+            {/* Game Time */}
+            <Text textAlign="center" fontSize="xs" color="text.500">
+              {game.time}
+            </Text>
+          </VStack>
         )}
 
         {/* Stats/Social Toggle */}
         <HStack justify="center" mb="4">
-          <Box bg="text.100" borderRadius="lg" p="1" display="flex" gap="0">
-            <Button
-              size="xs"
-              variant="ghost"
-              onClick={() => handleViewToggle("stats")}
-              bg={boxscoreView === "stats" ? "white" : "transparent"}
-              color={boxscoreView === "stats" ? "text.600" : "text.400"}
-              borderRadius="md"
-              px="2"
-              fontSize="xs"
-              height="6"
-              _hover={{
-                bg: boxscoreView === "stats" ? "white" : "text.50",
-              }}
-              _active={{
-                bg: boxscoreView === "stats" ? "white" : "text.50",
-              }}
-              boxShadow={boxscoreView === "stats" ? "sm" : "none"}
-            >
-              Stats
-            </Button>
-            <Button
-              size="xs"
-              variant="ghost"
-              onClick={() => handleViewToggle("social")}
-              bg={boxscoreView === "social" ? "white" : "transparent"}
-              color={boxscoreView === "social" ? "text.600" : "text.400"}
-              borderRadius="md"
-              px="2"
-              fontSize="xs"
-              height="6"
-              _hover={{
-                bg: boxscoreView === "social" ? "white" : "text.50",
-              }}
-              _active={{
-                bg: boxscoreView === "social" ? "white" : "text.50",
-              }}
-              boxShadow={boxscoreView === "social" ? "sm" : "none"}
-            >
-              Social
-            </Button>
-          </Box>
+          <Toggle
+            variant="buttons"
+            size="xs"
+            items={[
+              { id: "stats", label: "Stats", value: "stats" },
+              { id: "social", label: "Social", value: "social" },
+            ]}
+            selectedValue={boxscoreView}
+            onSelectionChange={handleViewToggle}
+          />
         </HStack>
 
         {/* Scoreboard */}

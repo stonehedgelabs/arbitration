@@ -153,24 +153,24 @@ export function RedditContent({
                         wordBreak="break-word"
                       >
                         <Text
-                          fontSize="xs"
+                          fontSize="2xs"
                           fontWeight="semibold"
-                          color="text.400"
+                          color="text.500"
                           mb="0.5"
                         >
                           u/{comment.author}
                         </Text>
-                        <Text fontSize="sm" color="text.400">
+                        <Text fontSize="xs" color="text.500">
                           {comment.content}
                         </Text>
                         <HStack gap="2" mt="1">
-                          <Text fontSize="xs" color="text.500">
+                          <Text fontSize="2xs" color="text.500">
                             ↑ {comment.score}
                           </Text>
-                          <Text fontSize="xs" color="text.500">
+                          <Text fontSize="2xs" color="text.500">
                             •
                           </Text>
-                          <Text fontSize="xs" color="text.500">
+                          <Text fontSize="2xs" color="text.500">
                             {formatRelativeUTCTime(comment.timestamp)}
                           </Text>
                         </HStack>

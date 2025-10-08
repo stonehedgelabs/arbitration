@@ -10,15 +10,15 @@ import {
   Spinner,
   Text,
   VStack,
-  IconButton,
-  Switch,
 } from "@chakra-ui/react";
-import { MessageCircle, Twitter, RefreshCw } from "lucide-react";
+import { Twitter } from "lucide-react";
 import { Tweet } from "react-tweet";
 
 // Internal imports - components
 import { SearchBar } from "./SearchBar";
 import { TwitterCardSkeleton } from "./Skeleton";
+import { RefreshButton } from "./RefreshButton";
+import { Toggle } from "./Toggle";
 
 // Internal imports - store
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -54,6 +54,8 @@ export const TwitterContent = memo(function TwitterContent({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const searchTimeoutRef = useRef<number | null>(null);
+  const loadMoreTimeoutRef = useRef<number | null>(null);
+  const consecutiveEmptyLoadsRef = useRef<number>(0);
 
   // Set initial search query if provided
   useEffect(() => {
@@ -62,7 +64,29 @@ export const TwitterContent = memo(function TwitterContent({
     }
   }, [initialSearchQuery, twitterHasSearched, dispatch]);
 
-  // No need to initialize from Redux state since we're using it directly
+  // Filter out tweets with ALL counts equal to 0 OR from invalid accounts
+  const isInvalidTweet = (tweet: any) => {
+    // Check if all counts are 0
+    const hasNoEngagement =
+      tweet.retweetCount === 0 &&
+      tweet.replyCount === 0 &&
+      tweet.likeCount === 0 &&
+      tweet.quoteCount === 0 &&
+      tweet.viewCount === 0;
+
+    // Check if tweet is from invalid accounts
+    const isInvalidAccount =
+      tweet.url?.startsWith("https://x.com/grok") ||
+      tweet.url?.startsWith("https://x.com/premium");
+
+    const isInvalid = hasNoEngagement || isInvalidAccount;
+
+    return isInvalid;
+  };
+
+  // Get filtered tweets
+  const filteredTweets =
+    twitterData?.tweets?.filter((tweet: any) => !isInvalidTweet(tweet)) || [];
 
   // Set up intersection observer for infinite scroll
   useEffect(() => {
@@ -77,13 +101,66 @@ export const TwitterContent = memo(function TwitterContent({
           !twitterLoadingMore &&
           twitterData?.next_cursor
         ) {
-          dispatch(
-            loadMoreTwitterData({
-              query: twitterSearchQuery,
-              filter: twitterSortKind,
-              cursor: twitterData.next_cursor,
-            }),
+          // Check if we have any valid tweets from the current batch
+          const currentBatchTweets = twitterData.tweets || [];
+          const currentBatchFiltered = currentBatchTweets.filter(
+            (tweet: any) => !isInvalidTweet(tweet),
           );
+
+          // Track consecutive empty loads to prevent infinite loading
+          if (
+            currentBatchFiltered.length === 0 &&
+            currentBatchTweets.length > 0
+          ) {
+            consecutiveEmptyLoadsRef.current += 1;
+          } else {
+            consecutiveEmptyLoadsRef.current = 0; // Reset counter if we got valid tweets
+          }
+
+          // Only load more if we have valid tweets OR if this is the first page
+          // Also prevent loading if we've had too many consecutive empty loads
+          const shouldLoadMore =
+            (currentBatchFiltered.length > 0 ||
+              currentBatchTweets.length === 0) &&
+            consecutiveEmptyLoadsRef.current < 3;
+
+          if (shouldLoadMore) {
+            // Debounce load more requests to prevent rapid firing
+            if (loadMoreTimeoutRef.current) {
+              clearTimeout(loadMoreTimeoutRef.current);
+            }
+
+            loadMoreTimeoutRef.current = setTimeout(() => {
+              console.log("🔄 Loading more tweets...", {
+                hasNextCursor: !!twitterData.next_cursor,
+                currentBatchSize: currentBatchTweets.length,
+                currentBatchFiltered: currentBatchFiltered.length,
+                totalFiltered: filteredTweets.length,
+                consecutiveEmptyLoads: consecutiveEmptyLoadsRef.current,
+              });
+
+              dispatch(
+                loadMoreTwitterData({
+                  query: twitterSearchQuery,
+                  filter: twitterSortKind,
+                  cursor: twitterData.next_cursor,
+                }),
+              );
+            }, 300); // 300ms debounce
+          } else {
+            console.log(
+              "⏹️ Skipping load more - no valid tweets in current batch",
+              {
+                currentBatchSize: currentBatchTweets.length,
+                currentBatchFiltered: currentBatchFiltered.length,
+                consecutiveEmptyLoads: consecutiveEmptyLoadsRef.current,
+                reason:
+                  consecutiveEmptyLoadsRef.current >= 3
+                    ? "too many consecutive empty loads"
+                    : "no valid tweets",
+              },
+            );
+          }
         }
       },
       { threshold: 0.1 },
@@ -97,6 +174,9 @@ export const TwitterContent = memo(function TwitterContent({
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+      }
     };
   }, [
     dispatch,
@@ -104,6 +184,7 @@ export const TwitterContent = memo(function TwitterContent({
     twitterData?.next_cursor,
     twitterSearchQuery,
     twitterSortKind,
+    filteredTweets.length, // Add filteredTweets.length to dependencies
   ]);
 
   const handleSearch = useCallback(async () => {
@@ -114,6 +195,7 @@ export const TwitterContent = memo(function TwitterContent({
     setIsSearching(true);
     dispatch(setTwitterHasSearched(true));
     dispatch(clearTwitterData());
+    consecutiveEmptyLoadsRef.current = 0; // Reset consecutive empty loads counter
 
     try {
       const result = await dispatch(
@@ -158,6 +240,9 @@ export const TwitterContent = memo(function TwitterContent({
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+      }
     };
   }, [twitterSearchQuery, handleSearch, dispatch]);
 
@@ -200,36 +285,26 @@ export const TwitterContent = memo(function TwitterContent({
       {twitterHasSearched && (
         <HStack justify="space-between" align="center" py="2">
           {/* Twitter Sort Toggle */}
-          <HStack gap="2" align="center">
-            <Text fontSize="xs" color="text.400">
-              Top
-            </Text>
-            <Switch.Root
-              size="xs"
-              checked={twitterSortKind === "latest"}
-              onCheckedChange={(e) => {
-                const newSort = e.checked ? "latest" : "top";
-                dispatch(setTwitterSortKind(newSort));
-              }}
-            >
-              <Switch.HiddenInput />
-              <Switch.Control />
-            </Switch.Root>
-            <Text fontSize="xs" color="text.400">
-              Latest
-            </Text>
-          </HStack>
+          <Toggle
+            variant="switch"
+            leftLabel="Top"
+            rightLabel="Latest"
+            checked={twitterSortKind === "latest"}
+            onCheckedChange={(checked) => {
+              const newSort = checked ? "latest" : "top";
+              dispatch(setTwitterSortKind(newSort));
+            }}
+            items={[]} // Not used for switch variant
+            selectedValue={twitterSortKind}
+            onSelectionChange={() => {}} // Not used for switch variant
+          />
           {/* Refresh Button */}
-          <IconButton
-            aria-label="Refresh tweets"
-            size="sm"
-            variant="ghost"
-            color="text.400"
+          <RefreshButton
             onClick={handleRefresh}
             loading={twitterLoading}
-          >
-            <RefreshCw size={16} />
-          </IconButton>
+            size="sm"
+            ariaLabel="Refresh tweets"
+          />
         </HStack>
       )}
 
@@ -252,7 +327,7 @@ export const TwitterContent = memo(function TwitterContent({
             <Text fontSize="lg" fontWeight="semibold" color="text.400">
               Find Tweets
             </Text>
-            <Text fontSize="sm" color="text.500" textAlign="center" maxW="md">
+            <Text fontSize="sm" color="text.400" textAlign="center" maxW="md">
               Search for tweets about your favorite teams, players, or games.
             </Text>
           </VStack>
@@ -277,7 +352,9 @@ export const TwitterContent = memo(function TwitterContent({
             Try Again
           </Button>
         </VStack>
-      ) : !twitterData?.tweets || twitterData.tweets.length === 0 ? (
+      ) : !twitterData?.tweets ||
+        twitterData.tweets.length === 0 ||
+        filteredTweets.length === 0 ? (
         // No results state
         <VStack gap="4" align="center" py="8">
           <Box
@@ -291,10 +368,10 @@ export const TwitterContent = memo(function TwitterContent({
           >
             <Twitter size={24} color="#1DA1F2" />
           </Box>
-          <Text fontSize="lg" fontWeight="semibold" color="text.400">
-            Search for something to find tweets
+          <Text fontSize="md" fontWeight="semibold" color="text.300">
+            Search to find tweets
           </Text>
-          <Text color="text.500" textAlign="center">
+          <Text fontSize="xs" color="text.300" textAlign="center">
             Enter a search term above to discover what's happening on Twitter.
           </Text>
         </VStack>
@@ -306,14 +383,14 @@ export const TwitterContent = memo(function TwitterContent({
             <Text fontSize="xs" color="text.500">
               Results for "{twitterSearchQuery}"
             </Text>
-            <Text fontSize="xs" color="text.500">
-              {twitterData.tweets.length} tweet
-              {twitterData.tweets.length !== 1 ? "s" : ""} found
+            <Text fontSize="xs" color="text.300">
+              {filteredTweets.length} tweet
+              {filteredTweets.length !== 1 ? "s" : ""} found
             </Text>
           </VStack>
 
           {/* Tweets */}
-          {twitterData.tweets.map((tweet: any, index: number) => (
+          {filteredTweets.map((tweet: any, index: number) => (
             <Box
               key={tweet.id || index}
               bg="primary.25"
@@ -329,7 +406,7 @@ export const TwitterContent = memo(function TwitterContent({
           ))}
 
           {/* Load More Trigger */}
-          {twitterData.next_cursor && (
+          {twitterData.next_cursor && filteredTweets.length > 0 && (
             <Box ref={loadMoreRef} py="4">
               {twitterLoadingMore ? (
                 <Flex justify="center" align="center" py="4">

@@ -110,7 +110,7 @@ pub struct CacheTtlConfig {
     pub box_scores: u64,          // 1 minute - game results
     pub stadiums: u64,            // 6 hours - rarely changes
     pub twitter_search: u64,      // 1 minute - social data
-    pub reddit_thread: u64,       // 6 hours - game threads
+    pub reddit_thread: u64,       // 10 minutes - game threads
     pub reddit_thread_comments: u64, // 1 minute - live comments
     pub odds: u64,                // 1 hour - betting data
     pub user_auth: u64,           // 1 week - authentication
@@ -482,7 +482,7 @@ play_by_play = 60         # 1 minute
 box_scores = 60           # 1 minute
 stadiums = 21600          # 6 hours
 twitter_search = 60       # 1 minute
-reddit_thread = 21600     # 6 hours
+reddit_thread = 600       # 10 minutes
 reddit_thread_comments = 60 # 1 minute
 odds = 3600               # 1 hour
 user_auth = 604800        # 1 week (7 days)

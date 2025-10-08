@@ -4,11 +4,11 @@ import { Box, Card, HStack, Text, VStack } from "@chakra-ui/react";
 
 import { Skeleton, SkeletonCircle } from "../components/Skeleton";
 import {
-  MLBScoreCard,
-  NBAScoreCard,
-  NFLScoreCard,
-  NHLScoreCard,
-  GenericScoreCard,
+  MLBScoreCardV2,
+  NBAScoreCardV2,
+  NFLScoreCardV2,
+  NHLScoreCardV2,
+  GenericScoreCardV2,
 } from "../components/cards/score";
 import { ErrorState } from "../components/ErrorStates";
 import { DatePicker } from "../components/DatePicker";
@@ -430,7 +430,7 @@ const ScoreCard = ({
   switch (game.league) {
     case League.MLB:
       return (
-        <MLBScoreCard
+        <MLBScoreCardV2
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
@@ -439,7 +439,7 @@ const ScoreCard = ({
       );
     case League.NBA:
       return (
-        <NBAScoreCard
+        <NBAScoreCardV2
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
@@ -448,7 +448,7 @@ const ScoreCard = ({
       );
     case League.NFL:
       return (
-        <NFLScoreCard
+        <NFLScoreCardV2
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
@@ -457,7 +457,7 @@ const ScoreCard = ({
       );
     case League.NHL:
       return (
-        <NHLScoreCard
+        <NHLScoreCardV2
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
@@ -466,7 +466,7 @@ const ScoreCard = ({
       );
     default:
       return (
-        <GenericScoreCard
+        <GenericScoreCardV2
           game={game}
           onGameClick={onGameClick}
           oddsLoading={oddsLoading}
@@ -476,7 +476,7 @@ const ScoreCard = ({
   }
 };
 
-export function Scores() {
+export function ScoresV2() {
   // Get league from URL parameter
   const { league } = useParams<{ league: string }>();
 
@@ -514,7 +514,7 @@ export function Scores() {
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
   const navigate = useNavigate();
 
-  // Handle game click for box score navigation
+  // Handle game click for box score navigation - now goes to new /scores route
   const handleGameClick = (gameId: string) => {
     navigate(`/scores/${selectedLeague}/${gameId}`);
   };
