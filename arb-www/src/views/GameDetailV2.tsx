@@ -38,7 +38,7 @@ export function GameDetailV2({ onBack }: GameDetailV2Props) {
   // Fetch box score data when component mounts
   useEffect(() => {
     if (gameId && league) {
-      dispatch(fetchBoxScore({ league, gameId }));
+      // dispatch(fetchBoxScore({ league, gameId }));
     }
   }, [gameId, league, dispatch]);
 
@@ -52,7 +52,7 @@ export function GameDetailV2({ onBack }: GameDetailV2Props) {
   // Handle refresh
   const handleRefresh = async () => {
     if (gameId && league) {
-      dispatch(fetchBoxScore({ league, gameId }));
+      //  dispatch(fetchBoxScore({ league, gameId }));
     }
   };
 

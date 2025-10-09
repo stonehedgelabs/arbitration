@@ -7,11 +7,20 @@ import { BackButton } from "../components/BackButton";
 import { BoxScoreDetailMLBv2 } from "../components/boxscore/BoxScoreDetailMLBv2";
 import { UnifiedGameFeed } from "../components/UnifiedGameFeed";
 import { Skeleton } from "../components/Skeleton";
+import { TopNavigation } from "../components/TopNavigation";
+import { BottomNavigation } from "../components/BottomNavigation";
+import { AppLayout } from "../components/containers/AppLayout";
 
 import { useAppSelector, useAppDispatch } from "../store/hooks";
-import { fetchBoxScore } from "../store/slices/sportsDataSlice";
+import {
+  fetchBoxScore,
+  fetchSchedule,
+  fetchScores,
+  setSelectedLeague,
+} from "../store/slices/sportsDataSlice";
 import { League } from "../config";
 import useArb from "../services/Arb";
+import { getCurrentLocalDate } from "../utils.ts";
 
 interface BoxScoreV2Props {
   onBack: () => void;
@@ -36,15 +45,26 @@ export function BoxScoreV2({ onBack }: BoxScoreV2Props) {
     (state) => state.sportsData.selectedLeague,
   );
 
+  const { league: paramLeague, gameId: paramGameId } = useParams<{
+    league: string;
+    gameId: string;
+  }>();
+
   const [gameData, setGameData] = useState<any>(null);
 
   // Fetch box score data and team profiles when component mounts
   useEffect(() => {
-    if (gameId && league) {
+    if (league) {
       dispatch(fetchBoxScore({ league, gameId }));
       fetchTeamProfiles(league);
     }
   }, [gameId, league, dispatch, fetchTeamProfiles]);
+
+  useEffect(() => {
+    if (!selectedLeague && league) {
+      dispatch(setSelectedLeague(league));
+    }
+  }, [selectedLeague, league, dispatch]);
 
   // Extract game data from box score
   useEffect(() => {
@@ -155,80 +175,75 @@ export function BoxScoreV2({ onBack }: BoxScoreV2Props) {
   const homeTeamKey = homeTeamProfile?.Key;
 
   return (
-    <motion.div
-      initial={{ x: "100%" }}
-      animate={{ x: 0 }}
-      exit={{ x: "100%" }}
-      transition={{ type: "spring", damping: 30, stiffness: 300 }}
-    >
-      <Box minH="100vh" bg="primary.25">
-        {/* Header */}
-        <Box
-          bg="primary.25"
-          borderBottom="1px"
-          borderColor="border.100"
-          px="4"
-          py="3"
-          position="sticky"
-          top="0"
-          zIndex="10"
-        >
-          <HStack justify="space-between" align="center">
-            <BackButton onClick={onBack} />
-            <Text fontSize="lg" fontWeight="semibold" color="text.400">
-              {awayTeam} vs {homeTeam}
-            </Text>
-            <Box w="8" /> {/* Spacer */}
-          </HStack>
-        </Box>
+    <AppLayout>
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+      >
+        <Box minH="100vh" bg="primary.25" display="flex" flexDirection="column">
+          {/* Top Navigation with Back Button */}
+          <TopNavigation showLeagueSelector={false} onBack={onBack} />
 
-        {/* Content */}
-        <VStack gap="0" align="stretch">
-          {/* Box Score Section - Compressed */}
+          {/* Content */}
           <Box
+            flex="1"
+            minH="calc(100vh - 200px)"
+            overflowY="auto"
             bg="primary.25"
-            borderBottom="1px"
-            borderColor="border.100"
-            maxH="250px"
-            overflow="hidden"
           >
-            {selectedLeague === League.MLB ? (
-              <Box transform="scale(0.8)" transformOrigin="top center">
-                <BoxScoreDetailMLBv2 gameId={gameId || ""} />
-              </Box>
-            ) : (
-              <VStack
-                gap="4"
-                p="4"
-                align="center"
-                justify="center"
-                minH="200px"
+            <VStack gap="0" align="stretch">
+              {/* Box Score Section - Compressed */}
+              <Box
+                bg="primary.25"
+                borderBottom="1px"
+                borderColor="border.100"
+                maxH="250px"
+                overflow="hidden"
               >
-                <Text color="text.400" fontSize="lg" fontWeight="semibold">
-                  {selectedLeague.toUpperCase()} Box Score
-                </Text>
-                <Text color="text.500" textAlign="center">
-                  Box score details for {selectedLeague.toUpperCase()} are not
-                  yet supported.
-                </Text>
-              </VStack>
-            )}
+                {paramLeague === League.MLB ? (
+                  <Box transform="scale(0.8)" transformOrigin="top center">
+                    <BoxScoreDetailMLBv2 gameId={gameId} league={paramLeague} />
+                  </Box>
+                ) : (
+                  <VStack
+                    gap="4"
+                    p="4"
+                    align="center"
+                    justify="center"
+                    minH="200px"
+                  >
+                    <Text color="text.400" fontSize="lg" fontWeight="semibold">
+                      {selectedLeague.toUpperCase()} Box Score
+                    </Text>
+                    <Text color="text.500" textAlign="center">
+                      Box score details for {selectedLeague.toUpperCase()} are
+                      not yet supported.
+                    </Text>
+                  </VStack>
+                )}
+              </Box>
+
+              {/* Unified Feed Section */}
+              <Box flex="1" bg="primary.25" minH="calc(100vh - 300px)">
+                <UnifiedGameFeed
+                  gameId={gameId || ""}
+                  awayTeam={awayTeam}
+                  homeTeam={homeTeam}
+                  awayTeamKey={awayTeamKey}
+                  homeTeamKey={homeTeamKey}
+                  league={selectedLeague as League}
+                  gameData={gameData}
+                />
+              </Box>
+            </VStack>
           </Box>
 
-          {/* Unified Feed Section */}
-          <Box flex="1" bg="primary.25" minH="calc(100vh - 300px)">
-            <UnifiedGameFeed
-              gameId={gameId || ""}
-              awayTeam={awayTeam}
-              homeTeam={homeTeam}
-              awayTeamKey={awayTeamKey}
-              homeTeamKey={homeTeamKey}
-              league={selectedLeague as League}
-              gameData={gameData}
-            />
-          </Box>
-        </VStack>
-      </Box>
-    </motion.div>
+          {/* Bottom Navigation */}
+          {/* <BottomNavigation /> */}
+        </Box>
+      </motion.div>
+    </AppLayout>
   );
 }

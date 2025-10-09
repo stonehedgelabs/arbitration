@@ -237,7 +237,7 @@ export function BoxScoreDetailMLB({ gameId, onBack }: BoxScoreDetailMLBProps) {
     }
 
     // Use Redux thunk to fetch box score data
-    dispatch(fetchBoxScore({ league: currentLeague, gameId }));
+    // dispatch(fetchBoxScore({ league: currentLeague, gameId }));
   }, [gameId, dispatch, reduxBoxScore, currentLeague]);
 
   // Separate useEffect for supporting data to avoid dependency issues

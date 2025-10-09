@@ -22,15 +22,12 @@ import {
 const useArb = () => {
   const [mlbBoxScore, setMlbBoxScore] = useState<BoxScoreResponse | null>(null);
   
-  // Redux state and dispatch
   const dispatch = useAppDispatch();
   const selectedLeague = useAppSelector((state) => state.sportsData.selectedLeague);
   
-  // Redux state for current league data (generic)
   const leagueData = useAppSelector((state) => state.sportsData.leagueData);
   const currentLeagueData = leagueData[selectedLeague];
   
-  // Generic state accessors
   const scores = currentLeagueData?.scores || null;
   const scoresLoading = currentLeagueData?.scoresLoading || false;
   const scoresError = currentLeagueData?.scoresError || null;
@@ -51,7 +48,6 @@ const useArb = () => {
   const oddsLoading = currentLeagueData?.oddsLoading || false;
   const oddsError = currentLeagueData?.oddsError || null;
   
-  // Current games
   const currentGames = currentLeagueData?.currentGames || null;
   const currentGamesLoading = currentLeagueData?.currentGamesLoading || false;
   const currentGamesError = currentLeagueData?.currentGamesError || null;
@@ -96,11 +92,13 @@ const useArb = () => {
   /**
    * Fetch team profiles for a specific league
    */
-  const fetchTeamProfiles = useCallback(async (league: string): Promise<void> => {
+  const fetchTeamProfiles = useCallback(async (league?: string): Promise<void> => {
     // Don't fetch if already loading or data exists
-    if (teamProfilesLoading || teamProfiles) {
+    if (teamProfilesLoading || teamProfiles || !league) {
       return;
     }
+
+    console.log('>fetching league ', league)
 
     try {
       // Set loading state

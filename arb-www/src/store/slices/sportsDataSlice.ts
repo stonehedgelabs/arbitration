@@ -153,6 +153,7 @@ export const fetchScores = createAsyncThunk(
     const params: Record<string, string> = { league };
     if (date) {
       params.date = date;
+
     }
     const apiUrl = buildApiUrl('/api/v1/scores', params);
     const response = await fetch(apiUrl);

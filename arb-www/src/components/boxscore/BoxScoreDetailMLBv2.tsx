@@ -23,10 +23,14 @@ import {
 } from "../../config.ts";
 
 interface BoxScoreDetailMLBv2Props {
-  gameId: string;
+  gameId?: string;
+  league?: string;
 }
 
-export function BoxScoreDetailMLBv2({ gameId }: BoxScoreDetailMLBv2Props) {
+export function BoxScoreDetailMLBv2({
+  gameId,
+  league,
+}: BoxScoreDetailMLBv2Props) {
   const {
     mlbBoxScore,
     teamProfiles,
@@ -42,14 +46,14 @@ export function BoxScoreDetailMLBv2({ gameId }: BoxScoreDetailMLBv2Props) {
 
   // Fetch data when component mounts
   useEffect(() => {
-    fetchTeamProfiles("mlb");
-    fetchStadiums("mlb");
+    fetchTeamProfiles(League.MLB);
+    fetchStadiums(League.MLB);
   }, [fetchTeamProfiles, fetchStadiums]);
 
   // Fetch box score data
   useEffect(() => {
-    if (gameId) {
-      dispatch(fetchBoxScore({ league: "mlb", gameId }));
+    if (gameId && league && !reduxBoxScore) {
+      dispatch(fetchBoxScore({ league: League.MLB, gameId }));
     }
   }, [gameId, dispatch]);
 
@@ -77,6 +81,7 @@ export function BoxScoreDetailMLBv2({ gameId }: BoxScoreDetailMLBv2Props) {
 
   // Get game data - prioritize Redux data if available
   const game = reduxBoxScore?.data?.Game || mlbBoxScore?.data?.Game;
+
   if (!game) {
     return (
       <Box

@@ -210,6 +210,17 @@ export const PLAY_BY_PLAY_CONFIG = {
 } as const;
 
 /**
+ * Unified Game Feed Configuration
+ */
+export const UNIFIED_FEED_CONFIG = {
+  // Auto-refresh interval in milliseconds
+  autoRefreshInterval: 5000, // 5 seconds
+  
+  // Whether to enable auto-refresh
+  enableAutoRefresh: true,
+} as const;
+
+/**
  * Twitter Configuration
  */
 export const TWITTER_CONFIG = {

@@ -16,25 +16,21 @@ interface BoxScoreDetailProps {
   onBack: () => void;
 }
 
-export function BoxScoreDetail({
-  gameId,
-  sport = League.MLB,
-  onBack,
-}: BoxScoreDetailProps) {
+export function BoxScoreDetail({ gameId, sport, onBack }: BoxScoreDetailProps) {
   // Route to sport-specific components
   if (sport === League.MLB) {
     return <BoxScoreDetailMLB gameId={gameId} onBack={onBack} />;
   }
 
-  if (sport === "nfl") {
+  if (sport === League.NFL) {
     return <BoxScoreDetailNFL gameId={gameId} onBack={onBack} />;
   }
 
-  if (sport === "nba") {
+  if (sport === League.MLB) {
     return <BoxScoreDetailNBA gameId={gameId} onBack={onBack} />;
   }
 
-  if (sport === "nhl") {
+  if (sport === League.NHL) {
     return <BoxScoreDetailNHL gameId={gameId} onBack={onBack} />;
   }
 

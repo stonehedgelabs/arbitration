@@ -534,32 +534,32 @@ export function Scores() {
     }
   }, [league, selectedLeague, dispatch]);
 
-  // Fetch data when component mounts or league/date changes
-  useEffect(() => {
-    if (selectedDate && league) {
-      const today = getCurrentLocalDate();
-      const isFutureDate = selectedDate > today;
-
-      // Use scores endpoint for past/current dates, schedule endpoint for future dates
-      if (isFutureDate) {
-        fetchSchedule(league, selectedDate);
-      } else {
-        fetchScores(league, selectedDate);
-      }
-
-      fetchTeamProfiles(league);
-      fetchStadiums(league);
-      // fetchOdds(league, selectedDate); // Commented out - not using odds-by-date endpoint anymore
-    }
-  }, [
-    league,
-    selectedDate,
-    fetchScores,
-    fetchTeamProfiles,
-    fetchStadiums,
-    // fetchOdds, // Commented out - not using odds-by-date endpoint anymore
-    fetchSchedule,
-  ]);
+  // // Fetch data when component mounts or league/date changes
+  // useEffect(() => {
+  //   if (selectedDate && league) {
+  //     const today = getCurrentLocalDate();
+  //     const isFutureDate = selectedDate > today;
+  //
+  //     // Use scores endpoint for past/current dates, schedule endpoint for future dates
+  //     if (isFutureDate) {
+  //       fetchSchedule(league, selectedDate);
+  //     } else {
+  //       fetchScores(league, selectedDate);
+  //     }
+  //
+  //     fetchTeamProfiles(league);
+  //     fetchStadiums(league);
+  //     // fetchOdds(league, selectedDate); // Commented out - not using odds-by-date endpoint anymore
+  //   }
+  // }, [
+  //   league,
+  //   selectedDate,
+  //   fetchScores,
+  //   fetchTeamProfiles,
+  //   fetchStadiums,
+  //   // fetchOdds, // Commented out - not using odds-by-date endpoint anymore
+  //   fetchSchedule,
+  // ]);
 
   // Fetch box score data for live games to get more accurate scores
   useEffect(() => {
@@ -571,7 +571,7 @@ export function Scores() {
 
         // Only fetch box score for live games that we don't already have
         if (gameStatus === GameStatus.LIVE && !boxScoreData[gameId]) {
-          dispatch(fetchBoxScore({ league, gameId }));
+          // dispatch(fetchBoxScore({ league, gameId }));
         }
       });
     }
