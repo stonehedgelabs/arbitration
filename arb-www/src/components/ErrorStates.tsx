@@ -36,21 +36,21 @@ export function ErrorState({
       case "error":
         return {
           iconColor: "text.400",
-          titleColor: "text.300",
+          titleColor: "text.400",
           bgColor: "danger.100",
           borderColor: "danger.100",
         };
       case "warning":
         return {
-          iconColor: "orange.500",
-          titleColor: "orange.500",
+          iconColor: "text.400",
+          titleColor: "text.400",
           bgColor: "orange.50",
           borderColor: "orange.200",
         };
       case "info":
         return {
-          iconColor: "blue.500",
-          titleColor: "blue.500",
+          iconColor: "text.400",
+          titleColor: "text.400",
           bgColor: "blue.50",
           borderColor: "blue.200",
         };
@@ -99,18 +99,12 @@ export function ErrorState({
                 <Button
                   onClick={onRetry}
                   bg={"buttons.primary.bg"}
+                  fontSize="xs"
                   color={"buttons.primary.color"}
-                  // colorScheme={
-                  //   variant === "error"
-                  //     ? "red"
-                  //     : variant === "warning"
-                  //       ? "orange"
-                  //       : "blue"
-                  // }
                   variant="solid"
                   w="full"
                 >
-                  <RefreshCw size={16} style={{ marginRight: "8px" }} />
+                  <RefreshCw style={{ marginRight: "8px", height: 16 }} />
                   Try Again
                 </Button>
               )}
@@ -281,5 +275,73 @@ export function LoadingTimeoutState({
       showBack={true}
       variant="warning"
     />
+  );
+}
+
+interface CompactErrorStateProps {
+  title: string;
+  message: string;
+  icon?: React.ReactNode;
+  variant?: "error" | "warning" | "info";
+}
+
+export function CompactErrorState({
+  title,
+  message,
+  icon,
+  variant = "error",
+}: CompactErrorStateProps) {
+  const getVariantStyles = () => {
+    switch (variant) {
+      case "error":
+        return {
+          iconColor: "red.500",
+          titleColor: "text.400",
+        };
+      case "warning":
+        return {
+          iconColor: "orange.500",
+          titleColor: "text.400",
+        };
+      case "info":
+        return {
+          iconColor: "blue.500",
+          titleColor: "text.400",
+        };
+    }
+  };
+
+  const styles = getVariantStyles();
+  const defaultIcon = <AlertCircle size={32} />;
+
+  return (
+    <VStack gap="3" align="center" justify="center" p="4" minH="200px">
+      {/* Icon */}
+      <Box
+        w="12"
+        h="12"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        color={styles.iconColor}
+      >
+        {icon || defaultIcon}
+      </Box>
+
+      {/* Content */}
+      <VStack gap="2">
+        <Text fontSize="sm" fontWeight="semibold" color={styles.titleColor}>
+          {title}
+        </Text>
+        <Text
+          fontSize="xs"
+          color="text.400"
+          textAlign="center"
+          lineHeight="1.4"
+        >
+          {message}
+        </Text>
+      </VStack>
+    </VStack>
   );
 }

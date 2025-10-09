@@ -659,14 +659,16 @@ function ScoresV2() {
     scoresError || teamProfilesError || stadiumsError || scheduleError;
   if (hasCriticalError) {
     return (
-      <ErrorState
-        title="Error Loading Scores"
-        message={`Failed to load ${selectedLeague.toUpperCase()} scores. ${hasCriticalError}`}
-        onRetry={handleRetry}
-        showRetry={true}
-        showBack={false}
-        variant="error"
-      />
+      <AppLayout>
+        <ErrorState
+          title="Error Loading Scores"
+          message={hasCriticalError}
+          onRetry={handleRetry}
+          showRetry={true}
+          showBack={false}
+          variant="error"
+        />
+      </AppLayout>
     );
   }
 
