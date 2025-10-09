@@ -2,7 +2,7 @@
 import { Card, Text, VStack } from "@chakra-ui/react";
 
 // Internal imports - config
-import { GameStatus } from "../../../config";
+import { GameStatus } from "../../config";
 
 interface Team {
   name: string;
@@ -26,19 +26,19 @@ interface Game {
   odds?: any;
 }
 
-interface NHLScoreCardProps {
+interface GenericScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
   oddsByDate?: any;
 }
 
-export function NHLScoreCard({
+export function GenericScoreCard({
   game,
   onGameClick,
   oddsLoading: _oddsLoading,
-  nhlOddsByDate: _nhlOddsByDate,
-}: NHLScoreCardProps) {
+  oddsByDate: _oddsByDate,
+}: GenericScoreCardProps) {
   return (
     <Card.Root
       key={game.id}
@@ -53,12 +53,20 @@ export function NHLScoreCard({
       onClick={() => onGameClick(game.id, game.date)}
     >
       <Card.Body p="4">
-        <VStack align="stretch" gap="4">
-          <Text fontSize="sm" color="text.400">
-            NHL Score Card - {game.awayTeam.name} vs {game.homeTeam.name}
+        <VStack align="stretch" gap="3">
+          <Text fontSize="sm" color="text.400" textAlign="center">
+            {game.awayTeam.name} vs {game.homeTeam.name}
           </Text>
-          <Text fontSize="xs" color="text.500">
-            NHL-specific score card coming soon
+          <Text
+            fontSize="lg"
+            fontWeight="bold"
+            color="text.400"
+            textAlign="center"
+          >
+            {game.awayTeam.score} - {game.homeTeam.score}
+          </Text>
+          <Text fontSize="xs" color="text.500" textAlign="center">
+            {game.status} {game.quarter && `- ${game.quarter}`}
           </Text>
         </VStack>
       </Card.Body>

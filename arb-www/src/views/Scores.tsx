@@ -9,10 +9,12 @@ import {
   NFLScoreCard,
   NHLScoreCard,
   GenericScoreCard,
-} from "../components/cards/score";
+} from "../components/score";
 import { ErrorState } from "../components/ErrorStates";
 import { DatePicker } from "../components/DatePicker";
 import { HideVerticalScroll } from "../components/containers";
+import { TopNavigation } from "../components/TopNavigation";
+import { AppLayout } from "../components/containers/AppLayout";
 
 import {
   isPostseasonDate,
@@ -476,10 +478,7 @@ const ScoreCard = ({
   }
 };
 
-export function Scores() {
-  // Get league from URL parameter
-  const { league } = useParams<{ league: string }>();
-
+function ScoresV2() {
   // Get selectedLeague from Redux
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
@@ -504,8 +503,6 @@ export function Scores() {
     fetchScores,
     fetchTeamProfiles,
     fetchStadiums,
-    fetchSchedule,
-    // fetchOddsByDate: fetchOdds, // Commented out - not using odds-by-date endpoint anymore
   } = useArb();
 
   // Redux state
@@ -513,8 +510,9 @@ export function Scores() {
   const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
   const navigate = useNavigate();
+  const { league } = useParams<{ league: string }>();
 
-  // Handle game click for box score navigation
+  // Handle game click for box score navigation - now goes to new /scores route
   const handleGameClick = (gameId: string) => {
     navigate(`/scores/${selectedLeague}/${gameId}`);
   };
@@ -527,51 +525,37 @@ export function Scores() {
     }
   }, [selectedDate, dispatch]);
 
-  // Update selectedLeague when URL parameter changes
+  // Update selectedLeague from URL if not in state
   useEffect(() => {
     if (league && league !== selectedLeague) {
       dispatch(setSelectedLeague(league));
     }
   }, [league, selectedLeague, dispatch]);
 
-  // // Fetch data when component mounts or league/date changes
-  // useEffect(() => {
-  //   if (selectedDate && league) {
-  //     const today = getCurrentLocalDate();
-  //     const isFutureDate = selectedDate > today;
-  //
-  //     // Use scores endpoint for past/current dates, schedule endpoint for future dates
-  //     if (isFutureDate) {
-  //       fetchSchedule(league, selectedDate);
-  //     } else {
-  //       fetchScores(league, selectedDate);
-  //     }
-  //
-  //     fetchTeamProfiles(league);
-  //     fetchStadiums(league);
-  //     // fetchOdds(league, selectedDate); // Commented out - not using odds-by-date endpoint anymore
-  //   }
-  // }, [
-  //   league,
-  //   selectedDate,
-  //   fetchScores,
-  //   fetchTeamProfiles,
-  //   fetchStadiums,
-  //   // fetchOdds, // Commented out - not using odds-by-date endpoint anymore
-  //   fetchSchedule,
-  // ]);
+  useEffect(() => {
+    if (!selectedLeague) {
+      dispatch(setSelectedLeague(league));
+    }
+  }, [setSelectedLeague, dispatch]);
+
+  // Fetch data when component mounts or league/date changes
+  useEffect(() => {
+    if (selectedDate && league) {
+      fetchScores(league, selectedDate);
+      fetchTeamProfiles(league);
+      fetchStadiums(league);
+    }
+  }, [selectedDate, league, fetchScores, fetchTeamProfiles, fetchStadiums]);
 
   // Fetch box score data for live games to get more accurate scores
   useEffect(() => {
     if (scores?.data && selectedDate && league) {
-      // Fetch box score data for each live game to get accurate scores
       scores.data.forEach((game: any) => {
         const gameId = game.GameID.toString();
         const gameStatus = mapApiStatusToGameStatus(game.Status);
 
-        // Only fetch box score for live games that we don't already have
         if (gameStatus === GameStatus.LIVE && !boxScoreData[gameId]) {
-          // dispatch(fetchBoxScore({ league, gameId }));
+          dispatch(fetchBoxScore({ league, gameId }));
         }
       });
     }
@@ -664,22 +648,9 @@ export function Scores() {
   // Retry function for error state
   const handleRetry = () => {
     if (selectedDate && league) {
-      const today = getCurrentLocalDate();
-      const isFutureDate = selectedDate > today;
-
-      // Use the appropriate endpoint based on date
-      if (isFutureDate) {
-        fetchSchedule(league, selectedDate);
-      } else {
-        fetchScores(league, selectedDate);
-      }
-
+      fetchScores(league, selectedDate);
       fetchTeamProfiles(league);
       fetchStadiums(league);
-      // Only retry odds if there's no critical error
-      // if (!hasCriticalError) {
-      //   fetchOdds(league, selectedDate); // Commented out - not using odds-by-date endpoint anymore
-      // }
     }
   };
 
@@ -700,108 +671,131 @@ export function Scores() {
   }
 
   return (
-    <HideVerticalScroll minH="100vh" bg="primary.25">
-      <VStack gap="4" align="stretch" p="4" pb="20">
-        {/* Date Selector */}
-        <DatePicker selectedLeague={selectedLeague} />
+    <AppLayout>
+      <Box minH="100vh" bg="primary.25" display="flex" flexDirection="column">
+        {/* Top Navigation */}
+        <TopNavigation />
 
-        {/* Games List */}
-        <VStack gap="4" align="stretch">
-          {sortedGames.length === 0 ? (
-            // Show loading state if we're fetching data, otherwise show no games
-            scoresLoading ||
-            teamProfilesLoading ||
-            stadiumsLoading ||
-            scheduleLoading ||
-            oddsLoading ? (
-              // Show skeleton cards while loading
-              Array.from({ length: 3 }, (_, index) => (
-                <GameCardSkeleton key={`skeleton-${index}`} />
-              ))
-            ) : (
-              <Card.Root
-                bg="primary.25"
-                borderRadius="12px"
-                shadow="sm"
-                border="1px"
-                borderColor="text.400"
-              >
-                <Card.Body p="8" textAlign="center">
-                  <VStack gap="4">
-                    <Box
-                      w="16"
-                      h="16"
+        {/* Main Content */}
+        <Box
+          flex="1"
+          minH="calc(100vh - 140px)"
+          overflowY="auto"
+          bg="primary.25"
+        >
+          <HideVerticalScroll minH="100vh" bg="primary.25">
+            <VStack gap="4" align="stretch" p="4" pb="20">
+              {/* Date Selector */}
+              <DatePicker selectedLeague={selectedLeague} />
+
+              {/* Games List */}
+              <VStack gap="4" align="stretch">
+                {sortedGames.length === 0 ? (
+                  // Show loading state if we're fetching data, otherwise show no games
+                  scoresLoading ||
+                  teamProfilesLoading ||
+                  stadiumsLoading ||
+                  scheduleLoading ||
+                  oddsLoading ? (
+                    // Show skeleton cards while loading
+                    Array.from({ length: 3 }, (_, index) => (
+                      <GameCardSkeleton key={`skeleton-${index}`} />
+                    ))
+                  ) : (
+                    <Card.Root
                       bg="primary.25"
-                      borderRadius="full"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
+                      borderRadius="12px"
+                      shadow="sm"
+                      border="1px"
+                      borderColor="text.400"
                     >
-                      <Text fontSize="2xl">📺</Text>
-                    </Box>
-                    <VStack gap="2">
-                      <Text
-                        fontSize="lg"
-                        fontWeight="semibold"
-                        color="text.400"
-                      >
-                        {selectedLeague === League.MLB
-                          ? "No Games"
-                          : "Coming Soon"}
-                      </Text>
-                      <Text fontSize="sm" color="text.400" textAlign="center">
-                        {selectedLeague === League.MLB ? (
-                          <>
-                            No games scheduled for{" "}
-                            {selectedDate
-                              ? parseLocalDate(selectedDate).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    weekday: "long",
-                                    month: "long",
-                                    day: "numeric",
-                                  },
-                                )
-                              : "this date"}
-                            .
-                          </>
-                        ) : (
-                          <>
-                            {selectedLeague.toUpperCase()} scores are not yet
-                            available. We're working on adding support for{" "}
-                            {selectedLeague.toUpperCase()} games.
-                          </>
-                        )}
-                      </Text>
-                    </VStack>
+                      <Card.Body p="8" textAlign="center">
+                        <VStack gap="4">
+                          <Box
+                            w="16"
+                            h="16"
+                            bg="primary.25"
+                            borderRadius="full"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <Text fontSize="2xl">📺</Text>
+                          </Box>
+                          <VStack gap="2">
+                            <Text
+                              fontSize="lg"
+                              fontWeight="semibold"
+                              color="text.400"
+                            >
+                              {selectedLeague === League.MLB
+                                ? "No Games"
+                                : "Coming Soon"}
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color="text.400"
+                              textAlign="center"
+                            >
+                              {selectedLeague === League.MLB ? (
+                                <>
+                                  No games scheduled for{" "}
+                                  {selectedDate
+                                    ? parseLocalDate(
+                                        selectedDate,
+                                      ).toLocaleDateString("en-US", {
+                                        weekday: "long",
+                                        month: "long",
+                                        day: "numeric",
+                                      })
+                                    : "this date"}
+                                  .
+                                </>
+                              ) : (
+                                <>
+                                  {selectedLeague.toUpperCase()} scores are not
+                                  yet available. We're working on adding support
+                                  for {selectedLeague.toUpperCase()} games.
+                                </>
+                              )}
+                            </Text>
+                          </VStack>
+                        </VStack>
+                      </Card.Body>
+                    </Card.Root>
+                  )
+                ) : (
+                  <VStack gap="4" align="stretch">
+                    {scoresLoading ||
+                    teamProfilesLoading ||
+                    stadiumsLoading ||
+                    scheduleLoading ||
+                    oddsLoading
+                      ? // Show skeleton cards while loading
+                        Array.from({ length: 3 }, (_, index) => (
+                          <GameCardSkeleton key={`skeleton-${index}`} />
+                        ))
+                      : sortedGames.map((game) => (
+                          <ScoreCard
+                            key={game.id}
+                            game={game}
+                            onGameClick={handleGameClick}
+                            oddsLoading={oddsLoading || false}
+                            oddsByDate={odds}
+                          />
+                        ))}
                   </VStack>
-                </Card.Body>
-              </Card.Root>
-            )
-          ) : (
-            <VStack gap="4" align="stretch">
-              {scoresLoading ||
-              teamProfilesLoading ||
-              stadiumsLoading ||
-              scheduleLoading ||
-              oddsLoading
-                ? // Show skeleton cards while loading
-                  Array.from({ length: 3 }, (_, index) => (
-                    <GameCardSkeleton key={`skeleton-${index}`} />
-                  ))
-                : sortedGames.map((game) => (
-                    <ScoreCard
-                      key={game.id}
-                      game={game}
-                      onGameClick={handleGameClick}
-                      oddsLoading={oddsLoading || false}
-                      oddsByDate={odds}
-                    />
-                  ))}
+                )}
+              </VStack>
             </VStack>
-          )}
-        </VStack>
-      </VStack>
-    </HideVerticalScroll>
+          </HideVerticalScroll>
+        </Box>
+
+        {/* Bottom Navigation */}
+        {/* <BottomNavigation /> */}
+      </Box>
+    </AppLayout>
   );
 }
+
+export default ScoresV2;

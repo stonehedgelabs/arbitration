@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Button, HStack, Text } from "@chakra-ui/react";
+import { Button, HStack, Text } from "@chakra-ui/react";
 import { useTheme } from "../contexts/ThemeContext";
 
 interface ThemeToggleProps {

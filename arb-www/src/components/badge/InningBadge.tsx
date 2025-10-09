@@ -15,7 +15,6 @@ export function InningBadge({
   inningHalf,
   league,
   size = "sm",
-  showChevron = true,
 }: InningBadgeProps) {
   const fontSize = size === "sm" ? "xs" : "sm";
 

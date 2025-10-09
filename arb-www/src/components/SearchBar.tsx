@@ -1,4 +1,4 @@
-import { useState, memo } from "react";
+import { memo } from "react";
 import { Box, Input } from "@chakra-ui/react";
 import { Search } from "lucide-react";
 

@@ -3,30 +3,27 @@ import { useParams } from "react-router-dom";
 import { Box, VStack, HStack, Text } from "@chakra-ui/react";
 import { motion } from "motion/react";
 
-import { BackButton } from "../components/BackButton";
-import { BoxScoreDetailMLBv2 } from "../components/boxscore/BoxScoreDetailMLBv2";
-import { UnifiedGameFeed } from "../components/UnifiedGameFeed";
-import { Skeleton } from "../components/Skeleton";
-import { TopNavigation } from "../components/TopNavigation";
-import { BottomNavigation } from "../components/BottomNavigation";
-import { AppLayout } from "../components/containers/AppLayout";
+import { BackButton } from "../components/BackButton.tsx";
+import { BoxScoreDetailMLB } from "../components/boxscore/MLB.tsx";
+import { UnifiedGameFeed } from "../components/UnifiedGameFeed.tsx";
+import { MLBSkeleton } from "../components/boxscore/MLBSkeleton.tsx";
+import { UnifiedGameFeedSkeleton } from "../components/UnifiedGameFeedSkeleton.tsx";
+import { TopNavigation } from "../components/TopNavigation.tsx";
+import { AppLayout } from "../components/containers/AppLayout.tsx";
 
-import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { useAppSelector, useAppDispatch } from "../store/hooks.ts";
 import {
   fetchBoxScore,
-  fetchSchedule,
-  fetchScores,
   setSelectedLeague,
-} from "../store/slices/sportsDataSlice";
-import { League } from "../config";
-import useArb from "../services/Arb";
-import { getCurrentLocalDate } from "../utils.ts";
+} from "../store/slices/sportsDataSlice.ts";
+import { League } from "../config.ts";
+import useArb from "../services/Arb.ts";
 
-interface BoxScoreV2Props {
+interface BoxScoreProps {
   onBack: () => void;
 }
 
-export function BoxScoreV2({ onBack }: BoxScoreV2Props) {
+export function BoxScore({ onBack }: BoxScoreProps) {
   const { league, gameId } = useParams<{ league: string; gameId: string }>();
   const dispatch = useAppDispatch();
 
@@ -45,7 +42,7 @@ export function BoxScoreV2({ onBack }: BoxScoreV2Props) {
     (state) => state.sportsData.selectedLeague,
   );
 
-  const { league: paramLeague, gameId: paramGameId } = useParams<{
+  const { league: paramLeague } = useParams<{
     league: string;
     gameId: string;
   }>();
@@ -54,7 +51,7 @@ export function BoxScoreV2({ onBack }: BoxScoreV2Props) {
 
   // Fetch box score data and team profiles when component mounts
   useEffect(() => {
-    if (league) {
+    if (league && gameId) {
       dispatch(fetchBoxScore({ league, gameId }));
       fetchTeamProfiles(league);
     }
@@ -75,27 +72,52 @@ export function BoxScoreV2({ onBack }: BoxScoreV2Props) {
 
   if (boxScoreLoading && !gameData) {
     return (
-      <Box minH="100vh" bg="primary.25">
-        {/* Header Skeleton */}
-        <Box
-          bg="primary.25"
-          borderBottom="1px"
-          borderColor="border.100"
-          px="4"
-          py="3"
+      <AppLayout>
+        <motion.div
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ type: "spring", damping: 30, stiffness: 300 }}
         >
-          <HStack justify="space-between" align="center">
-            <Skeleton w="8" h="8" borderRadius="md" />
-            <Skeleton w="16" h="4" />
-          </HStack>
-        </Box>
+          <Box
+            minH="100vh"
+            bg="primary.25"
+            display="flex"
+            flexDirection="column"
+          >
+            {/* Top Navigation with Back Button */}
+            <TopNavigation showLeagueSelector={false} onBack={onBack} />
 
-        {/* Content Skeleton */}
-        <VStack gap="4" p="4">
-          <Skeleton w="full" h="200px" borderRadius="lg" />
-          <Skeleton w="full" h="300px" borderRadius="lg" />
-        </VStack>
-      </Box>
+            {/* Content */}
+            <Box
+              flex="1"
+              minH="calc(100vh - 200px)"
+              overflowY="auto"
+              bg="primary.25"
+            >
+              <VStack gap="0" align="stretch">
+                {/* Box Score Section - Compressed */}
+                <Box
+                  bg="primary.25"
+                  borderBottom="1px"
+                  borderColor="border.100"
+                  maxH="250px"
+                  overflow="hidden"
+                >
+                  <Box transform="scale(0.8)" transformOrigin="top center">
+                    <MLBSkeleton />
+                  </Box>
+                </Box>
+
+                {/* Unified Feed Section */}
+                <Box flex="1" bg="primary.25" minH="calc(100vh - 300px)">
+                  <UnifiedGameFeedSkeleton />
+                </Box>
+              </VStack>
+            </Box>
+          </Box>
+        </motion.div>
+      </AppLayout>
     );
   }
 
@@ -204,7 +226,7 @@ export function BoxScoreV2({ onBack }: BoxScoreV2Props) {
               >
                 {paramLeague === League.MLB ? (
                   <Box transform="scale(0.8)" transformOrigin="top center">
-                    <BoxScoreDetailMLBv2 gameId={gameId} league={paramLeague} />
+                    <BoxScoreDetailMLB gameId={gameId} league={paramLeague} />
                   </Box>
                 ) : (
                   <VStack

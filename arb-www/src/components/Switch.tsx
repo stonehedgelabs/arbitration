@@ -1,4 +1,4 @@
-import { Box, HStack, Text } from "@chakra-ui/react";
+import { HStack, Text } from "@chakra-ui/react";
 import { Switch as ChakraSwitch } from "@chakra-ui/react";
 
 interface CustomSwitchProps {

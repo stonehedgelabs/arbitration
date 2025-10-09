@@ -22,15 +22,12 @@ import {
   GameStatus,
 } from "../../config.ts";
 
-interface BoxScoreDetailMLBv2Props {
+interface BoxScoreDetailMLBProps {
   gameId?: string;
   league?: string;
 }
 
-export function BoxScoreDetailMLBv2({
-  gameId,
-  league,
-}: BoxScoreDetailMLBv2Props) {
+export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
   const {
     mlbBoxScore,
     teamProfiles,
@@ -218,18 +215,18 @@ export function BoxScoreDetailMLBv2({
               </Text>
               {/* Strikes for away team */}
               <VStack gap="1" align="center">
-                <HStack gap="0.5">
+                <HStack gap="1">
                   {Array.from({ length: 2 }, (_, i) => (
                     <Box
                       key={i}
-                      w="2"
-                      h="2"
+                      w="3"
+                      h="3"
                       borderRadius="full"
                       bg={i < (game.Strikes || 0) ? "red.500" : "text.200"}
                     />
                   ))}
                 </HStack>
-                <Text fontSize="2xs" color="text.500">
+                <Text fontSize="xs" color="text.500">
                   Strikes
                 </Text>
               </VStack>
@@ -255,7 +252,7 @@ export function BoxScoreDetailMLBv2({
               <Box
                 w="12"
                 h="12"
-                bg="text.200"
+                bg="primary.25"
                 borderRadius="md"
                 display="flex"
                 alignItems="center"
@@ -266,23 +263,23 @@ export function BoxScoreDetailMLBv2({
                   runnerOnFirst={game.RunnerOnFirst || false}
                   runnerOnSecond={game.RunnerOnSecond || false}
                   runnerOnThird={game.RunnerOnThird || false}
-                  size="sm"
+                  size="md"
                 />
               </Box>
               {/* Outs */}
-              <VStack gap="1" align="center">
-                <HStack gap="0.5">
+              <VStack gap="1" align="center" mt={12}>
+                <HStack gap="1">
                   {Array.from({ length: 2 }, (_, i) => (
                     <Box
                       key={i}
-                      w="2"
-                      h="2"
+                      w="3"
+                      h="3"
                       borderRadius="full"
                       bg={i < (game.Outs || 0) ? "yellow.500" : "text.200"}
                     />
                   ))}
                 </HStack>
-                <Text fontSize="2xs" color="text.500">
+                <Text fontSize="xs" color="text.500">
                   Outs
                 </Text>
               </VStack>
@@ -329,18 +326,18 @@ export function BoxScoreDetailMLBv2({
               </Text>
               {/* Balls for home team */}
               <VStack gap="1" align="center">
-                <HStack gap="0.5">
+                <HStack gap="1">
                   {Array.from({ length: 4 }, (_, i) => (
                     <Box
                       key={i}
-                      w="2"
-                      h="2"
+                      w="3"
+                      h="3"
                       borderRadius="full"
                       bg={i < (game.Balls || 0) ? "blue.500" : "text.200"}
                     />
                   ))}
                 </HStack>
-                <Text fontSize="2xs" color="text.500">
+                <Text fontSize="xs" color="text.500">
                   Balls
                 </Text>
               </VStack>
@@ -423,89 +420,6 @@ export function BoxScoreDetailMLBv2({
             </VStack>
           </VStack>
         </VStack>
-
-        {/* <VStack gap="4" align="stretch">
-          <Box
-            bg="primary.25"
-            borderRadius="lg"
-            p="4"
-            border="1px"
-            borderColor="text.400"
-          >
-            <VStack gap="4" align="stretch">
-        
-              <VStack gap="2" align="stretch">
-                <Text fontSize="sm" fontWeight="semibold" color="text.400">
-                  {orEmpty(awayTeamProfile.Name)} Stats
-                </Text>
-                <HStack justify="space-between" gap="4">
-                  <VStack gap="1" align="center" flex="1">
-                    <Text fontSize="xs" color="text.500">Hits</Text>
-                    <Text fontSize="lg" fontWeight="bold" color="text.400">
-                      {orEmpty(game.AwayTeamHits?.toString())}
-                    </Text>
-                  </VStack>
-                  <VStack gap="1" align="center" flex="1">
-                    <Text fontSize="xs" color="text.500">Errors</Text>
-                    <Text fontSize="lg" fontWeight="bold" color="text.400">
-                      {orEmpty(game.AwayTeamErrors?.toString())}
-                    </Text>
-                  </VStack>
-                  <VStack gap="1" align="center" flex="1">
-                    <Text fontSize="xs" color="text.500">LOB</Text>
-                    <Text fontSize="lg" fontWeight="bold" color="text.400">
-                      {orEmpty(game.AwayTeamLeftOnBase?.toString())}
-                    </Text>
-                  </VStack>
-                </HStack>
-              </VStack>
-
-        
-              <VStack gap="2" align="stretch">
-                <Text fontSize="sm" fontWeight="semibold" color="text.400">
-                  {orEmpty(homeTeamProfile.Name)} Stats
-                </Text>
-                <HStack justify="space-between" gap="4">
-                  <VStack gap="1" align="center" flex="1">
-                    <Text fontSize="xs" color="text.500">Hits</Text>
-                    <Text fontSize="lg" fontWeight="bold" color="text.400">
-                      {orEmpty(game.HomeTeamHits?.toString())}
-                    </Text>
-                  </VStack>
-                  <VStack gap="1" align="center" flex="1">
-                    <Text fontSize="xs" color="text.500">Errors</Text>
-                    <Text fontSize="lg" fontWeight="bold" color="text.400">
-                      {orEmpty(game.HomeTeamErrors?.toString())}
-                    </Text>
-                  </VStack>
-                  <VStack gap="1" align="center" flex="1">
-                    <Text fontSize="xs" color="text.500">LOB</Text>
-                    <Text fontSize="lg" fontWeight="bold" color="text.400">
-                      {orEmpty(game.HomeTeamLeftOnBase?.toString())}
-                    </Text>
-                  </VStack>
-                </HStack>
-              </VStack>
-            </VStack>
-          </Box>
-
-          <Box
-            bg="primary.25"
-            borderRadius="lg"
-            p="4"
-            border="1px"
-            borderColor="text.400"
-          >
-            <VStack gap="2" align="stretch">
-              <Text fontSize="sm" fontWeight="semibold" color="text.400">
-                Game Summary
-              </Text>
-              <Text fontSize="xs" color="text.500">
-                {game.GameSummary || "No summary available"}
-              </Text>
-            </VStack>
-          </Box>
-        </VStack> */}
       </Box>
     </HideVerticalScroll>
   );

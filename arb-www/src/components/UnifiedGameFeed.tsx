@@ -219,10 +219,6 @@ export function UnifiedGameFeed({
       }
 
       const data: ActualPlayByPlayResponse = await response.json();
-
-      // console.log("UnifiedGameFeed: Raw PBP API response:", data);
-      // console.log("UnifiedGameFeed: PBP data array length:", data.data?.length);
-
       // Limit to latest events
       const limitedData = {
         ...data,
@@ -243,17 +239,6 @@ export function UnifiedGameFeed({
     if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;
 
     const refreshData = () => {
-      // Refresh Reddit comments
-      if (redditGameThreadFound && redditGameThreadFound.subreddit) {
-        dispatch(
-          fetchRedditGameThreadComments({
-            subreddit: redditGameThreadFound.subreddit,
-            gameId,
-            bypassCache: true,
-          }),
-        );
-      }
-
       // Refresh Twitter data
       if (awayTeam && homeTeam) {
         const searchTerms = [
@@ -282,7 +267,6 @@ export function UnifiedGameFeed({
   }, [
     UNIFIED_FEED_CONFIG.enableAutoRefresh,
     UNIFIED_FEED_CONFIG.autoRefreshInterval,
-    redditGameThreadFound,
     gameId,
     awayTeam,
     homeTeam,
@@ -291,6 +275,42 @@ export function UnifiedGameFeed({
     league,
     dispatch,
     fetchPlayByPlay,
+  ]);
+
+  // Reddit thread refresh functionality (5-minute interval)
+  useEffect(() => {
+    if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;
+
+    const refreshRedditThread = () => {
+      // Refresh Reddit comments
+      if (
+        redditGameThreadFound &&
+        redditCommentsData?.posts?.[0]?.comments?.[0]?.subreddit
+      ) {
+        const subreddit = redditCommentsData.posts[0].comments[0].subreddit;
+        dispatch(
+          fetchRedditGameThreadComments({
+            subreddit: subreddit,
+            gameId,
+            bypassCache: true,
+          }),
+        );
+      }
+    };
+
+    const redditInterval = setInterval(
+      refreshRedditThread,
+      UNIFIED_FEED_CONFIG.redditThreadRefreshInterval,
+    );
+
+    return () => clearInterval(redditInterval);
+  }, [
+    UNIFIED_FEED_CONFIG.enableAutoRefresh,
+    UNIFIED_FEED_CONFIG.redditThreadRefreshInterval,
+    redditGameThreadFound,
+    redditCommentsData,
+    gameId,
+    dispatch,
   ]);
 
   // Fetch team profiles and PBP data on mount
@@ -361,29 +381,16 @@ export function UnifiedGameFeed({
 
     // Add PBP data
     if (playByPlayData?.data) {
-      // console.log(
-      //   "UnifiedGameFeed: Processing PBP data, count:",
-      //   playByPlayData.data.length,
-      // );
-      playByPlayData.data.forEach((play: PlayEvent, index) => {
-        // console.log(`UnifiedGameFeed: PBP event ${index}:`, {
-        //   PlayID: play.PlayID,
-        //   Description: play.Description,
-        //   Team: play.Team,
-        //   Updated: play.Updated,
-        // });
-
+      playByPlayData.data.forEach((play: PlayEvent) => {
         // Convert EST timestamp to UTC for proper sorting
         const utcTimestamp = estToUTC(play.Updated);
 
         // Use the actual PBP data fields
-        const hitterName = play.HitterName || "Player";
-        const pitcherName = play.PitcherName || "Pitcher";
+        const hitterName = (play as any).HitterName || "Player";
         const playDescription = play.Description || "Play in progress...";
 
         // Determine which team the play belongs to based on HitterTeamID
         const hitterTeamId = play.HitterTeamID;
-        const pitcherTeamId = play.PitcherTeamID;
 
         // Use hitter as the primary player for the play
         const primaryPlayer = hitterName;
@@ -423,21 +430,12 @@ export function UnifiedGameFeed({
 
   const allEvents = getAllEvents();
 
-  // // Debug: Log PBP data
-  // console.log("UnifiedGameFeed: PBP data:", playByPlayData);
-  // console.log("UnifiedGameFeed: All events:", allEvents);
-  // console.log(
-  //   "UnifiedGameFeed: PBP events:",
-  //   allEvents.filter((e) => e.type === "pbp"),
-  // );
-
   // Get the latest PBP event for sticky display
   const latestPBPEvent = allEvents.find((event) => event.type === "pbp");
 
   // Render sticky latest PBP event in old card style
   const renderStickyPBPEvent = (event: FeedEvent) => {
     // Debug: Log the event being rendered
-    // console.log("UnifiedGameFeed: Rendering sticky PBP event:", event);
 
     // Get team logo for the PBP event using the actual PBP data
     const getTeamLogoForEvent = () => {
@@ -468,9 +466,11 @@ export function UnifiedGameFeed({
         bg="primary.25"
         borderBottom="1px"
         borderColor="border.100"
-        px="3"
-        py="2"
+        px="2"
+        py="1.5"
         mb="1"
+        display="flex"
+        justifyContent="center"
       >
         <Box
           bg="primary.100"
@@ -480,15 +480,16 @@ export function UnifiedGameFeed({
           borderColor="text.400"
           borderLeft="3px"
           borderLeftColor="primary.500"
+          w="320px"
         >
-          <Box p="2">
-            <VStack gap="1.5" align="stretch">
+          <Box px="4" pb="4">
+            <VStack gap="1" align="stretch">
               {/* Header with Latest Play and timestamp */}
               <HStack justify="space-between" align="center">
                 <HStack gap="1.5">
                   <Box
-                    w="5"
-                    h="5"
+                    w="4"
+                    h="4"
                     borderRadius="full"
                     bg="primary.500"
                     color="white"
@@ -498,7 +499,7 @@ export function UnifiedGameFeed({
                     fontSize="2xs"
                     fontWeight="bold"
                   >
-                    <Clock size={8} />
+                    <Clock size={6} />
                   </Box>
                   <Text
                     fontSize="2xs"
@@ -508,11 +509,22 @@ export function UnifiedGameFeed({
                     Latest Play
                   </Text>
                 </HStack>
-                <Text fontSize="2xs" color="text.400">
-                  {event.timestamp
-                    ? formatRelativeUTCTime(event.timestamp)
-                    : "Just now"}
-                </Text>
+                <VStack gap="0" align="end" mt="4">
+                  <Text fontSize="2xs" color="text.400">
+                    {event.timestamp
+                      ? formatRelativeUTCTime(event.timestamp)
+                      : "Just now"}
+                  </Text>
+                  {/* Inning badge */}
+                  {gameData?.Inning && (
+                    <InningBadge
+                      inningNumber={parseInt(gameData.Inning) || 1}
+                      inningHalf={gameData.InningHalf}
+                      league={league}
+                      size="sm"
+                    />
+                  )}
+                </VStack>
               </HStack>
 
               {/* Team info with logo and name */}
@@ -553,30 +565,25 @@ export function UnifiedGameFeed({
               </HStack>
 
               {/* Play description */}
-              <Text fontSize="xs" fontWeight="medium">
-                {event.content || "Play in progress..."}
-              </Text>
-
-              {/* Game info: Inning badge and scores */}
-              <HStack justify="space-between" align="center">
-                {/* Inning badge */}
-                {gameData?.Inning && (
-                  <InningBadge
-                    inningNumber={parseInt(gameData.Inning) || 1}
-                    inningHalf={gameData.InningHalf}
-                    league={league}
-                    size="xs"
-                  />
-                )}
-
-                {/* Scores */}
-                {gameData?.AwayTeamRuns !== undefined &&
-                  gameData?.HomeTeamRuns !== undefined && (
-                    <HStack gap="1" align="center">
-                      <Text fontSize="2xs" color="text.400">
-                        {gameData.AwayTeamRuns} - {gameData.HomeTeamRuns}
-                      </Text>
-                    </HStack>
+              <HStack gap="2" align="center">
+                <Text fontSize="xs" fontWeight="medium" flex="1">
+                  {event.content || "Play in progress..."}
+                </Text>
+                {/* Error badge */}
+                {event.content &&
+                  event.content.toLowerCase().includes("error") && (
+                    <Box
+                      bg="red.500"
+                      color="white"
+                      px="2"
+                      py="0.5"
+                      borderRadius="4px"
+                      fontSize="2xs"
+                      fontWeight="bold"
+                      textTransform="uppercase"
+                    >
+                      Error
+                    </Box>
                   )}
               </HStack>
 
@@ -606,7 +613,7 @@ export function UnifiedGameFeed({
                             color="text.500"
                             fontWeight="medium"
                           >
-                            B:
+                            Balls:
                           </Text>
                           <Text
                             fontSize="2xs"
@@ -624,7 +631,7 @@ export function UnifiedGameFeed({
                             color="text.500"
                             fontWeight="medium"
                           >
-                            S:
+                            Strikes:
                           </Text>
                           <Text
                             fontSize="2xs"
@@ -734,6 +741,13 @@ export function UnifiedGameFeed({
                       • {event.subreddit}
                     </Text>
                   )}
+                </HStack>
+              )}
+              {event.type === "twitter" && (
+                <HStack gap="1" mb="0.5">
+                  <Text fontSize="2xs" fontWeight="semibold" color="text.500">
+                    @{event.author}
+                  </Text>
                 </HStack>
               )}
               <Text fontSize="xs" color="text.500">

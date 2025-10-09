@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
-import { Skeleton } from "../../Skeleton";
-import { Bases } from "../../Bases";
+import { Skeleton } from "../Skeleton";
+import { Bases } from "../Bases";
 import {
   PostseasonBadge,
   LiveBadge,
@@ -11,16 +11,16 @@ import {
   DivisionBadge,
   StatusBadge,
   InningBadge,
-} from "../../badge";
+} from "../badge";
 
-import { GameStatus, League } from "../../../config";
+import { GameStatus, League } from "../../config";
 
-import { orEmpty, toLocalTime } from "../../../utils";
+import { orEmpty, toLocalTime } from "../../utils";
 
-import { useAppDispatch } from "../../../store/hooks";
-import { findRedditGameThread } from "../../../store/slices/sportsDataSlice";
+import { useAppDispatch } from "../../store/hooks";
+import { findRedditGameThread } from "../../store/slices/sportsDataSlice";
 
-import { getTeamSubredditByName } from "../../../teams";
+import { getTeamSubredditByName } from "../../teams";
 
 interface Team {
   name: string;
@@ -193,9 +193,9 @@ export function MLBScoreCard({
 }: MLBScoreCardProps) {
   const dispatch = useAppDispatch();
 
-  // Enhanced click handler that also searches for Reddit game threads
+  // Enhanced click handler that navigates to the new V2 route
   const handleGameClick = useCallback(async () => {
-    // Call the original onGameClick
+    // Call the original onGameClick with the new route format
     onGameClick(game.id, game.date);
 
     // Find subreddits for both teams using the new function

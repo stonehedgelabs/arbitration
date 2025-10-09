@@ -66,18 +66,6 @@ export function Bases({
         border="1px"
         borderColor={runnerOnThird ? "green.700" : "gray.500"}
       />
-
-      {/* Home Plate (center) */}
-      {/* <Box
-        position="absolute"
-        top="1/2"
-        left="1/2"
-        transform="translate(-50%, -50%) rotate(45deg)"
-        w={config.base}
-        h={config.base}
-        bg="gray.300"
-        borderRadius="2px"
-      /> */}
     </Box>
   );
 }

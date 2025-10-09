@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Box, Button, Text, VStack } from "@chakra-ui/react";
-import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
+import { useAppDispatch } from "../store/hooks.ts";
 import { setUserType } from "../store/slices/authSlice.ts";
 import { AppLayout } from "../components/containers";
 
@@ -36,7 +36,6 @@ const GoogleIcon = () => (
 export function Login() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const hasSeenWelcome = useAppSelector((state) => state.auth.hasSeenWelcome);
 
   const handleLogin = (method: "guest" | "apple" | "google") => {
     if (method === "guest") {

@@ -2,7 +2,7 @@
 import { Card, Text, VStack } from "@chakra-ui/react";
 
 // Internal imports - config
-import { GameStatus, League } from "../../../config";
+import { GameStatus } from "../../config";
 
 interface Team {
   name: string;
@@ -24,22 +24,21 @@ interface Game {
   division?: string;
   isPostseason?: boolean;
   odds?: any;
-  league: League;
 }
 
-interface GenericScoreCardProps {
+interface NBAScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
   oddsByDate?: any;
 }
 
-export function GenericScoreCard({
+export function NBAScoreCard({
   game,
   onGameClick,
   oddsLoading: _oddsLoading,
   oddsByDate: _oddsByDate,
-}: GenericScoreCardProps) {
+}: NBAScoreCardProps) {
   return (
     <Card.Root
       key={game.id}
@@ -54,13 +53,20 @@ export function GenericScoreCard({
       onClick={() => onGameClick(game.id, game.date)}
     >
       <Card.Body p="4">
-        <VStack align="stretch" gap="4">
-          <Text fontSize="sm" color="text.400">
-            {game.league.toUpperCase()} Score Card - {game.awayTeam.name} vs{" "}
-            {game.homeTeam.name}
+        <VStack align="stretch" gap="3">
+          <Text fontSize="sm" color="text.400" textAlign="center">
+            {game.awayTeam.name} vs {game.homeTeam.name}
           </Text>
-          <Text fontSize="xs" color="text.500">
-            Generic score card for unsupported league
+          <Text
+            fontSize="lg"
+            fontWeight="bold"
+            color="text.400"
+            textAlign="center"
+          >
+            {game.awayTeam.score} - {game.homeTeam.score}
+          </Text>
+          <Text fontSize="xs" color="text.500" textAlign="center">
+            {game.status} {game.quarter && `- ${game.quarter}`}
           </Text>
         </VStack>
       </Card.Body>

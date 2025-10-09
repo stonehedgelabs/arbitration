@@ -98,8 +98,6 @@ const useArb = () => {
       return;
     }
 
-    console.log('>fetching league ', league)
-
     try {
       // Set loading state
       dispatch(setLeagueLoading({ league, dataType: 'teamProfiles', loading: true }));

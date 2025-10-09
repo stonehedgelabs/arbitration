@@ -2,7 +2,7 @@
 import { Card, Text, VStack } from "@chakra-ui/react";
 
 // Internal imports - config
-import { GameStatus } from "../../../config";
+import { GameStatus } from "../../config";
 
 interface Team {
   name: string;
@@ -26,19 +26,19 @@ interface Game {
   odds?: any;
 }
 
-interface NBAScoreCardProps {
+interface NHLScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
   oddsByDate?: any;
 }
 
-export function NBAScoreCard({
+export function NHLScoreCard({
   game,
   onGameClick,
   oddsLoading: _oddsLoading,
   oddsByDate: _oddsByDate,
-}: NBAScoreCardProps) {
+}: NHLScoreCardProps) {
   return (
     <Card.Root
       key={game.id}
@@ -53,12 +53,20 @@ export function NBAScoreCard({
       onClick={() => onGameClick(game.id, game.date)}
     >
       <Card.Body p="4">
-        <VStack align="stretch" gap="4">
-          <Text fontSize="sm" color="text.400">
-            NBA Score Card - {game.awayTeam.name} vs {game.homeTeam.name}
+        <VStack align="stretch" gap="3">
+          <Text fontSize="sm" color="text.400" textAlign="center">
+            {game.awayTeam.name} vs {game.homeTeam.name}
           </Text>
-          <Text fontSize="xs" color="text.500">
-            NBA-specific score card coming soon
+          <Text
+            fontSize="lg"
+            fontWeight="bold"
+            color="text.400"
+            textAlign="center"
+          >
+            {game.awayTeam.score} - {game.homeTeam.score}
+          </Text>
+          <Text fontSize="xs" color="text.500" textAlign="center">
+            {game.status} {game.quarter && `- ${game.quarter}`}
           </Text>
         </VStack>
       </Card.Body>

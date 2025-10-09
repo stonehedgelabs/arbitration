@@ -1,8 +1,6 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
 import { LeagueSelector } from "./LeagueSelector";
-import { FavoritesManager } from "./favorites/FavoritesManager";
 import { BackButton } from "./BackButton";
-import { useAppSelector } from "../store/hooks";
 
 interface TopNavigationProps {
   showLeagueSelector?: boolean;
@@ -13,8 +11,6 @@ export function TopNavigation({
   showLeagueSelector = true,
   onBack,
 }: TopNavigationProps) {
-  const favoriteTeams = useAppSelector((state) => state.favorites.teams);
-
   return (
     <Box
       bg="primary.25"
@@ -64,10 +60,6 @@ export function TopNavigation({
           >
             Arbitration
           </Text>
-          <FavoritesManager
-            favoriteTeams={favoriteTeams}
-            onToggleFavorite={() => {}}
-          />
         </HStack>
       </Box>
 

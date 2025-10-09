@@ -2,7 +2,7 @@
 import { Card, Text, VStack } from "@chakra-ui/react";
 
 // Internal imports - config
-import { GameStatus } from "../../../config";
+import { GameStatus } from "../../config";
 
 interface Team {
   name: string;
@@ -26,19 +26,19 @@ interface Game {
   odds?: any;
 }
 
-interface NHLScoreCardV2Props {
+interface NFLScoreCardProps {
   game: Game;
   onGameClick: (gameId: string, gameDate: string) => void;
   oddsLoading?: boolean;
   oddsByDate?: any;
 }
 
-export function NHLScoreCardV2({
+export function NFLScoreCard({
   game,
   onGameClick,
   oddsLoading: _oddsLoading,
   oddsByDate: _oddsByDate,
-}: NHLScoreCardV2Props) {
+}: NFLScoreCardProps) {
   return (
     <Card.Root
       key={game.id}

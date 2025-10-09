@@ -14,14 +14,13 @@ import {
   Text,
   Checkbox,
 } from "@chakra-ui/react";
-import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
+import { useAppDispatch } from "../store/hooks.ts";
 import { setUserType } from "../store/slices/authSlice.ts";
 import { AppLayout } from "../components/containers";
 
 export default function AppleLogin() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const hasSeenWelcome = useAppSelector((state) => state.auth.hasSeenWelcome);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 

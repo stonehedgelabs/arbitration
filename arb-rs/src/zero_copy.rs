@@ -44,7 +44,7 @@ impl ZeroCopyJson {
 
         // Use iterator to avoid intermediate allocations
         let filtered_items: Vec<serde_json::Value> = array
-            .into_iter()
+            .iter()
             .filter(|item| Self::matches_filters(item, filters))
             .cloned()
             .collect();

@@ -1,11 +1,8 @@
 import { motion } from "motion/react";
 import { Smartphone } from "lucide-react";
 import { Box, Text, VStack, HStack } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
 
 export function InvalidDevice() {
-  const navigate = useNavigate();
-
   return (
     <Box
       minH="100vh"

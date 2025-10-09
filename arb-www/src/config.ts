@@ -88,7 +88,7 @@ export enum ViewType {
   PLAYBYPLAY = 'playbyplay',
   SCORESV2 = 'scoresv2',
   GAMEDETAILV2 = 'gamedetailv2',
-  BOXSCOREV2 = 'boxscorev2',
+  BoxScore = 'BoxScore',
 }
 
 /**
@@ -215,6 +215,9 @@ export const PLAY_BY_PLAY_CONFIG = {
 export const UNIFIED_FEED_CONFIG = {
   // Auto-refresh interval in milliseconds
   autoRefreshInterval: 5000, // 5 seconds
+  
+  // Reddit thread refresh interval in milliseconds
+  redditThreadRefreshInterval: 300000, // 5 minutes
   
   // Whether to enable auto-refresh
   enableAutoRefresh: true,
