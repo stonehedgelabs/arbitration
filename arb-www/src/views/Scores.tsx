@@ -533,10 +533,10 @@ function ScoresV2() {
   }, [league, selectedLeague, dispatch]);
 
   useEffect(() => {
-    if (!selectedLeague) {
+    if (!selectedLeague && league) {
       dispatch(setSelectedLeague(league));
     }
-  }, [setSelectedLeague, dispatch]);
+  }, [setSelectedLeague, dispatch, league]);
 
   // Fetch data when component mounts or league/date changes
   useEffect(() => {

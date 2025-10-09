@@ -11,39 +11,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   showLabels = true,
   size = "md",
 }) => {
-  const { theme, themeMode, setThemeMode, toggleTheme } = useTheme();
-
-  const getThemeIcon = (mode: "light" | "dark" | "system") => {
-    switch (mode) {
-      case "light":
-        return "☀️";
-      case "dark":
-        return "🌙";
-      case "system":
-        return "💻";
-      default:
-        return "💻";
-    }
-  };
-
-  const getThemeLabel = (mode: "light" | "dark" | "system") => {
-    switch (mode) {
-      case "light":
-        return "Light";
-      case "dark":
-        return "Dark";
-      case "system":
-        return "System";
-      default:
-        return "System";
-    }
-  };
+  const { themeMode, setThemeMode } = useTheme();
 
   const buttonSize = size === "sm" ? "sm" : size === "lg" ? "lg" : "md";
   const iconSize = size === "sm" ? "16px" : size === "lg" ? "24px" : "20px";
 
   return (
-    <HStack spacing={1}>
+    <HStack gap={1}>
       <Button
         size={buttonSize}
         variant={themeMode === "light" ? "solid" : "ghost"}
@@ -52,7 +26,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         minW="auto"
         px={2}
       >
-        <HStack spacing={1}>
+        <HStack gap={1}>
           <Text fontSize={iconSize}>☀️</Text>
           {showLabels && <Text fontSize="sm">Light</Text>}
         </HStack>
@@ -66,7 +40,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         minW="auto"
         px={2}
       >
-        <HStack spacing={1}>
+        <HStack gap={1}>
           <Text fontSize={iconSize}>🌙</Text>
           {showLabels && <Text fontSize="sm">Dark</Text>}
         </HStack>
@@ -80,7 +54,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         minW="auto"
         px={2}
       >
-        <HStack spacing={1}>
+        <HStack gap={1}>
           <Text fontSize={iconSize}>💻</Text>
           {showLabels && <Text fontSize="sm">System</Text>}
         </HStack>

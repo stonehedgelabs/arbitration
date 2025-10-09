@@ -133,9 +133,6 @@ export function BoxScore({ onBack }: BoxScoreProps) {
         >
           <HStack justify="space-between" align="center">
             <BackButton onClick={onBack} />
-            <Text fontSize="lg" fontWeight="semibold" color="text.400">
-              Game Details
-            </Text>
             <Box w="8" /> {/* Spacer */}
           </HStack>
         </Box>

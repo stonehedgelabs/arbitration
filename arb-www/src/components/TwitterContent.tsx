@@ -143,7 +143,7 @@ export const TwitterContent = memo(function TwitterContent({
                 loadMoreTwitterData({
                   query: twitterSearchQuery,
                   filter: twitterSortKind,
-                  cursor: twitterData.next_cursor,
+                  cursor: twitterData.next_cursor || "",
                 }),
               );
             }, 300); // 300ms debounce
@@ -201,7 +201,7 @@ export const TwitterContent = memo(function TwitterContent({
       const result = await dispatch(
         fetchTwitterData({
           query: twitterSearchQuery.trim(),
-          filter: twitterSortKind,
+          queryType: twitterSortKind === "latest" ? "Latest" : "Top",
         }),
       );
 
@@ -253,18 +253,12 @@ export const TwitterContent = memo(function TwitterContent({
     }
   }, [twitterSortKind, twitterHasSearched, twitterSearchQuery, handleSearch]);
 
-  const handleClearSearch = () => {
-    dispatch(setTwitterSearchQuery(""));
-    dispatch(setTwitterHasSearched(false));
-    dispatch(clearTwitterData());
-  };
-
   const handleRefresh = () => {
     if (twitterSearchQuery.trim()) {
       dispatch(
         fetchTwitterData({
           query: twitterSearchQuery.trim(),
-          filter: twitterSortKind,
+          queryType: twitterSortKind === "latest" ? "Latest" : "Top",
         }),
       );
     }
@@ -401,7 +395,7 @@ export const TwitterContent = memo(function TwitterContent({
               _hover={{ borderColor: "text.400" }}
               transition="border-color 0.2s"
             >
-              <Tweet id={tweet.id} />
+              <Tweet id={tweet.id || ""} />
             </Box>
           ))}
 

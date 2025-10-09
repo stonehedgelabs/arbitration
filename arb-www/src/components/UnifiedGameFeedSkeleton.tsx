@@ -1,5 +1,5 @@
 import { Box, VStack, HStack } from "@chakra-ui/react";
-import { Skeleton, SkeletonCircle, SkeletonText } from "./Skeleton";
+import { SkeletonCircle, SkeletonText } from "./Skeleton";
 
 export function UnifiedGameFeedSkeleton() {
   return (

@@ -31,6 +31,6 @@ export abstract class BaseDTO {
     this: new () => T,
     jsonArray: any[]
   ): T[] {
-    return jsonArray.map((json) => this.fromJSON(json));
+    return jsonArray.map((json) => (this as any).fromJSON(json));
   }
 }

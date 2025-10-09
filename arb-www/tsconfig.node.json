@@ -15,7 +15,7 @@
 
     /* Required for project references */
     "composite": true,
-    "noEmit": false,
+    "noEmit": true,
 
     /* Linting */
     "strict": true,

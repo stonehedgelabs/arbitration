@@ -6,7 +6,7 @@
  * Debug configuration
  */
 export const DEBUG = {
-  enabled: process.env.NODE_ENV === 'development' || process.env.REACT_APP_DEBUG === 'true' || true,
+  enabled: (import.meta as any).env?.MODE === 'development' || (import.meta as any).env?.VITE_DEBUG === 'true' || true,
 };
 
 /**
@@ -157,6 +157,10 @@ export const POSTSEASON_CONFIG = {
   },
   [League.NHL]: {
     startDate: '04-01', // MM-DD format
+    seasonIdentifier: '2025POST',
+  },
+  [League.MLS]: {
+    startDate: '10-01', // MM-DD format
     seasonIdentifier: '2025POST',
   },
 } as const;

@@ -1,21 +1,21 @@
 import { Box, VStack, HStack, Flex } from "@chakra-ui/react";
-import { Skeleton, SkeletonCircle, SkeletonText } from "../Skeleton";
+import { SkeletonCircle, SkeletonText } from "../Skeleton";
 
 export function MLBSkeleton() {
   return (
     <Box p="4" bg="primary.25" borderRadius="12px">
       <VStack gap="4" align="stretch" w="full">
         {/* Game Meta Info */}
-        <VStack spacing="2" align="center">
+        <VStack gap="2" align="center">
           <SkeletonText width="180px" height="14px" /> {/* "Game 3 of 5..." */}
         </VStack>
 
         {/* Main Scoreboard Section */}
         <Flex justify="space-between" align="center" w="full" px="2" gap="6">
           {/* Away Team */}
-          <VStack spacing="2" align="center" flex="1">
+          <VStack gap="2" align="center" flex="1">
             <SkeletonCircle size="48px" />
-            <VStack spacing="1" align="center">
+            <VStack gap="1" align="center">
               <SkeletonText width="80px" height="14px" /> {/* Team name */}
               <SkeletonText width="70px" height="12px" /> {/* City */}
             </VStack>
@@ -23,7 +23,7 @@ export function MLBSkeleton() {
           </VStack>
 
           {/* Inning + Bases/Outs Section */}
-          <VStack spacing="3" align="center" flex="1">
+          <VStack gap="3" align="center" flex="1">
             <SkeletonText width="40px" height="14px" /> {/* "▼ 5" */}
             {/* Bases indicator */}
             <Box
@@ -38,10 +38,10 @@ export function MLBSkeleton() {
               <SkeletonCircle size="40px" />
             </Box>
             {/* Outs / Strikes / Balls */}
-            <HStack spacing="6" align="center">
+            <HStack gap="6" align="center">
               {/* Outs */}
-              <VStack spacing="1" align="center">
-                <HStack spacing="1">
+              <VStack gap="1" align="center">
+                <HStack gap="1">
                   <SkeletonCircle size="8px" />
                   <SkeletonCircle size="8px" />
                 </HStack>
@@ -49,8 +49,8 @@ export function MLBSkeleton() {
               </VStack>
 
               {/* Strikes */}
-              <VStack spacing="1" align="center">
-                <HStack spacing="1">
+              <VStack gap="1" align="center">
+                <HStack gap="1">
                   <SkeletonCircle size="8px" />
                   <SkeletonCircle size="8px" />
                 </HStack>
@@ -58,8 +58,8 @@ export function MLBSkeleton() {
               </VStack>
 
               {/* Balls */}
-              <VStack spacing="1" align="center">
-                <HStack spacing="1">
+              <VStack gap="1" align="center">
+                <HStack gap="1">
                   <SkeletonCircle size="8px" />
                   <SkeletonCircle size="8px" />
                   <SkeletonCircle size="8px" />
@@ -70,9 +70,9 @@ export function MLBSkeleton() {
           </VStack>
 
           {/* Home Team */}
-          <VStack spacing="2" align="center" flex="1">
+          <VStack gap="2" align="center" flex="1">
             <SkeletonCircle size="48px" />
-            <VStack spacing="1" align="center">
+            <VStack gap="1" align="center">
               <SkeletonText width="80px" height="14px" />
               <SkeletonText width="70px" height="12px" />
             </VStack>
@@ -81,7 +81,7 @@ export function MLBSkeleton() {
         </Flex>
 
         {/* Bottom Info */}
-        <VStack spacing="2" align="center" w="full">
+        <VStack gap="2" align="center" w="full">
           <SkeletonText width="100px" height="12px" /> {/* "Dodger Stadium" */}
           <SkeletonText width="160px" height="12px" /> {/* TV + odds */}
         </VStack>

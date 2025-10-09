@@ -22,12 +22,12 @@ export const BackButton = ({
         onClick={onClick}
         variant="ghost"
         size={size}
-        leftIcon={<ArrowLeft size={16} />}
         color="text.400"
         _hover={{
           bg: "text.50",
         }}
       >
+        <ArrowLeft size={16} />
         {children || "Go Back"}
       </Button>
     );

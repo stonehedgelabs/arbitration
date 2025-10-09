@@ -107,10 +107,6 @@ export function Toggle(props: ToggleProps) {
       selectedValue,
       onSelectionChange,
       containerBg = "text.100",
-      selectedBg = "white",
-      selectedColor = "text.600",
-      unselectedBg = "transparent",
-      unselectedColor = "text.400",
     } = props as ButtonToggleProps;
 
     return (

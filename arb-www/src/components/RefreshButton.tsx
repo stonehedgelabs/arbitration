@@ -25,7 +25,7 @@ export const RefreshButton = ({
       variant="ghost"
       color="text.400"
       onClick={onClick}
-      isLoading={loading}
+      loading={loading}
       spinner={<Spinner size={size} />}
       bg="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
       boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"

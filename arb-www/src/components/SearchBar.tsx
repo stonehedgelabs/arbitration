@@ -15,7 +15,6 @@ export const SearchBar = memo(function SearchBar({
   value,
   onChange,
   onSearch,
-  isLoading = false,
 }: SearchBarProps) {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {

@@ -31,7 +31,6 @@ const useDevice = () => {
   // Set up resize listener
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [handleResize]);
@@ -50,20 +49,19 @@ const useDevice = () => {
     navigate('/invalid-device');
   }, [navigate]);
 
-  // Hook that can be used in components to check mobile device
-  const useMobileCheck = useCallback(() => {
+  const useMobileCheck = () => {
     useEffect(() => {
       checkMobileDevice();
     }, [checkMobileDevice]);
 
     return deviceInfo.isMobile;
-  }, [checkMobileDevice, deviceInfo.isMobile]);
+  };
 
   return {
     ...deviceInfo,
     checkMobileDevice,
     redirectToInvalidDevice,
-    useMobileCheck
+    useMobileCheck,
   };
 };
 

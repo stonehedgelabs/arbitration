@@ -137,22 +137,15 @@ export function Welcome({ onComplete, onSkip }: WelcomeOnboardingProps) {
           <Button
             variant="ghost"
             onClick={handlePrevious}
-            isDisabled={currentScreen === 0}
+            disabled={currentScreen === 0}
             visibility={currentScreen === 0 ? "hidden" : "visible"}
             color="#717182"
             _dark={{ color: "oklch(0.708 0 0)" }}
             className="ios-button-press"
-            leftIcon={
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            }
           >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
             Back
           </Button>
 
@@ -194,7 +187,7 @@ export function Welcome({ onComplete, onSkip }: WelcomeOnboardingProps) {
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={1}
-            onDragEnd={(e, { offset, velocity }) => {
+            onDragEnd={(_, { offset, velocity }) => {
               const swipe = swipePower(offset.x, velocity.x);
 
               if (swipe < -swipeConfidenceThreshold) {
@@ -213,7 +206,7 @@ export function Welcome({ onComplete, onSkip }: WelcomeOnboardingProps) {
               textAlign: "center",
             }}
           >
-            <VStack spacing={8} maxW="sm">
+            <VStack gap={8} maxW="sm">
               {/* Icon */}
               <Box
                 w="128px"
@@ -229,7 +222,7 @@ export function Welcome({ onComplete, onSkip }: WelcomeOnboardingProps) {
               </Box>
 
               {/* Content */}
-              <VStack spacing={6} maxW="sm">
+              <VStack gap={6} maxW="sm">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -286,41 +279,29 @@ export function Welcome({ onComplete, onSkip }: WelcomeOnboardingProps) {
               ? "linear-gradient(to right, #a855f7, #ec4899)"
               : undefined
           }
-          rightIcon={
-            currentScreen === onboardingScreens.length - 1 ? (
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-              </svg>
-            ) : (
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            )
-          }
         >
           {currentScreen === onboardingScreens.length - 1 ? "Let's Go" : "Next"}
+          {currentScreen === onboardingScreens.length - 1 ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          )}
         </Button>
       </Box>
 
       {/* Progress Dots */}
-      <HStack justify="center" spacing={2} mb={8}>
+      <HStack justify="center" gap={2} mb={8}>
         {onboardingScreens.map((_, index) => (
           <IconButton
             key={index}
             onClick={() => handleDotClick(index)}
             aria-label={`Go to screen ${index + 1}`}
             size="xs"
-            variant="unstyled"
+            variant="ghost"
             className="ios-button-press"
             w="8px"
             h="8px"
