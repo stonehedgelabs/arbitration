@@ -112,15 +112,6 @@ async fn setup_test_server() -> TestServer {
                     }),
                 )
                 .route(
-                    "/api/v1/teams",
-                    get(|| async {
-                        (
-                            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                            "Redis not available",
-                        )
-                    }),
-                )
-                .route(
                     "/api/v1/schedule",
                     get(|| async {
                         (
@@ -334,26 +325,6 @@ async fn test_box_score_final_unsupported_league() {
         .await;
 
     assert_eq!(response.status_code(), 400);
-}
-
-#[tokio::test]
-async fn test_teams_mlb() {
-    let server = setup_test_server().await;
-
-    let response = server
-        .get("/api/v1/teams")
-        .add_query_param("league", "mlb")
-        .await;
-
-    // The response might be 200 (if API key works), 500 (if API key is invalid), or 500 (if Redis not available)
-    assert!(response.status_code() == 200 || response.status_code() == 500);
-
-    if response.status_code() == 200 {
-        let body: Value = response.json();
-        assert_eq!(body.get("league").unwrap().as_str().unwrap(), "mlb");
-        assert_eq!(body.get("data_type").unwrap().as_str().unwrap(), "teams");
-        assert!(body.get("data").is_some());
-    }
 }
 
 #[tokio::test]

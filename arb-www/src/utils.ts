@@ -416,8 +416,6 @@ interface PlayData {
 export const getPlayLabel = (play: PlayData): string => {
   const batter = play.HitterName;
   const pitcher = play.PitcherName;
- // const inning = formatInningWithIcon(play.InningNumber, play.InningHalf);
-  const outs = play.Outs;
   const description = play.Description || "";
 
   // Check if description is usable (not scrambled/empty)

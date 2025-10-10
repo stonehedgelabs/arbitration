@@ -33,32 +33,37 @@ export function UnifiedGameFeedSkeleton() {
               {/* Header with Latest Play and timestamp */}
               <HStack justify="space-between" align="center">
                 <HStack gap="1.5">
-                  <SkeletonCircle size="16px" />
-                  <SkeletonText width="60px" height="10px" />
+                  <SkeletonCircle size="16px" bg={"primary.300"} />
+                  <SkeletonText width="60px" height="10px" bg={"primary.300"} />
                 </HStack>
                 <VStack gap="0" align="end" mt="4">
-                  <SkeletonText width="50px" height="10px" />
-                  <SkeletonText width="30px" height="12px" />
+                  <SkeletonText width="50px" height="10px" bg={"primary.300"} />
+                  <SkeletonText width="30px" height="12px" bg={"primary.300"} />
                 </VStack>
               </HStack>
 
               {/* Team info with logo and name */}
               <HStack gap="2" align="center">
-                <SkeletonCircle size="20px" />
+                <SkeletonCircle size="20px" bg={"primary.300"} />
                 <VStack gap="0" align="start">
-                  <SkeletonText width="80px" height="10px" />
+                  <SkeletonText width="80px" height="10px" bg={"primary.300"} />
                 </VStack>
               </HStack>
 
               {/* Play description */}
               <HStack gap="2" align="center">
-                <SkeletonText width="100%" height="12px" flex="1" />
-                <SkeletonText width="40px" height="16px" />
+                <SkeletonText
+                  width="100%"
+                  height="12px"
+                  flex="1"
+                  bg={"primary.300"}
+                />
+                <SkeletonText width="40px" height="16px" bg={"primary.300"} />
               </HStack>
 
               {/* Game info: Scores */}
               <HStack justify="flex-end" align="center">
-                <SkeletonText width="30px" height="10px" />
+                <SkeletonText width="30px" height="10px" bg={"primary.300"} />
               </HStack>
 
               <HStack
@@ -71,20 +76,44 @@ export function UnifiedGameFeedSkeleton() {
               >
                 <HStack gap="2" align="center">
                   <HStack gap="1" align="center">
-                    <SkeletonText width="20px" height="10px" />
-                    <SkeletonText width="8px" height="10px" />
+                    <SkeletonText
+                      width="20px"
+                      height="10px"
+                      bg={"primary.300"}
+                    />
+                    <SkeletonText
+                      width="8px"
+                      height="10px"
+                      bg={"primary.300"}
+                    />
                   </HStack>
                   <HStack gap="1" align="center">
-                    <SkeletonText width="20px" height="10px" />
-                    <SkeletonText width="8px" height="10px" />
+                    <SkeletonText
+                      width="20px"
+                      height="10px"
+                      bg={"primary.300"}
+                    />
+                    <SkeletonText
+                      width="8px"
+                      height="10px"
+                      bg={"primary.300"}
+                    />
                   </HStack>
                   <HStack gap="1" align="center">
-                    <SkeletonText width="20px" height="10px" />
-                    <SkeletonText width="8px" height="10px" />
+                    <SkeletonText
+                      width="20px"
+                      height="10px"
+                      bg={"primary.300"}
+                    />
+                    <SkeletonText
+                      width="8px"
+                      height="10px"
+                      bg={"primary.300"}
+                    />
                   </HStack>
                 </HStack>
 
-                <SkeletonText width="60px" height="10px" />
+                <SkeletonText width="60px" height="10px" bg={"primary.300"} />
               </HStack>
             </VStack>
           </Box>
@@ -99,12 +128,12 @@ export function UnifiedGameFeedSkeleton() {
             <Box key={index} display="flex" justifyContent="center" mb="3">
               <HStack gap="2" maxW="95%" flexDirection="row" align="flex-start">
                 {/* Avatar/Icon */}
-                <SkeletonCircle size="32px" />
+                <SkeletonCircle size="32px" bg={"primary.300"} />
 
                 {/* Event Bubble */}
                 <VStack gap="1" align="flex-start">
                   <Box
-                    bg="gray.100"
+                    bg="primary.100"
                     borderRadius="lg"
                     px="3"
                     py="2"
@@ -112,14 +141,38 @@ export function UnifiedGameFeedSkeleton() {
                     wordBreak="break-word"
                   >
                     <HStack gap="1" mb="0.5">
-                      <SkeletonText width="60px" height="10px" />
-                      <SkeletonText width="40px" height="10px" />
+                      <SkeletonText
+                        width="60px"
+                        height="10px"
+                        bg={"primary.300"}
+                      />
+                      <SkeletonText
+                        width="40px"
+                        height="10px"
+                        bg={"primary.300"}
+                      />
                     </HStack>
-                    <SkeletonText width="200px" height="12px" />
+                    <SkeletonText
+                      width="200px"
+                      height="12px"
+                      bg={"primary.300"}
+                    />
                     <HStack gap="2" mt="1">
-                      <SkeletonText width="20px" height="10px" />
-                      <SkeletonText width="4px" height="10px" />
-                      <SkeletonText width="30px" height="10px" />
+                      <SkeletonText
+                        width="20px"
+                        height="10px"
+                        bg={"primary.300"}
+                      />
+                      <SkeletonText
+                        width="4px"
+                        height="10px"
+                        bg={"primary.300"}
+                      />
+                      <SkeletonText
+                        width="30px"
+                        height="10px"
+                        bg={"primary.300"}
+                      />
                     </HStack>
                   </Box>
                 </VStack>

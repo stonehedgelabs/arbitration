@@ -21,14 +21,6 @@ const lightColors = {
     500: { value: "#BDBDBD" }, // Disabled bg
   },
 
-  // Accent colors for interactivity
-  // accent: {
-  //   50: { value: "#87A5C5" },
-  //   100: { value: "#456990" },
-  //   200: { value: "#385574" },
-  //   300: { value: "#E4E4E4" },
-  //   400: { value: "#0D3D4C" },
-  // },
   accent: {
     50: { value: "#2A4057" },
     100: { value: "#456990" },
@@ -92,6 +84,14 @@ const lightColors = {
   divider: { value: "#E0E0E0" },
   overlay: { value: "rgba(0, 0, 0, 0.5)" },
 
+  unifiedFeed: {
+    reddit: {
+      home: { value: "gray.100" },
+      away: { value: "orange.100" },
+    },
+    twitter: "blue.100",
+  },
+
   // Buttons
   buttons: {
     primary: {
@@ -154,6 +154,13 @@ const darkColors = {
     500: { value: "#999999" }, // disabled
   },
 
+  unifiedFeed: {
+    reddit: {
+      home: { value: "#262626" },
+      away: { value: "#3f3f3f" },
+    },
+    twitter: "#2a2b3a",
+  },
 
   label: { 
     100: { value: "#BDBDBD" },
@@ -232,7 +239,7 @@ const darkColors = {
 };
 
 // Factory function to create theme config
-const createThemeConfig = (colors: typeof lightColors) =>
+const createThemeConfig = (colors: any) =>
   defineConfig({
     theme: {
       breakpoints: {

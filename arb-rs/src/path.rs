@@ -22,13 +22,9 @@ pub struct TeamProfilePath {
 }
 
 #[derive(Debug, Clone)]
-pub struct TeamsPath {
-    league: League,
-}
-
-#[derive(Debug, Clone)]
 pub struct SchedulePath {
     league: League,
+    config: ArbConfig,
 }
 
 #[derive(Debug, Clone)]
@@ -81,7 +77,7 @@ pub struct BoxScoresFinalPath {
 #[derive(Debug, Clone)]
 pub struct BoxScorePath {
     league: League,
-    game_id: String,
+    id: String,
 }
 
 #[derive(Debug, Clone)]
@@ -127,70 +123,42 @@ impl std::fmt::Display for TeamProfilePath {
     }
 }
 
-impl std::fmt::Display for TeamsPath {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.league {
-            League::Mlb | League::Nba | League::Nhl => {
-                write!(
-                    f,
-                    "{}/{}/scores/json/teams",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
-                )
-            }
-            League::Nfl => {
-                write!(
-                    f,
-                    "{}/{}/scores/json/Teams",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
-                )
-            }
-            League::Soccer => {
-                write!(
-                    f,
-                    "{}/{}/scores/json/Teams",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
-                )
-            }
-        }
-    }
-}
-
 impl std::fmt::Display for SchedulePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let league_str = self.league.to_string().to_lowercase();
+        let season_info = self
+            .config
+            .get_season_info(&league_str)
+            .ok_or(std::fmt::Error)?;
+        let season = &season_info.regular;
+
         match self.league {
             League::Mlb => {
                 write!(
                     f,
-                    "{}/{}/scores/json/Games/2025",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
+                    "{}/{}/scores/json/Games/{}",
+                    BASE_URL, league_str, season
                 )
             }
             League::Nba | League::Nhl => {
                 write!(
                     f,
-                    "{}/{}/scores/json/Games",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
+                    "{}/{}/scores/json/Games/{}",
+                    BASE_URL, league_str, season
                 )
             }
             League::Nfl => {
                 write!(
                     f,
-                    "{}/{}/scores/json/Schedules",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
+                    "{}/{}/scores/json/Schedules/{}",
+                    BASE_URL, league_str, season
                 )
             }
             League::Soccer => {
                 write!(
                     f,
-                    "{}/{}/scores/json/Games",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
+                    "{}/{}/scores/json/Games/{}",
+                    BASE_URL, league_str, season
                 )
             }
         }
@@ -201,16 +169,16 @@ impl std::fmt::Display for PostseasonSchedulePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.league {
             League::Mlb => {
-                let season_id = self
+                let league_str = self.league.to_string().to_lowercase();
+                let season_info = self
                     .config
-                    .get_season_identifier("mlb", "2025-10-01")
-                    .unwrap_or_else(|| "2026POST".to_string());
+                    .get_season_info(&league_str)
+                    .ok_or(std::fmt::Error)?;
+                let season_id = &season_info.postseason;
                 write!(
                     f,
                     "{}/{}/scores/json/Games/{}",
-                    self.config.api.sportsdata_base_url,
-                    self.league.to_string().to_lowercase(),
-                    season_id
+                    self.config.api.sportsdata_base_url, league_str, season_id
                 )
             }
             _ => {
@@ -388,7 +356,7 @@ impl std::fmt::Display for BoxScorePath {
             "{}/{}/stats/json/BoxScore/{}",
             BASE_URL,
             self.league.to_string().to_lowercase(),
-            self.game_id
+            self.id
         )
     }
 }
@@ -517,12 +485,8 @@ pub fn team_profile_path(league: League) -> TeamProfilePath {
     TeamProfilePath { league }
 }
 
-pub fn teams_path(league: League) -> TeamsPath {
-    TeamsPath { league }
-}
-
-pub fn schedule_path(league: League) -> SchedulePath {
-    SchedulePath { league }
+pub fn schedule_path(league: League, config: ArbConfig) -> SchedulePath {
+    SchedulePath { league, config }
 }
 
 pub fn postseason_schedule_path(
@@ -569,8 +533,8 @@ pub fn box_scores_final_path(
     BoxScoresFinalPath { league, game_id }
 }
 
-pub fn box_score_path(league: League, game_id: String) -> BoxScorePath {
-    BoxScorePath { league, game_id }
+pub fn box_score_path(league: League, id: String) -> BoxScorePath {
+    BoxScorePath { league, id }
 }
 
 pub fn play_by_play_path(league: League, game_id: Option<String>) -> PlayByPlayPath {

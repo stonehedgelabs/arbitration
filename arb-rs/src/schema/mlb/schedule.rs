@@ -249,7 +249,7 @@ pub struct MLBScheduleGame {
     pub innings: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MLBScheduleResponse {
     pub league: String,
     pub data_type: String,

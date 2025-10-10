@@ -190,7 +190,7 @@ const useArb = () => {
       // Set loading state
       dispatch(setLeagueLoading({ league, dataType: 'stadiums', loading: true }));
       
-      const apiUrl = buildApiUrl('/api/v1/venues', { league });
+      const apiUrl = buildApiUrl('/api/v1/stadiums', { league });
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch stadiums: ${response.status}`);

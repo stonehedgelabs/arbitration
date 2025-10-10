@@ -1,0 +1,100 @@
+import { BaseDTO } from '../BaseDTO';
+
+export class NFLStadiumDetails extends BaseDTO {
+  StadiumID: number = 0;
+  Name: string = '';
+  City: string = '';
+  State?: string;
+  Country: string = '';
+  Capacity: number = 0;
+  PlayingSurface: string = '';
+  GeoLat: number = 0;
+  GeoLong: number = 0;
+  Type: string = '';
+}
+
+export class NFLBoxScoreGame extends BaseDTO {
+  GameKey: string = '';
+  SeasonType: number = 0;
+  Season: number = 0;
+  Week: number = 0;
+  Date: string = '';
+  AwayTeam: string = '';
+  HomeTeam: string = '';
+  AwayScore: number = 0;
+  HomeScore: number = 0;
+  Channel?: string;
+  PointSpread?: number;
+  OverUnder?: number;
+  Quarter: string = '';
+  TimeRemaining?: string;
+  Possession?: string;
+  Down?: number;
+  Distance?: string;
+  YardLine?: number;
+  YardLineTerritory?: string;
+  RedZone?: boolean;
+  AwayScoreQuarter1: number = 0;
+  AwayScoreQuarter2: number = 0;
+  AwayScoreQuarter3: number = 0;
+  AwayScoreQuarter4: number = 0;
+  AwayScoreOvertime: number = 0;
+  HomeScoreQuarter1: number = 0;
+  HomeScoreQuarter2: number = 0;
+  HomeScoreQuarter3: number = 0;
+  HomeScoreQuarter4: number = 0;
+  HomeScoreOvertime: number = 0;
+  HasStarted: boolean = false;
+  IsInProgress: boolean = false;
+  IsOver: boolean = false;
+  Has1stQuarterStarted: boolean = false;
+  Has2ndQuarterStarted: boolean = false;
+  Has3rdQuarterStarted: boolean = false;
+  Has4thQuarterStarted: boolean = false;
+  IsOvertime: boolean = false;
+  DownAndDistance?: string;
+  QuarterDescription: string = '';
+  StadiumID: number = 0;
+  LastUpdated: string = '';
+  GeoLat?: number;
+  GeoLong?: number;
+  ForecastTempLow?: number;
+  ForecastTempHigh?: number;
+  ForecastDescription?: string;
+  ForecastWindChill?: number;
+  ForecastWindSpeed?: number;
+  AwayTeamMoneyLine?: number;
+  HomeTeamMoneyLine?: number;
+  Canceled: boolean = false;
+  Closed: boolean = false;
+  LastPlay?: string;
+  Day: string = '';
+  DateTime: string = '';
+  AwayTeamID: number = 0;
+  HomeTeamID: number = 0;
+  GlobalGameID: number = 0;
+  GlobalAwayTeamID: number = 0;
+  GlobalHomeTeamID: number = 0;
+  PointSpreadAwayTeamMoneyLine?: number;
+  PointSpreadHomeTeamMoneyLine?: number;
+  ScoreID: number = 0;
+  Status: string = '';
+  GameEndDateTime?: string;
+  HomeRotationNumber?: number;
+  AwayRotationNumber?: number;
+  NeutralVenue: boolean = false;
+  RefereeID?: number;
+  OverPayout?: number;
+  UnderPayout?: number;
+  HomeTimeouts?: number;
+  AwayTimeouts?: number;
+  DateTimeUTC: string = '';
+  Attendance?: number;
+  IsClosed: boolean = false;
+  StadiumDetails: NFLStadiumDetails = new NFLStadiumDetails();
+}
+
+export class NFLBoxScoreResponse extends BaseDTO {
+  data: NFLBoxScoreGame[] = [];
+  league: string = '';
+}

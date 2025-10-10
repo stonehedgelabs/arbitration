@@ -232,7 +232,7 @@ const GameCardSkeleton = () => {
       variant="outline"
       size="sm"
       transition="all 0.2s"
-      bg="primary.25"
+      bg="primary.100"
       borderRadius="12px"
       shadow="sm"
       border="1px"
@@ -242,52 +242,52 @@ const GameCardSkeleton = () => {
         <VStack gap="3" align="stretch">
           {/* Game Status and Time */}
           <HStack justify="space-between" align="center">
-            <Skeleton w="20%" h="3" />
+            <Skeleton w="20%" h="3" bg={"primary.300"} />
             <HStack gap="2">
-              <Skeleton w="12" h="5" borderRadius="full" />
-              <Skeleton w="16" h="5" borderRadius="full" />
+              <Skeleton w="12" h="5" borderRadius="full" bg={"primary.300"} />
+              <Skeleton w="16" h="5" borderRadius="full" bg={"primary.300"} />
             </HStack>
           </HStack>
 
           {/* Location */}
           <HStack gap="2" flexWrap="wrap">
-            <Skeleton w="24" h="5" borderRadius="full" />
-            <Skeleton w="20" h="5" borderRadius="full" />
+            <Skeleton w="24" h="5" borderRadius="full" bg={"primary.300"} />
+            <Skeleton w="20" h="5" borderRadius="full" bg={"primary.300"} />
           </HStack>
 
           {/* Away Team */}
           <HStack justify="space-between" align="center">
             <HStack gap="3" align="center">
-              <SkeletonCircle size="8" />
+              <SkeletonCircle size="8" bg={"primary.300"} />
               <VStack align="start" gap="1">
-                <Skeleton w="24" h="3" />
-                <Skeleton w="16" h="2" />
+                <Skeleton w="24" h="3" bg={"primary.300"} />
+                <Skeleton w="16" h="2" bg={"primary.300"} />
               </VStack>
             </HStack>
             <HStack gap="2" align="center">
-              <Skeleton w="6" h="5" />
-              <Skeleton w="20" h="8" borderRadius="6px" />
+              <Skeleton w="6" h="5" bg={"primary.300"} />
+              <Skeleton w="20" h="8" borderRadius="6px" bg={"primary.300"} />
             </HStack>
           </HStack>
 
           {/* Home Team */}
           <HStack justify="space-between" align="center">
             <HStack gap="3" align="center">
-              <SkeletonCircle size="8" />
+              <SkeletonCircle size="8" bg={"primary.300"} />
               <VStack align="start" gap="1">
-                <Skeleton w="24" h="3" />
-                <Skeleton w="16" h="2" />
+                <Skeleton w="24" h="3" bg={"primary.300"} />
+                <Skeleton w="16" h="2" bg={"primary.300"} />
               </VStack>
             </HStack>
             <HStack gap="2" align="center">
-              <Skeleton w="6" h="5" />
-              <Skeleton w="20" h="8" borderRadius="6px" />
+              <Skeleton w="6" h="5" bg={"primary.300"} />
+              <Skeleton w="20" h="8" borderRadius="6px" bg={"primary.300"} />
             </HStack>
           </HStack>
 
           {/* Game Odds */}
           <Box pt="2" borderTop="1px" borderColor="text.200">
-            <Skeleton w="full" h="3" />
+            <Skeleton w="full" h="3" bg={"primary.300"} />
           </Box>
         </VStack>
       </Card.Body>

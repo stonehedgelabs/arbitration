@@ -113,7 +113,6 @@ export const API_CONFIG = {
   endpoints: {
     scores: '/api/v1/scores',
     boxScoreFinal: '/api/v1/box-score-final',
-    teams: '/api/v1/teams',
     schedule: '/api/v1/schedule',
     headshots: '/api/v1/headshots',
     playByPlay: '/api/v1/play-by-play',

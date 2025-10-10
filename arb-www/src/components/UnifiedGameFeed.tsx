@@ -748,7 +748,15 @@ export function UnifiedGameFeed({
           {/* Event Bubble */}
           <VStack gap="1" align={isPBP ? "flex-end" : "flex-start"}>
             <Box
-              bg={isPBP ? "gray.100" : isReddit ? "orange.100" : "blue.100"}
+              bg={
+                isPBP
+                  ? "primary.200"
+                  : isReddit
+                    ? event.team === "away"
+                      ? "unifiedFeed.reddit.away"
+                      : "unifiedFeed.reddit.home"
+                    : "unifiedFeed.twitter"
+              }
               borderRadius="lg"
               px="3"
               py="2"
@@ -761,7 +769,7 @@ export function UnifiedGameFeed({
                     u/{event.author}
                   </Text>
                   {event.subreddit && (
-                    <Text fontSize="2xs" color="text.400">
+                    <Text fontSize="2xs" color="text.300">
                       • {event.subreddit}
                     </Text>
                   )}
@@ -774,7 +782,7 @@ export function UnifiedGameFeed({
                   </Text>
                 </HStack>
               )}
-              <Text fontSize="xs" color="text.500">
+              <Text fontSize="xs" color="text.400">
                 {event.content}
               </Text>
               <HStack gap="2" mt="1">
@@ -838,9 +846,7 @@ export function UnifiedGameFeed({
                 Game feed will appear here once the game starts.
               </Text>
             </VStack>
-          ) : filteredEvents.length ===
-            0 ? // Show nothing while loading - let the skeleton handle the loading state
-          null : (
+          ) : filteredEvents.length === 0 ? null : ( // Show nothing while loading - let the skeleton handle the loading state
             <AnimatePresence>
               {filteredEvents.map((event) => (
                 <motion.div
