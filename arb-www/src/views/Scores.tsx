@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Card, HStack, Text, VStack } from "@chakra-ui/react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 import { Skeleton, SkeletonCircle } from "../components/Skeleton";
 import {
@@ -10,7 +11,6 @@ import {
   NHLScoreCard,
   GenericScoreCard,
 } from "../components/score";
-import { ErrorState } from "../components/ErrorStates";
 import { DatePicker } from "../components/DatePicker";
 import { HideVerticalScroll } from "../components/containers";
 import { TopNavigation } from "../components/TopNavigation";
@@ -157,6 +157,73 @@ const getGameOdds = (gameId: string, oddsData: any, gameData?: any) => {
     totalUnderOdds: oddsEntry.UnderPayout,
   };
 };
+
+// Compact Error State Component for Scores View
+interface ScoresErrorStateProps {
+  title: string;
+  message: string;
+  onRetry?: () => void;
+}
+
+function ScoresErrorState({ title, message, onRetry }: ScoresErrorStateProps) {
+  return (
+    <Card.Root bg="primary.25" borderWidth={0}>
+      <Card.Body p="8" textAlign="center">
+        <VStack gap="4">
+          {/* Icon */}
+          <Box
+            w="16"
+            h="16"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            color="text.300"
+          >
+            <AlertCircle size={32} />
+          </Box>
+
+          {/* Content */}
+          <VStack gap="2">
+            <Text fontSize="lg" fontWeight="semibold" color="text.300">
+              {title}
+            </Text>
+            <Text
+              fontSize="sm"
+              color="text.300"
+              textAlign="center"
+              lineHeight="1.4"
+            >
+              {message}
+            </Text>
+          </VStack>
+
+          {/* Retry Button */}
+          {onRetry && (
+            <Box
+              as="button"
+              onClick={onRetry}
+              bg="buttons.primary.bg"
+              color="white"
+              px="6"
+              py="3"
+              borderRadius="md"
+              fontSize="sm"
+              fontWeight="medium"
+              _hover={{ bg: "primary.600" }}
+              _active={{ bg: "primary.700" }}
+              display="flex"
+              alignItems="center"
+              gap="2"
+            >
+              <RefreshCw size={16} />
+              Try Again
+            </Box>
+          )}
+        </VStack>
+      </Card.Body>
+    </Card.Root>
+  );
+}
 
 // Game Card Skeleton Component
 const GameCardSkeleton = () => {
@@ -654,23 +721,9 @@ function ScoresV2() {
     }
   };
 
-  // Show error state if there's a critical error (odds errors are non-blocking)
+  // Check for critical errors (odds errors are non-blocking)
   const hasCriticalError =
     scoresError || teamProfilesError || stadiumsError || scheduleError;
-  if (hasCriticalError) {
-    return (
-      <AppLayout>
-        <ErrorState
-          title="Error Loading Scores"
-          message={hasCriticalError}
-          onRetry={handleRetry}
-          showRetry={true}
-          showBack={false}
-          variant="error"
-        />
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout>
@@ -690,105 +743,114 @@ function ScoresV2() {
               {/* Date Selector */}
               <DatePicker selectedLeague={selectedLeague} />
 
-              {/* Games List */}
-              <VStack gap="4" align="stretch">
-                {sortedGames.length === 0 ? (
-                  // Show loading state if we're fetching data, otherwise show no games
-                  scoresLoading ||
-                  teamProfilesLoading ||
-                  stadiumsLoading ||
-                  scheduleLoading ||
-                  oddsLoading ? (
-                    // Show skeleton cards while loading
-                    Array.from({ length: 3 }, (_, index) => (
-                      <GameCardSkeleton key={`skeleton-${index}`} />
-                    ))
-                  ) : (
-                    <Card.Root
-                      bg="primary.25"
-                      borderRadius="12px"
-                      shadow="sm"
-                      border="1px"
-                      borderColor="text.400"
-                    >
-                      <Card.Body p="8" textAlign="center">
-                        <VStack gap="4">
-                          <Box
-                            w="16"
-                            h="16"
-                            bg="primary.25"
-                            borderRadius="full"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                          >
-                            <Text fontSize="2xl">📺</Text>
-                          </Box>
-                          <VStack gap="2">
-                            <Text
-                              fontSize="lg"
-                              fontWeight="semibold"
-                              color="text.400"
-                            >
-                              {selectedLeague === League.MLB
-                                ? "No Games"
-                                : "Coming Soon"}
-                            </Text>
-                            <Text
-                              fontSize="sm"
-                              color="text.400"
-                              textAlign="center"
-                            >
-                              {selectedLeague === League.MLB ? (
-                                <>
-                                  No games scheduled for{" "}
-                                  {selectedDate
-                                    ? parseLocalDate(
-                                        selectedDate,
-                                      ).toLocaleDateString("en-US", {
-                                        weekday: "long",
-                                        month: "long",
-                                        day: "numeric",
-                                      })
-                                    : "this date"}
-                                  .
-                                </>
-                              ) : (
-                                <>
-                                  {selectedLeague.toUpperCase()} scores are not
-                                  yet available. We're working on adding support
-                                  for {selectedLeague.toUpperCase()} games.
-                                </>
-                              )}
-                            </Text>
-                          </VStack>
-                        </VStack>
-                      </Card.Body>
-                    </Card.Root>
-                  )
-                ) : (
-                  <VStack gap="4" align="stretch">
-                    {scoresLoading ||
+              {/* Error State or Games List */}
+              {hasCriticalError ? (
+                <ScoresErrorState
+                  title="Error Loading Scores"
+                  message={hasCriticalError}
+                  onRetry={handleRetry}
+                />
+              ) : (
+                <VStack gap="4" align="stretch">
+                  {sortedGames.length === 0 ? (
+                    // Show loading state if we're fetching data, otherwise show no games
+                    scoresLoading ||
                     teamProfilesLoading ||
                     stadiumsLoading ||
                     scheduleLoading ||
-                    oddsLoading
-                      ? // Show skeleton cards while loading
-                        Array.from({ length: 3 }, (_, index) => (
-                          <GameCardSkeleton key={`skeleton-${index}`} />
-                        ))
-                      : sortedGames.map((game) => (
-                          <ScoreCard
-                            key={game.id}
-                            game={game}
-                            onGameClick={handleGameClick}
-                            oddsLoading={oddsLoading || false}
-                            oddsByDate={odds}
-                          />
-                        ))}
-                  </VStack>
-                )}
-              </VStack>
+                    oddsLoading ? (
+                      // Show skeleton cards while loading
+                      Array.from({ length: 3 }, (_, index) => (
+                        <GameCardSkeleton key={`skeleton-${index}`} />
+                      ))
+                    ) : (
+                      <Card.Root
+                        bg="primary.25"
+                        borderRadius="12px"
+                        shadow="sm"
+                        border="1px"
+                        borderColor="text.400"
+                      >
+                        <Card.Body p="8" textAlign="center">
+                          <VStack gap="4">
+                            <Box
+                              w="16"
+                              h="16"
+                              bg="primary.25"
+                              borderRadius="full"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                            >
+                              <Text fontSize="2xl">📺</Text>
+                            </Box>
+                            <VStack gap="2">
+                              <Text
+                                fontSize="lg"
+                                fontWeight="semibold"
+                                color="text.400"
+                              >
+                                {selectedLeague === League.MLB
+                                  ? "No Games"
+                                  : "Coming Soon"}
+                              </Text>
+                              <Text
+                                fontSize="sm"
+                                color="text.400"
+                                textAlign="center"
+                              >
+                                {selectedLeague === League.MLB ? (
+                                  <>
+                                    No games scheduled for{" "}
+                                    {selectedDate
+                                      ? parseLocalDate(
+                                          selectedDate,
+                                        ).toLocaleDateString("en-US", {
+                                          weekday: "long",
+                                          month: "long",
+                                          day: "numeric",
+                                        })
+                                      : "this date"}
+                                    .
+                                  </>
+                                ) : (
+                                  <>
+                                    {selectedLeague.toUpperCase()} scores are
+                                    not yet available. We're working on adding
+                                    support for {selectedLeague.toUpperCase()}{" "}
+                                    games.
+                                  </>
+                                )}
+                              </Text>
+                            </VStack>
+                          </VStack>
+                        </Card.Body>
+                      </Card.Root>
+                    )
+                  ) : (
+                    <VStack gap="4" align="stretch">
+                      {scoresLoading ||
+                      teamProfilesLoading ||
+                      stadiumsLoading ||
+                      scheduleLoading ||
+                      oddsLoading
+                        ? // Show skeleton cards while loading
+                          Array.from({ length: 3 }, (_, index) => (
+                            <GameCardSkeleton key={`skeleton-${index}`} />
+                          ))
+                        : sortedGames.map((game) => (
+                            <ScoreCard
+                              key={game.id}
+                              game={game}
+                              onGameClick={handleGameClick}
+                              oddsLoading={oddsLoading || false}
+                              oddsByDate={odds}
+                            />
+                          ))}
+                    </VStack>
+                  )}
+                </VStack>
+              )}
             </VStack>
           </HideVerticalScroll>
         </Box>

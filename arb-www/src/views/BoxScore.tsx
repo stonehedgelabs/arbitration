@@ -32,9 +32,6 @@ export function BoxScore({ onBack }: BoxScoreProps) {
 
   // Redux state
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
-  const boxScoreLoading = useAppSelector(
-    (state) => state.sportsData.boxScoreLoading,
-  );
   const boxScoreError = useAppSelector(
     (state) => state.sportsData.boxScoreError,
   );
@@ -70,7 +67,7 @@ export function BoxScore({ onBack }: BoxScoreProps) {
     }
   }, [boxScoreData, gameId]);
 
-  if (boxScoreLoading && !gameData) {
+  if (!gameData) {
     return (
       <AppLayout>
         <motion.div
@@ -208,21 +205,15 @@ export function BoxScore({ onBack }: BoxScoreProps) {
           {/* Content */}
           <Box
             flex="1"
-            minH="calc(100vh - 200px)"
-            overflowY="auto"
+            // minH="calc(100vh - 200px)"
+            // overflowY="auto"
             bg="primary.25"
           >
-            <VStack gap="0" align="stretch">
+            <VStack align="stretch">
               {/* Box Score Section - Compressed */}
-              <Box
-                bg="primary.25"
-                borderBottom="1px"
-                borderColor="border.100"
-                maxH="250px"
-                overflow="hidden"
-              >
+              <Box bg="primary.25">
                 {paramLeague === League.MLB ? (
-                  <Box transform="scale(0.8)" transformOrigin="top center">
+                  <Box transformOrigin="top center">
                     <BoxScoreDetailMLB gameId={gameId} league={paramLeague} />
                   </Box>
                 ) : (
@@ -231,7 +222,7 @@ export function BoxScore({ onBack }: BoxScoreProps) {
                     p="4"
                     align="center"
                     justify="center"
-                    minH="200px"
+                    // minH="200px"
                   >
                     <Text color="text.400" fontSize="lg" fontWeight="semibold">
                       {selectedLeague.toUpperCase()} Box Score
@@ -258,9 +249,6 @@ export function BoxScore({ onBack }: BoxScoreProps) {
               </Box>
             </VStack>
           </Box>
-
-          {/* Bottom Navigation */}
-          {/* <BottomNavigation /> */}
         </Box>
       </motion.div>
     </AppLayout>

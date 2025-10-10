@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
-import { DEBUG } from "./config";
+import { DEBUG, REDDIT_CONFIG } from "./config";
 
 /**
  * Debug utility - wraps console methods to respect debug configuration
@@ -416,7 +416,7 @@ interface PlayData {
 export const getPlayLabel = (play: PlayData): string => {
   const batter = play.HitterName;
   const pitcher = play.PitcherName;
-  const inning = formatInningWithIcon(play.InningNumber, play.InningHalf);
+ // const inning = formatInningWithIcon(play.InningNumber, play.InningHalf);
   const outs = play.Outs;
   const description = play.Description || "";
 
@@ -457,7 +457,7 @@ export const getPlayLabel = (play: PlayData): string => {
   }
 
   // Add inning and outs
-  contextParts.push(`${inning}, ${outs} out${outs !== 1 ? "s" : ""}`);
+ // contextParts.push(`${inning}, ${outs} out${outs !== 1 ? "s" : ""}`);
 
   // Count runners on base
   const runners: string[] = [];
@@ -601,4 +601,13 @@ export const getPlayIcon = (play: PlayData): string => {
     if (play.Out) return "out";
     return "play";
   }
+};
+
+/**
+ * Applies the configured Reddit delay to a timestamp
+ * @param timestamp - The original timestamp string
+ * @returns {string} The timestamp with Reddit delay applied
+ */
+export const delayedRedditTimestamp = (timestamp: string): string => {
+  return new Date(new Date(timestamp).getTime() + REDDIT_CONFIG.eventDelay).toISOString();
 };

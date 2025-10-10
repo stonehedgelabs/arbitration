@@ -6,7 +6,7 @@ interface InningBadgeProps {
   inningNumber: number;
   inningHalf?: string; // "Top" or "Bottom" for baseball
   league: League;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   showChevron?: boolean;
 }
 
@@ -16,8 +16,6 @@ export function InningBadge({
   league,
   size = "sm",
 }: InningBadgeProps) {
-  const fontSize = size === "sm" ? "xs" : "sm";
-
   // Format the inning display text
   const getInningText = () => {
     if (league === League.MLB) {
@@ -37,7 +35,7 @@ export function InningBadge({
       variant="subtle"
       bg="transparent"
       color="label.100"
-      fontSize={fontSize}
+      fontSize={size}
       px="2"
       py="1"
       borderRadius="full"

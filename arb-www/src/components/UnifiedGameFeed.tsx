@@ -29,7 +29,12 @@ import {
   PLAY_BY_PLAY_CONFIG,
   UNIFIED_FEED_CONFIG,
 } from "../config";
-import { formatRelativeUTCTime, estToUTC } from "../utils";
+import {
+  formatRelativeUTCTime,
+  estToUTC,
+  getPlayLabel,
+  delayedRedditTimestamp,
+} from "../utils";
 import useArb from "../services/Arb";
 import { InningBadge } from "./badge";
 
@@ -349,7 +354,7 @@ export function UnifiedGameFeed({
         events.push({
           id: `reddit-${comment.id}`,
           type: "reddit",
-          timestamp: comment.timestamp,
+          timestamp: delayedRedditTimestamp(comment.timestamp),
           content: comment.content,
           author: comment.author,
           score: comment.score,
@@ -387,7 +392,30 @@ export function UnifiedGameFeed({
 
         // Use the actual PBP data fields
         const hitterName = (play as any).HitterName || "Player";
-        const playDescription = play.Description || "Play in progress...";
+
+        // Check if description is scrambled and use getPlayLabel if so
+        let playDescription = play.Description || "Play in progress...";
+        if (playDescription.toLowerCase() === "scrambled") {
+          // Cast play to the full PlayData interface for getPlayLabel
+          const playData = play as any;
+          playDescription = getPlayLabel({
+            HitterName: playData.HitterName || "Player",
+            PitcherName: playData.PitcherName || "Pitcher",
+            InningHalf: playData.InningHalf || "T",
+            InningNumber: playData.InningNumber || 1,
+            Outs: playData.Outs || 0,
+            Description: playData.Description,
+            Strikeout: playData.Strikeout || false,
+            Walk: playData.Walk || false,
+            Hit: playData.Hit || false,
+            Sacrifice: playData.Sacrifice || false,
+            Out: playData.Out || false,
+            Runner1ID: playData.Runner1ID || null,
+            Runner2ID: playData.Runner2ID || null,
+            Runner3ID: playData.Runner3ID || null,
+            RunsBattedIn: playData.RunsBattedIn || 0,
+          });
+        }
 
         // Determine which team the play belongs to based on HitterTeamID
         const hitterTeamId = play.HitterTeamID;
@@ -480,9 +508,9 @@ export function UnifiedGameFeed({
           borderColor="text.400"
           borderLeft="3px"
           borderLeftColor="primary.500"
-          w="320px"
+          w="90%"
         >
-          <Box px="4" pb="4">
+          <Box px={"4"} pb={"2"}>
             <VStack gap="1" align="stretch">
               {/* Header with Latest Play and timestamp */}
               <HStack justify="space-between" align="center">
@@ -501,16 +529,12 @@ export function UnifiedGameFeed({
                   >
                     <Clock size={6} />
                   </Box>
-                  <Text
-                    fontSize="2xs"
-                    fontWeight="semibold"
-                    color="primary.500"
-                  >
+                  <Text fontSize="xs" fontWeight="semibold" color="primary.500">
                     Latest Play
                   </Text>
                 </HStack>
                 <VStack gap="0" align="end" mt="4">
-                  <Text fontSize="2xs" color="text.400">
+                  <Text fontSize="xs" color="text.400">
                     {event.timestamp
                       ? formatRelativeUTCTime(event.timestamp)
                       : "Just now"}
@@ -541,7 +565,7 @@ export function UnifiedGameFeed({
                   {/* <Text fontSize="xs" fontWeight="medium" color="text.400">
                     {event.author || "Player"}
                   </Text> */}
-                  <Text fontSize="2xs" color="text.500">
+                  <Text fontSize="xs" color="text.500">
                     {(() => {
                       // Get team name from team profiles using the original play data
                       if (!teamProfiles?.data || !playByPlayData?.data)
@@ -578,7 +602,7 @@ export function UnifiedGameFeed({
                       px="2"
                       py="0.5"
                       borderRadius="4px"
-                      fontSize="2xs"
+                      fontSize="xs"
                       fontWeight="bold"
                       textTransform="uppercase"
                     >
@@ -609,14 +633,14 @@ export function UnifiedGameFeed({
                       {originalPlay.Balls !== undefined && (
                         <HStack gap="1" align="center">
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             color="text.500"
                             fontWeight="medium"
                           >
                             Balls:
                           </Text>
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             color="text.400"
                             fontWeight="bold"
                           >
@@ -627,14 +651,14 @@ export function UnifiedGameFeed({
                       {originalPlay.Strikes !== undefined && (
                         <HStack gap="1" align="center">
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             color="text.500"
                             fontWeight="medium"
                           >
                             Strikes:
                           </Text>
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             color="text.400"
                             fontWeight="bold"
                           >
@@ -775,19 +799,6 @@ export function UnifiedGameFeed({
     );
   };
 
-  if ((redditCommentsLoading || pbpLoading) && allEvents.length === 0) {
-    return (
-      <VStack gap="4" py="8">
-        <Text color="text.400" fontSize="lg">
-          ⏳
-        </Text>
-        <Text color="text.400" fontSize="sm">
-          Loading game feed...
-        </Text>
-      </VStack>
-    );
-  }
-
   if (redditCommentsError && allEvents.length === 0) {
     return (
       <VStack gap="4" py="8">
@@ -812,9 +823,12 @@ export function UnifiedGameFeed({
       {latestPBPEvent && renderStickyPBPEvent(latestPBPEvent)}
 
       {/* Events List */}
-      <Box px="4" py="1">
+      <Box px="7" py="1">
         <VStack gap="3" align="stretch">
-          {filteredEvents.length === 0 ? (
+          {filteredEvents.length === 0 &&
+          !redditCommentsLoading &&
+          !redditGameThreadLoading &&
+          !pbpLoading ? (
             <VStack gap="4" align="center" py="12">
               <MessageCircle size={32} color="var(--chakra-colors-text-300)" />
               <Text fontSize="lg" fontWeight="semibold" color="text.300">
@@ -824,7 +838,9 @@ export function UnifiedGameFeed({
                 Game feed will appear here once the game starts.
               </Text>
             </VStack>
-          ) : (
+          ) : filteredEvents.length ===
+            0 ? // Show nothing while loading - let the skeleton handle the loading state
+          null : (
             <AnimatePresence>
               {filteredEvents.map((event) => (
                 <motion.div

@@ -15,11 +15,10 @@ export function TopNavigation({
     <Box
       bg="primary.25"
       borderBottom="1px"
-      borderColor="border.100"
+      // borderColor="border.100"
       position="sticky"
       top="0"
       zIndex="40"
-      shadow="sm"
     >
       <Box px="4" py="3">
         <HStack justify="space-between" align="center">

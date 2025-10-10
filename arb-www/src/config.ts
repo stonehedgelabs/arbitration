@@ -109,7 +109,7 @@ export const ENV = {
  * API Configuration
  */
 export const API_CONFIG = {
-  baseUrl: 'https://4dd5da027203.ngrok.app', // Rust backend URL
+  baseUrl: 'https://b1c9a2101622.ngrok.app', // Rust backend URL
   endpoints: {
     scores: '/api/v1/scores',
     boxScoreFinal: '/api/v1/box-score-final',
@@ -262,6 +262,9 @@ export const REDDIT_CONFIG = {
   
   // Cache bypass configuration
   bypassCacheOnRefresh: true,
+  
+  // Delay for Reddit events in milliseconds (30 seconds)
+  eventDelay: 30 * 1000,
 } as const;
 
 /**

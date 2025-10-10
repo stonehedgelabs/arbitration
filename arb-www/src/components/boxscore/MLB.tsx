@@ -206,7 +206,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                 </Text>
               </VStack>
               <Text
-                fontSize="3xl"
+                fontSize="2xl"
                 fontWeight="bold"
                 color="text.400"
                 textAlign="center"
@@ -219,8 +219,8 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                   {Array.from({ length: 2 }, (_, i) => (
                     <Box
                       key={i}
-                      w="3"
-                      h="3"
+                      w="2"
+                      h="2"
                       borderRadius="full"
                       bg={i < (game.Strikes || 0) ? "red.500" : "text.200"}
                     />
@@ -272,8 +272,8 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                   {Array.from({ length: 2 }, (_, i) => (
                     <Box
                       key={i}
-                      w="3"
-                      h="3"
+                      w="2"
+                      h="2"
                       borderRadius="full"
                       bg={i < (game.Outs || 0) ? "yellow.500" : "text.200"}
                     />
@@ -317,7 +317,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                 </Text>
               </VStack>
               <Text
-                fontSize="3xl"
+                fontSize="2xl"
                 fontWeight="bold"
                 color="text.400"
                 textAlign="center"
@@ -330,8 +330,8 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                   {Array.from({ length: 4 }, (_, i) => (
                     <Box
                       key={i}
-                      w="3"
-                      h="3"
+                      w="2"
+                      h="2"
                       borderRadius="full"
                       bg={i < (game.Balls || 0) ? "blue.500" : "text.200"}
                     />
@@ -345,11 +345,11 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
           </Flex>
 
           {/* Bottom row - Game info */}
-          <VStack gap="2" align="center" w="full">
+          <HStack gap="2" w="full" justify={"center"}>
             <HStack gap="4" align="center">
               {stadium && (
                 <Text fontSize="xs" color="text.500">
-                  {orEmpty(stadium.Name)}
+                  {orEmpty(stadium.Name)} •
                 </Text>
               )}
             </HStack>
@@ -362,11 +362,6 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
 
             {/* TV and Odds Information */}
             <VStack gap="0" align="center" lineHeight="1">
-              {game.Channel && (
-                <Text fontSize="xs" color="text.500">
-                  TV: {orEmpty(game.Channel)}
-                </Text>
-              )}
               {/* Odds Information */}
               {(() => {
                 const odds = (() => {
@@ -406,19 +401,22 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                 if (!odds) return null;
 
                 return (
-                  <Text fontSize="xs" color="text.500">
-                    {odds.homeMoneyLine && odds.awayMoneyLine && (
-                      <>
-                        ML: {odds.awayMoneyLine}/{odds.homeMoneyLine}
-                      </>
-                    )}
-                    {odds.overUnder && <> • O/U: {odds.overUnder}</>}
-                    {odds.sportsbook && <> • {odds.sportsbook}</>}
-                  </Text>
+                  <HStack>
+                    <Text fontSize="xs" color="text.500">
+                      {odds.homeMoneyLine && odds.awayMoneyLine && (
+                        <>
+                          ML: {odds.awayMoneyLine}/{odds.homeMoneyLine} •
+                        </>
+                      )}
+                    </Text>
+                    <Text fontSize="xs" color="text.500">
+                      {odds.overUnder && <> • O/U: {odds.overUnder}</>}
+                    </Text>
+                  </HStack>
                 );
               })()}
             </VStack>
-          </VStack>
+          </HStack>
         </VStack>
       </Box>
     </HideVerticalScroll>
