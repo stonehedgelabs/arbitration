@@ -12,7 +12,7 @@ export {
   PlayerGame as BoxScorePlayerGame,
   BoxScore,
   BoxScoreResponse
-} from './boxscore';
+} from './boxScore.ts';
 
 // GameByDate module exports  
 export {
@@ -43,4 +43,4 @@ export {
   Play,
   Pitch,
   PlayByPlayApiResponse
-} from './playbyplay';
+} from './playByPlay.ts';

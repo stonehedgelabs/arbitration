@@ -25,9 +25,8 @@ use crate::{
     },
     schema::{
         data_type::DataType,
-        league_response::{LeagueData, LeagueResponse, MLBData, NFLData},
+        league_response::{LeagueData, LeagueResponse, MLBData, NBAData, NFLData},
         mlb::{
-            box_score::{BoxScore, BoxScoreResponse},
             game_by_date::{GameByDate, GameByDateResponse},
             odds::{GameOdds, OddsByDateResponse},
             schedule::{MLBScheduleGame, MLBScheduleResponse},
@@ -296,7 +295,7 @@ pub async fn team_profile(
                 "Cache miss for team profile, fetching from API: {}",
                 api_url
             );
-            let fetched_data = fetch_team_data_from_api(&api_url, &league)
+            let fetched_data = fetch_team_data_from_api(&api_url, &league, &use_case_state.config)
                 .await
                 .map_err(|e| {
                     tracing::error!("Failed to fetch team profile data: {}", e);
@@ -328,15 +327,12 @@ pub async fn team_profile(
     }))
 }
 
-async fn fetch_team_data_from_api(api_url: &str, league: &League) -> Result<String> {
+async fn fetch_team_data_from_api(api_url: &str, league: &League, config: &ArbConfig) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
     match league {
         League::Mlb => {
-            let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-                tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
+            let api_key = &config.api.sportsdata_api_key;
 
             let client = reqwest::Client::new();
 
@@ -376,6 +372,47 @@ async fn fetch_team_data_from_api(api_url: &str, league: &League) -> Result<Stri
             tracing::info!("Successfully fetched team profile data for MLB");
             Ok(body)
         }
+        League::Nba => {
+            let api_key = &config.api.sportsdata_api_key;
+
+            let client = reqwest::Client::new();
+
+            tracing::info!("Making real API request for NBA team profile: {}", api_url);
+
+            let response = client
+                .get(api_url)
+                .query(&[("key", &api_key)])
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to make HTTP request: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                tracing::error!(
+                    "API request failed with status {}: {}",
+                    status,
+                    error_text
+                );
+                return Err(StatusCode::from_u16(status.as_u16())
+                    .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                    .into());
+            }
+
+            let body = response.text().await.map_err(|e| {
+                tracing::error!("Failed to read response body: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            tracing::info!("Successfully fetched team profile data for NBA");
+            Ok(body)
+        }
         _ => Err(Error::NotImplemented(format!(
             "Teams data for league: {:?}",
             league
@@ -400,9 +437,10 @@ pub async fn current_games(
 pub async fn headshots(
     State(use_case_state): State<UseCaseState>,
     Query(params): Query<DataQuery>,
-) -> Result<Json<DataResponse>> {
-    handle_data_request(use_case_state, params, DataType::Headshots).await
+) -> Result<Json<LeagueResponse>> {
+    handle_headshots_request(use_case_state, params).await
 }
+
 
 pub async fn play_by_play_handler(
     State(use_case_state): State<UseCaseState>,
@@ -469,11 +507,12 @@ async fn handle_schedule_request(
                     &api_url,
                     &league,
                     date_filter.as_ref().unwrap(),
+                    &use_case_state.config,
                 )
                 .await
             } else {
                 tracing::info!("Using full schedule endpoint");
-                fetch_schedule_from_api(&api_url, &league).await
+                fetch_schedule_from_api(&api_url, &league, &use_case_state.config).await
             }
             .map_err(|e| {
                 tracing::error!("Failed to fetch schedule data: {}", e);
@@ -596,6 +635,30 @@ async fn handle_schedule_request(
                 total_count,
             }
         }
+        League::Nba => {
+            // Parse the data as NBA schedule games
+            let nba_games: Vec<crate::schema::nba::schedule::NBAScheduleGame> =
+                serde_json::from_value(serde_json::Value::Array(filtered_games))
+                    .map_err(|e| {
+                        tracing::error!("Failed to parse NBA schedule data: {}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::Schedule,
+                data: crate::schema::league_response::LeagueData::Nba(Box::new(
+                    crate::schema::league_response::NBAData::Schedule(
+                        crate::schema::nba::schedule::NBAScheduleResponse {
+                            data: nba_games,
+                            league: league.to_string(),
+                        },
+                    ),
+                )),
+                filtered_count,
+                total_count,
+            }
+        }
         _ => {
             tracing::error!("Unsupported league for schedule: {}", league);
             return Err(StatusCode::BAD_REQUEST.into());
@@ -615,7 +678,7 @@ async fn handle_current_games_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    if league != League::Mlb && league != League::Nfl {
+    if league != League::Mlb && league != League::Nfl && league != League::Nba {
         tracing::error!("Current games not yet supported for league: {}", league);
         return Err(StatusCode::BAD_REQUEST.into());
     }
@@ -670,7 +733,7 @@ async fn handle_current_games_request(
                     date_str
                 );
                 let fetched_data =
-                    fetch_games_by_date_from_api(&api_url, &league, &date_str)
+                    fetch_games_by_date_from_api(&api_url, &league, &date_str, &use_case_state.config)
                         .await
                         .map_err(|e| {
                             tracing::error!(
@@ -769,6 +832,30 @@ async fn handle_current_games_request(
                 total_count,
             }
         }
+        League::Nba => {
+            // Parse the data as NBA schedule games
+            let nba_games: Vec<crate::schema::nba::schedule::NBAScheduleGame> =
+                serde_json::from_value(serde_json::Value::Array(schedule_games))
+                    .map_err(|e| {
+                        tracing::error!("Failed to parse NBA current games data: {}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::CurrentGames,
+                data: crate::schema::league_response::LeagueData::Nba(Box::new(
+                    crate::schema::league_response::NBAData::CurrentGames(
+                        crate::schema::nba::schedule::NBAScheduleResponse {
+                            data: nba_games,
+                            league: league.to_string(),
+                        },
+                    ),
+                )),
+                filtered_count: total_count,
+                total_count,
+            }
+        }
         _ => {
             tracing::error!("Unsupported league for current games: {}", league);
             return Err(StatusCode::BAD_REQUEST.into());
@@ -778,6 +865,7 @@ async fn handle_current_games_request(
     Ok(Json(league_response))
 }
 
+#[allow(dead_code)]
 async fn handle_data_request(
     use_case_state: UseCaseState,
     params: DataQuery,
@@ -816,7 +904,7 @@ async fn handle_data_request(
                 data_type,
                 api_url
             );
-            let fetched_data = fetch_data_from_api(&api_url, &league, &data_type)
+            let fetched_data = fetch_data_from_api(&api_url, &league, &data_type, &use_case_state.config)
                 .await
                 .map_err(|e| {
                 tracing::error!("Failed to fetch {} data: {}", data_type, e);
@@ -858,6 +946,7 @@ async fn handle_data_request(
     }))
 }
 
+#[allow(dead_code)]
 fn filter_data_by_params(
     data: serde_json::Value,
     filters: &HashMap<String, String>,
@@ -866,6 +955,92 @@ fn filter_data_by_params(
         tracing::error!("Failed to filter data: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR.into()
     })
+}
+
+async fn handle_headshots_request(
+    use_case_state: UseCaseState,
+    params: DataQuery,
+) -> Result<Json<LeagueResponse>> {
+    let league_str = params.league.to_lowercase();
+    let league: League = league_str.parse().map_err(|_| {
+        tracing::error!("Invalid league: {}", params.league);
+        StatusCode::BAD_REQUEST
+    })?;
+
+    let api_url = headshots_path(league.clone()).to_string();
+    let cache_key = CacheKey::data_type(&DataType::Headshots, &league);
+
+    let data = {
+        let mut cache = use_case_state.cache.lock().await;
+        if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
+            tracing::error!("Failed to get headshots data from cache: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })? {
+            tracing::debug!("Returning cached headshots data for league: {}", league);
+            cached_data
+        } else {
+            tracing::info!("Cache miss for headshots data, fetching from API: {}", api_url);
+            let fetched_data = fetch_data_from_api(&api_url, &league, &DataType::Headshots, &use_case_state.config)
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to fetch headshots data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            let ttl = use_case_state.config.cache.ttl.team_profiles; // headshots are part of team data
+            cache
+                .setx(&cache_key, &fetched_data, ttl)
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to cache headshots data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            fetched_data
+        }
+    };
+
+    match league {
+        League::Nba => {
+            let headshots: Vec<crate::schema::nba::headshots::PlayerHeadshot> =
+                serde_json::from_str(&data).map_err(|e| {
+                    tracing::error!("Failed to parse NBA headshots JSON: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            let headshots_count = headshots.len();
+            Ok(Json(LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::Headshots,
+                data: LeagueData::Nba(Box::new(NBAData::Headshots(headshots))),
+                filtered_count: headshots_count,
+                total_count: headshots_count,
+            }))
+        }
+        League::Nfl => {
+            let headshots: Vec<crate::schema::nfl::headshots::NFLHeadshot> =
+                serde_json::from_str(&data).map_err(|e| {
+                    tracing::error!("Failed to parse NFL headshots JSON: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            let headshots_count = headshots.len();
+            Ok(Json(LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::Headshots,
+                data: LeagueData::Nfl(Box::new(NFLData::Headshots(
+                    crate::schema::nfl::headshots::NFLHeadshotsResponse {
+                        data: headshots,
+                        league: league.to_string(),
+                    },
+                ))),
+                filtered_count: headshots_count,
+                total_count: headshots_count,
+            }))
+        }
+        _ => {
+            tracing::error!("Headshots not yet supported for league: {}", league);
+            Err(StatusCode::BAD_REQUEST.into())
+        }
+    }
 }
 
 async fn handle_play_by_play_request(
@@ -926,6 +1101,7 @@ async fn handle_play_by_play_request(
                 &params.game_id,
                 is_delta,
                 params.delta_minutes,
+                &use_case_state.config,
             )
             .await
             .map_err(|e| {
@@ -999,6 +1175,24 @@ async fn handle_play_by_play_request(
                 total_count: total_events_count,
             }
         }
+        League::Nba => {
+            // Parse the data as NBA play-by-play
+            let nba_play_by_play: crate::schema::nba::play_by_play::NBAPlayByPlayResponse = serde_json::from_value(events)
+                .map_err(|e| {
+                    tracing::error!("Failed to parse NBA play-by-play data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::PlayByPlay,
+                data: crate::schema::league_response::LeagueData::Nba(Box::new(
+                    crate::schema::league_response::NBAData::PlayByPlay(nba_play_by_play),
+                )),
+                filtered_count: new_events_count,
+                total_count: total_events_count,
+            }
+        }
         _ => {
             tracing::error!("Unsupported league for play-by-play: {}", league);
             return Err(StatusCode::BAD_REQUEST.into());
@@ -1063,7 +1257,7 @@ async fn handle_scores_request(
                 date_str
             );
             let fetched_data = if is_postseason {
-                fetch_schedule_from_api(&api_url, &league)
+                fetch_schedule_from_api(&api_url, &league, &use_case_state.config)
                     .await
                     .map_err(|e| {
                         tracing::error!(
@@ -1074,7 +1268,7 @@ async fn handle_scores_request(
                         StatusCode::INTERNAL_SERVER_ERROR
                     })?
             } else {
-                fetch_games_by_date_from_api(&api_url, &league, &date_str)
+                fetch_games_by_date_from_api(&api_url, &league, &date_str, &use_case_state.config)
                     .await
                     .map_err(|e| {
                         tracing::error!(
@@ -1152,6 +1346,31 @@ async fn handle_scores_request(
                     crate::schema::league_response::NFLData::Scores(
                         crate::schema::nfl::scores::NFLScoresResponse {
                             data: nfl_games,
+                            league: league.to_string(),
+                        },
+                    ),
+                )),
+                filtered_count: games_count,
+                total_count: games_count,
+            }
+        }
+        League::Nba => {
+            // Parse the data as NBA scores games (reuse schedule schema since structure is identical)
+            let nba_games: Vec<crate::schema::nba::schedule::NBAScheduleGame> =
+                serde_json::from_value(serde_json::Value::Array(all_games)).map_err(
+                    |e| {
+                        tracing::error!("Failed to parse NBA scores data: {}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    },
+                )?;
+
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::Scores,
+                data: crate::schema::league_response::LeagueData::Nba(Box::new(
+                    crate::schema::league_response::NBAData::Scores(
+                        crate::schema::nba::schedule::NBAScheduleResponse {
+                            data: nba_games,
                             league: league.to_string(),
                         },
                     ),
@@ -1251,17 +1470,14 @@ fn extract_play_by_play_events(
     ))
 }
 
-async fn fetch_schedule_from_api(api_url: &str, league: &League) -> Result<String> {
+async fn fetch_schedule_from_api(api_url: &str, league: &League, config: &ArbConfig) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
     tracing::info!("Fetching schedule data from API: {}", api_url);
 
     match league {
         League::Mlb => {
-            let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-                tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
+            let api_key = &config.api.sportsdata_api_key;
 
             let client = reqwest::Client::new();
 
@@ -1339,6 +1555,7 @@ async fn fetch_data_from_api(
     api_url: &str,
     league: &League,
     data_type: &DataType,
+    config: &ArbConfig,
 ) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
@@ -1355,10 +1572,7 @@ async fn fetch_data_from_api(
         }
         League::Nfl => {
             if *data_type == DataType::Headshots {
-                let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-                    tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?;
+                let api_key = &config.api.sportsdata_api_key;
 
                 let client = reqwest::Client::new();
 
@@ -1409,6 +1623,7 @@ async fn fetch_play_by_play_from_api(
     game_id: &str,
     is_delta: bool,
     _delta_minutes: Option<u32>,
+    config: &ArbConfig,
 ) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
@@ -1419,10 +1634,7 @@ async fn fetch_play_by_play_from_api(
         game_id
     );
 
-    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    let api_key = &config.api.sportsdata_api_key;
 
     let client = reqwest::Client::new();
 
@@ -1479,6 +1691,7 @@ async fn fetch_games_by_date_from_api(
     api_url: &str,
     league: &League,
     date: &str,
+    config: &ArbConfig,
 ) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
@@ -1490,10 +1703,7 @@ async fn fetch_games_by_date_from_api(
 
     match league {
         League::Mlb => {
-            let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-                tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
+            let api_key = &config.api.sportsdata_api_key;
 
             let client = reqwest::Client::new();
 
@@ -1524,10 +1734,7 @@ async fn fetch_games_by_date_from_api(
             Ok(response_text)
         }
         League::Nfl => {
-            let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-                tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
+            let api_key = &config.api.sportsdata_api_key;
 
             let client = reqwest::Client::new();
 
@@ -1560,6 +1767,40 @@ async fn fetch_games_by_date_from_api(
             );
             Ok(response_text)
         }
+        League::Nba => {
+            let api_key = &config.api.sportsdata_api_key;
+
+            let client = reqwest::Client::new();
+
+            tracing::info!("Making real API request for NBA games by date: {}", api_url);
+
+            let response = client
+                .get(api_url)
+                .query(&[("key", &api_key)])
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to make HTTP request: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                tracing::error!("API request failed with status: {}", status);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR.into());
+            }
+
+            let response_text = response.text().await.map_err(|e| {
+                tracing::error!("Failed to read response body: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            tracing::info!(
+                "Successfully fetched NBA games by date data for date: {}",
+                date
+            );
+            Ok(response_text)
+        }
         _ => Err(Error::NotImplemented(format!(
             "API data fetching for {} games by date is not yet implemented",
             league
@@ -1572,6 +1813,7 @@ async fn fetch_scores_from_api(
     api_url: &str,
     league: &League,
     date: &str,
+    config: &ArbConfig,
 ) -> Result<String> {
     let _parsed_url = Url::parse(api_url)?;
 
@@ -1583,10 +1825,7 @@ async fn fetch_scores_from_api(
 
     match league {
         League::Mlb => {
-            let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-                tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
+            let api_key = &config.api.sportsdata_api_key;
 
             let client = reqwest::Client::new();
 
@@ -1745,7 +1984,7 @@ pub async fn handle_game_by_date_request(
     }
 
     // Fetch from API
-    let raw_data = fetch_games_by_date_from_api(&api_url, &league, &params.date).await?;
+    let raw_data = fetch_games_by_date_from_api(&api_url, &league, &params.date, &use_case_state.config).await?;
 
     // Parse the JSON response
     let games: Vec<serde_json::Value> = serde_json::from_str(&raw_data).map_err(|e| {
@@ -1762,6 +2001,11 @@ pub async fn handle_game_by_date_request(
             .unwrap_or(false),
         League::Nfl => game
             .get("ScoreID")
+            .and_then(|v| v.as_i64())
+            .map(|id| id == game_id)
+            .unwrap_or(false),
+        League::Nba => game
+            .get("GameID")
             .and_then(|v| v.as_i64())
             .map(|id| id == game_id)
             .unwrap_or(false),
@@ -1792,6 +2036,18 @@ pub async fn handle_game_by_date_request(
                     }
                     Err(e) => {
                         tracing::error!("Failed to parse NFL game data: {}", e);
+                        None
+                    }
+                }
+            }
+            League::Nba => {
+                match serde_json::from_value::<crate::schema::nba::schedule::NBAScheduleGame>(game) {
+                    Ok(parsed_game) => {
+                        tracing::info!("Successfully parsed NBA game data");
+                        Some(serde_json::to_value(parsed_game).ok())
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to parse NBA game data: {}", e);
                         None
                     }
                 }
@@ -1864,6 +2120,32 @@ pub async fn handle_game_by_date_request(
                 total_count: 1,
             }
         }
+        League::Nba => {
+            let nba_data = if let Some(Some(ref data)) = game_data {
+                match serde_json::from_value::<crate::schema::nba::schedule::NBAScheduleGame>(data.clone()) {
+                    Ok(game) => vec![game],
+                    Err(e) => {
+                        tracing::error!("Failed to parse NBA game data: {}", e);
+                        vec![]
+                    }
+                }
+            } else {
+                vec![]
+            };
+
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::GameByDate,
+                data: LeagueData::Nba(Box::new(NBAData::Schedule(
+                    crate::schema::nba::schedule::NBAScheduleResponse {
+                        data: nba_data,
+                        league: league.to_string(),
+                    },
+                ))),
+                filtered_count: if game_data.is_some() { 1 } else { 0 },
+                total_count: 1,
+            }
+        }
         _ => {
             tracing::error!("Unsupported league for game by date: {}", league);
             return Err(StatusCode::BAD_REQUEST.into());
@@ -1895,7 +2177,7 @@ pub async fn handle_game_by_date_request(
 pub async fn handle_box_score_request(
     Query(params): Query<BoxScoreQuery>,
     State(use_case_state): State<UseCaseState>,
-) -> Result<Json<BoxScoreResponse>> {
+) -> Result<Json<LeagueResponse>> {
     let league = params.league.parse::<League>().map_err(|_| {
         tracing::error!("Invalid league: {}", params.league);
         StatusCode::BAD_REQUEST
@@ -1919,6 +2201,14 @@ pub async fn handle_box_score_request(
                 return Err(StatusCode::BAD_REQUEST.into());
             }
         }
+        League::Nba => {
+            if let Some(game_id) = params.game_id {
+                ("game_id", game_id)
+            } else {
+                tracing::error!("game_id parameter is required for NBA box score");
+                return Err(StatusCode::BAD_REQUEST.into());
+            }
+        }
         _ => {
             tracing::error!("Unsupported league for box score: {}", league);
             return Err(StatusCode::BAD_REQUEST.into());
@@ -1932,7 +2222,7 @@ pub async fn handle_box_score_request(
         let mut cache = use_case_state.cache.lock().await;
         if let Some(cached_data) = cache.get(&cache_key).await? {
             tracing::debug!("Returning cached box score for {}: {}", id_param, id_value);
-            let response: BoxScoreResponse =
+            let response: LeagueResponse =
                 serde_json::from_str(&cached_data).map_err(|e| {
                     tracing::error!("Failed to deserialize cached data: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
@@ -1943,17 +2233,68 @@ pub async fn handle_box_score_request(
 
     // Fetch from API
     let api_url = box_score_path(league.clone(), id_value.clone()).to_string();
-    let raw_data = fetch_box_score_from_api(&api_url, &league).await?;
+    let raw_data = fetch_box_score_from_api(&api_url, &league, &use_case_state.config).await?;
 
-    // Parse the response
-    let box_score: BoxScore = serde_json::from_str(&raw_data).map_err(|e| {
-        tracing::error!("Failed to parse box score JSON: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    // Parse the response based on league
+    let response = match league {
+        League::Mlb => {
+            // Parse the data as MLB box score
+            let mlb_box_score: crate::schema::mlb::box_score::BoxScoreResponse = serde_json::from_str(&raw_data)
+                .map_err(|e| {
+                    tracing::error!("Failed to parse MLB box score data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
 
-    let response = BoxScoreResponse {
-        data: box_score,
-        league: league.to_string(),
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::BoxScore,
+                data: crate::schema::league_response::LeagueData::Mlb(Box::new(
+                    crate::schema::league_response::MLBData::BoxScore(mlb_box_score),
+                )),
+                filtered_count: 1,
+                total_count: 1,
+            }
+        }
+        League::Nfl => {
+            // Parse the data as NFL box score
+            let nfl_box_score: crate::schema::nfl::box_score::NFLBoxScoreResponse = serde_json::from_str(&raw_data)
+                .map_err(|e| {
+                    tracing::error!("Failed to parse NFL box score data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::BoxScore,
+                data: crate::schema::league_response::LeagueData::Nfl(Box::new(
+                    crate::schema::league_response::NFLData::BoxScore(nfl_box_score),
+                )),
+                filtered_count: 1,
+                total_count: 1,
+            }
+        }
+        League::Nba => {
+            // Parse the data as NBA box score
+            let nba_box_score: crate::schema::nba::box_score::NBABoxScoreResponse = serde_json::from_str(&raw_data)
+                .map_err(|e| {
+                    tracing::error!("Failed to parse NBA box score data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::BoxScore,
+                data: crate::schema::league_response::LeagueData::Nba(Box::new(
+                    crate::schema::league_response::NBAData::BoxScore(nba_box_score),
+                )),
+                filtered_count: 1,
+                total_count: 1,
+            }
+        }
+        _ => {
+            tracing::error!("Unsupported league for box score: {}", league);
+            return Err(StatusCode::BAD_REQUEST.into());
+        }
     };
 
     // Cache the response with configured TTL
@@ -1980,11 +2321,8 @@ pub async fn handle_box_score_request(
     Ok(Json(response))
 }
 
-async fn fetch_box_score_from_api(api_url: &str, league: &League) -> Result<String> {
-    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+async fn fetch_box_score_from_api(api_url: &str, league: &League, config: &ArbConfig) -> Result<String> {
+    let api_key = &config.api.sportsdata_api_key;
 
     let client = reqwest::Client::new();
 
@@ -2046,7 +2384,7 @@ pub async fn handle_stadiums_request(
     }
 
     // Fetch from API
-    let raw_data = fetch_stadiums_from_api(&api_url, &league).await?;
+    let raw_data = fetch_stadiums_from_api(&api_url, &league, &use_case_state.config).await?;
 
     // Parse the JSON response based on league
     let response = match league {
@@ -2065,6 +2403,27 @@ pub async fn handle_stadiums_request(
                     data: stadiums,
                     league: league.to_string(),
                 }))),
+                filtered_count: stadiums_count,
+                total_count: stadiums_count,
+            }
+        }
+        League::Nba => {
+            let stadiums: Vec<crate::schema::nba::stadiums::NBAStadium> =
+                serde_json::from_str(&raw_data).map_err(|e| {
+                    tracing::error!("Failed to parse NBA stadiums JSON: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            let stadiums_count = stadiums.len();
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::Stadiums,
+                data: LeagueData::Nba(Box::new(NBAData::Stadiums(
+                    crate::schema::nba::stadiums::NBAStadiumsResponse {
+                        data: stadiums,
+                        league: league.to_string(),
+                    },
+                ))),
                 filtered_count: stadiums_count,
                 total_count: stadiums_count,
             }
@@ -2119,11 +2478,8 @@ pub async fn handle_stadiums_request(
     Ok(Json(response))
 }
 
-async fn fetch_stadiums_from_api(api_url: &str, league: &League) -> Result<String> {
-    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+async fn fetch_stadiums_from_api(api_url: &str, league: &League, config: &ArbConfig) -> Result<String> {
+    let api_key = &config.api.sportsdata_api_key;
 
     let client = reqwest::Client::new();
 
@@ -2798,7 +3154,7 @@ pub async fn handle_odds_by_date_request(
     }
 
     // Fetch from API
-    let raw_data = fetch_odds_by_date_from_api(&api_url, &league).await?;
+    let raw_data = fetch_odds_by_date_from_api(&api_url, &league, &use_case_state.config).await?;
 
     // Parse the JSON response
     let game_odds: Vec<GameOdds> = serde_json::from_str(&raw_data).map_err(|e| {
@@ -2842,11 +3198,8 @@ pub async fn handle_odds_by_date_request(
     Ok(Json(response))
 }
 
-async fn fetch_odds_by_date_from_api(api_url: &str, league: &League) -> Result<String> {
-    let api_key = std::env::var("SPORTDATAIO_API_KEY").map_err(|_| {
-        tracing::error!("SPORTDATAIO_API_KEY environment variable not set");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+async fn fetch_odds_by_date_from_api(api_url: &str, league: &League, config: &ArbConfig) -> Result<String> {
+    let api_key = &config.api.sportsdata_api_key;
 
     let client = reqwest::Client::new();
 

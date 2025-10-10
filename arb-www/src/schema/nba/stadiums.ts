@@ -1,19 +1,20 @@
 import { BaseDTO } from '../BaseDTO';
 
-export class NFLStadium extends BaseDTO {
+export class NBAStadium extends BaseDTO {
   StadiumID!: number;
+  Active!: boolean;
   Name!: string;
+  Address!: string;
   City!: string;
   State!: string;
+  Zip!: string;
   Country!: string;
   Capacity!: number;
-  PlayingSurface!: string;
   GeoLat!: number;
   GeoLong!: number;
-  Type!: string;
 }
 
-export class NFLStadiumsResponse extends BaseDTO {
-  data!: NFLStadium[];
+export class NBAStadiumsResponse extends BaseDTO {
+  data!: NBAStadium[];
   league!: string;
 }

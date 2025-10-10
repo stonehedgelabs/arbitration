@@ -7,8 +7,16 @@ use crate::schema::{
         odds::OddsByDateResponse, schedule::MLBScheduleResponse,
         stadiums::StadiumsResponse, teams::TeamProfiles,
     },
+    nba::{
+        box_score::NBABoxScoreResponse,
+        headshots::PlayerHeadshots,
+        play_by_play::NBAPlayByPlayResponse,
+        schedule::NBAScheduleResponse,
+        stadiums::NBAStadiumsResponse,
+        teams::NBATeamProfilesResponse,
+    },
     nfl::{
-        game_by_date::NFLGameByDateResponse, headshots::NFLHeadshotsResponse,
+        box_score::NFLBoxScoreResponse, game_by_date::NFLGameByDateResponse, headshots::NFLHeadshotsResponse,
         play_by_play::NFLPlayByPlayResponse, schedule::NFLScheduleResponse,
         scores::NFLScoresResponse, stadiums::NFLStadiumsResponse,
         teams::NFLTeamProfilesResponse,
@@ -34,6 +42,8 @@ pub struct LeagueResponse {
 pub enum LeagueData {
     #[serde(rename = "mlb")]
     Mlb(Box<MLBData>),
+    #[serde(rename = "nba")]
+    Nba(Box<NBAData>),
     #[serde(rename = "nfl")]
     Nfl(Box<NFLData>),
 }
@@ -64,6 +74,28 @@ pub enum MLBData {
     Scores(serde_json::Value), // MLB scores uses generic JSON
 }
 
+/// NBA-specific data types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "data_type", content = "data")]
+pub enum NBAData {
+    #[serde(rename = "schedule")]
+    Schedule(NBAScheduleResponse),
+    #[serde(rename = "current_games")]
+    CurrentGames(NBAScheduleResponse),
+    #[serde(rename = "stadiums")]
+    Stadiums(NBAStadiumsResponse),
+    #[serde(rename = "team_profiles")]
+    TeamProfiles(NBATeamProfilesResponse),
+    #[serde(rename = "headshots")]
+    Headshots(PlayerHeadshots),
+    #[serde(rename = "play_by_play")]
+    PlayByPlay(NBAPlayByPlayResponse),
+    #[serde(rename = "scores")]
+    Scores(NBAScheduleResponse),
+    #[serde(rename = "box_score")]
+    BoxScore(NBABoxScoreResponse),
+}
+
 /// NFL-specific data types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "data_type", content = "data")]
@@ -84,4 +116,6 @@ pub enum NFLData {
     Scores(NFLScoresResponse),
     #[serde(rename = "stadiums")]
     Stadiums(NFLStadiumsResponse),
+    #[serde(rename = "box_score")]
+    BoxScore(NFLBoxScoreResponse),
 }
