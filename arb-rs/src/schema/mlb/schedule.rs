@@ -249,11 +249,4 @@ pub struct MLBScheduleGame {
     pub innings: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MLBScheduleResponse {
-    pub league: String,
-    pub data_type: String,
-    pub data: Vec<MLBScheduleGame>,
-    pub filtered_count: usize,
-    pub total_count: usize,
-}
+// MLBScheduleResponse removed - use Vec<MLBScheduleGame> directly

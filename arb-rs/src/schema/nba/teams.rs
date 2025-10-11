@@ -57,8 +57,4 @@ pub struct NBATeamProfile {
     pub head_coach: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NBATeamProfilesResponse {
-    pub data: Vec<NBATeamProfile>,
-    pub league: String,
-}
+// NBATeamProfilesResponse removed - use Vec<NBATeamProfile> directly

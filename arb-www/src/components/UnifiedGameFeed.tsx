@@ -141,9 +141,11 @@ export function UnifiedGameFeed({
       const searchTerms = [
         awayTeam,
         homeTeam,
-        awayTeamKey,
-        homeTeamKey,
-        "@MLB",
+        `#${awayTeam}`,
+        `#${homeTeam}`,
+        `#${awayTeamKey}`,
+        `#${homeTeamKey}`,
+        "#MLB",
       ].filter(Boolean); // Remove any undefined values
 
       const twitterQuery = searchTerms.join(" OR ");
@@ -155,7 +157,6 @@ export function UnifiedGameFeed({
         }),
       );
     }
-    // TODO: Add PBP data fetching here
   }, [gameId, awayTeam, homeTeam, awayTeamKey, homeTeamKey, league, dispatch]);
 
   // Step 2: Fetch Reddit comments only after thread is found
@@ -513,33 +514,102 @@ export function UnifiedGameFeed({
           <Box px={"4"} pb={"2"}>
             <VStack gap="1" align="stretch">
               {/* Header with Latest Play and timestamp */}
-              <HStack justify="space-between" align="center">
-                <HStack gap="1.5">
-                  <Box
-                    w="4"
-                    h="4"
-                    borderRadius="full"
-                    bg="primary.500"
-                    color="white"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    fontSize="2xs"
-                    fontWeight="bold"
+              <HStack
+                justify="space-between"
+                // border="1px solid green"
+                align="flex-start"
+                p={2}
+                w="100%"
+              >
+                {/* LEFT COLUMN */}
+                <VStack align="stretch" flex="1">
+                  {/* Yellow Header */}
+                  <HStack
+                    gap="1.5"
+                    //border="1px solid yellow"
+                    align="center"
                   >
-                    <Clock size={6} />
-                  </Box>
-                  <Text fontSize="xs" fontWeight="semibold" color="primary.500">
-                    Latest Play
-                  </Text>
-                </HStack>
-                <VStack gap="0" align="end" mt="4">
+                    <Box
+                      w="4"
+                      borderRadius="full"
+                      bg="primary.500"
+                      color="white"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      fontSize="2xs"
+                      fontWeight="bold"
+                    >
+                      <Clock size={6} />
+                    </Box>
+                    <Text fontSize="xs" fontWeight="semibold" color="text.400">
+                      Latest Play
+                    </Text>
+                  </HStack>
+
+                  {/* Red Box (Team Info) — width 50% of green container */}
+                  <HStack
+                    gap="2"
+                    // border="1px solid red"
+
+                    align="center"
+                    justify="flex-start"
+                  >
+                    {teamLogo && (
+                      <Image
+                        src={teamLogo}
+                        alt="Team logo"
+                        boxSize="20px"
+                        objectFit="contain"
+                      />
+                    )}
+                    <VStack gap="0" align="start">
+                      <Text fontSize="xs" fontWeight="medium" color="text.400">
+                        {event.author || "Player"}
+                      </Text>
+                      <Text fontSize="xs" color="text.400">
+                        {(() => {
+                          if (!teamProfiles?.data || !playByPlayData?.data)
+                            return "Team";
+
+                          const originalPlay = playByPlayData.data.find(
+                            (play) => `pbp-${play.PlayID}` === event.id,
+                          );
+                          if (!originalPlay) return "Team";
+
+                          const teamProfile = teamProfiles.data.find(
+                            (team: any) =>
+                              team.TeamID === originalPlay.HitterTeamID,
+                          );
+
+                          return (
+                            teamProfile?.Name || teamProfile?.Key || "Team"
+                          );
+                        })()}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </VStack>
+
+                {/* RIGHT COLUMN */}
+                <VStack
+                  gap="0"
+                  //    border="1px solid pink"
+                  align="end"
+                  width="130px"
+                  minWidth="130px"
+                  maxWidth="130px"
+                  flex="0 0 auto" // 👈 prevents flex resizing completely
+                  flexShrink={0}
+                  alignSelf="flex-start"
+                  boxSizing="border-box"
+                >
                   <Text fontSize="xs" color="text.400">
                     {event.timestamp
                       ? formatRelativeUTCTime(event.timestamp)
                       : "Just now"}
                   </Text>
-                  {/* Inning badge */}
+
                   {gameData?.Inning && (
                     <InningBadge
                       inningNumber={parseInt(gameData.Inning) || 1}
@@ -548,43 +618,6 @@ export function UnifiedGameFeed({
                       size="sm"
                     />
                   )}
-                </VStack>
-              </HStack>
-
-              {/* Team info with logo and name */}
-              <HStack gap="2" align="center">
-                {teamLogo && (
-                  <Image
-                    src={teamLogo}
-                    alt="Team logo"
-                    boxSize="20px"
-                    objectFit="contain"
-                  />
-                )}
-                <VStack gap="0" align="start">
-                  {/* <Text fontSize="xs" fontWeight="medium" color="text.400">
-                    {event.author || "Player"}
-                  </Text> */}
-                  <Text fontSize="xs" color="text.500">
-                    {(() => {
-                      // Get team name from team profiles using the original play data
-                      if (!teamProfiles?.data || !playByPlayData?.data)
-                        return "Team";
-
-                      const originalPlay = playByPlayData.data.find(
-                        (play) => `pbp-${play.PlayID}` === event.id,
-                      );
-
-                      if (!originalPlay) return "Team";
-
-                      const teamProfile = teamProfiles.data.find(
-                        (team: any) =>
-                          team.TeamID === originalPlay.HitterTeamID,
-                      );
-
-                      return teamProfile?.Name || teamProfile?.Key || "Team";
-                    })()}
-                  </Text>
                 </VStack>
               </HStack>
 
@@ -769,7 +802,10 @@ export function UnifiedGameFeed({
                     u/{event.author}
                   </Text>
                   {event.subreddit && (
-                    <Text fontSize="2xs" color="text.300">
+                    <Text
+                      fontSize="2xs"
+                      color={event.team === "away" ? "red" : "#44aae5"}
+                    >
                       • {event.subreddit}
                     </Text>
                   )}

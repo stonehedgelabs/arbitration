@@ -27,7 +27,7 @@ import { useAppSelector, useAppDispatch } from "../store/hooks";
 import {
   setSelectedDate,
   setSelectedLeague,
-  fetchBoxScore,
+  // fetchBoxScore,
 } from "../store/slices/sportsDataSlice";
 
 import useArb from "../services/Arb";
@@ -36,6 +36,7 @@ import {
   convertUtcToLocalDate,
   getCurrentLocalDate,
   parseLocalDate,
+  extractDataFromResponse,
 } from "../utils.ts";
 
 interface Team {
@@ -311,13 +312,15 @@ const convertGameToGame = (
 
   // Helper functions to get team profiles and stadiums
   const getTeamProfile = (teamId: number) => {
-    if (!teamProfiles?.data) return null;
-    return teamProfiles.data.find((team: any) => team.TeamID === teamId);
+    if (!teamProfiles) return null;
+    const teamProfilesArray = extractDataFromResponse(teamProfiles);
+    return teamProfilesArray.find((team: any) => team.TeamID === teamId);
   };
 
   const getStadium = (stadiumId?: number) => {
-    if (!stadiums?.data || !stadiumId) return null;
-    return stadiums.data.find(
+    if (!stadiums || !stadiumId) return null;
+    const stadiumsArray = extractDataFromResponse(stadiums);
+    return stadiumsArray.find(
       (stadium: any) => stadium.StadiumID === stadiumId,
     );
   };
@@ -407,13 +410,15 @@ const convertScheduleGameToGame = (
 
   // Helper functions to get team profiles and stadiums
   const getTeamProfile = (teamId: number) => {
-    if (!teamProfiles?.data) return null;
-    return teamProfiles.data.find((team: any) => team.TeamID === teamId);
+    if (!teamProfiles) return null;
+    const teamProfilesArray = extractDataFromResponse(teamProfiles);
+    return teamProfilesArray.find((team: any) => team.TeamID === teamId);
   };
 
   const getStadium = (stadiumId?: number) => {
-    if (!stadiums?.data || !stadiumId) return null;
-    return stadiums.data.find(
+    if (!stadiums || !stadiumId) return null;
+    const stadiumsArray = extractDataFromResponse(stadiums);
+    return stadiumsArray.find(
       (stadium: any) => stadium.StadiumID === stadiumId,
     );
   };
@@ -617,14 +622,15 @@ function ScoresV2() {
   // Fetch box score data for live games to get more accurate scores
   useEffect(() => {
     if (scores?.data && selectedDate && league) {
-      scores.data.forEach((game: any) => {
-        const gameId = game.GameID.toString();
-        const gameStatus = mapApiStatusToGameStatus(game.Status);
-
-        if (gameStatus === GameStatus.LIVE && !boxScoreData[gameId]) {
-          dispatch(fetchBoxScore({ league, gameId }));
-        }
-      });
+      // const gamesArray = extractDataFromResponse(scores);
+      // gamesArray.forEach((game: any) => {
+      //   const gameId = game.GameID.toString();
+      //   const gameStatus = mapApiStatusToGameStatus(game.Status);
+      //
+      //   // if (gameStatus === GameStatus.LIVE && !boxScoreData[gameId]) {
+      //   //   dispatch(fetchBoxScore({ league, gameId }));
+      //   // }
+      // });
     }
   }, [scores?.data, selectedDate, league, dispatch, boxScoreData]);
 
@@ -665,7 +671,10 @@ function ScoresV2() {
 
       return scheduleGames;
     } else if (!isFutureDate && scores?.data) {
-      const scoresGames = scores.data
+      // Use the utility function to extract data from the new response structure
+      const gamesArray = extractDataFromResponse(scores);
+
+      const scoresGames = gamesArray
         .filter((rawGame: any) => {
           // Filter out games that don't have a DateTime field
           return rawGame.DateTime !== undefined && rawGame.DateTime !== null;

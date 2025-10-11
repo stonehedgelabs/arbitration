@@ -132,8 +132,4 @@ pub struct NFLTeamProfile {
     pub stadium_details: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NFLTeamProfilesResponse {
-    pub data: Vec<NFLTeamProfile>,
-    pub league: String,
-}
+// NFLTeamProfilesResponse removed - use Vec<NFLTeamProfile> directly

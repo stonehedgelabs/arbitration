@@ -196,7 +196,6 @@ impl Default for ArbConfig {
     fn default() -> Self {
         let mut current_seasons = HashMap::new();
 
-        // MLB configuration
         current_seasons.insert(
             "mlb".to_string(),
             SeasonInfo {
@@ -206,7 +205,6 @@ impl Default for ArbConfig {
             },
         );
 
-        // NFL configuration
         current_seasons.insert(
             "nfl".to_string(),
             SeasonInfo {
@@ -216,7 +214,6 @@ impl Default for ArbConfig {
             },
         );
 
-        // NBA configuration
         current_seasons.insert(
             "nba".to_string(),
             SeasonInfo {
@@ -226,7 +223,6 @@ impl Default for ArbConfig {
             },
         );
 
-        // NHL configuration
         current_seasons.insert(
             "nhl".to_string(),
             SeasonInfo {
@@ -303,7 +299,6 @@ impl ArbConfig {
     /// Load configuration from a specific TOML file and environment variables
     /// This method will panic if the config file cannot be read or parsed
     pub fn from_file(config_path: &str) -> Self {
-        // Try to load from the specified config file
         let toml_content = std::fs::read_to_string(config_path).unwrap_or_else(|e| {
             tracing::error!("Could not read config file at: {}", config_path);
             tracing::error!("Error: {}", e);
@@ -321,8 +316,6 @@ impl ArbConfig {
         });
 
         tracing::info!("Successfully parsed config file");
-
-        // Override with environment variables if present
         Self::apply_env_overrides(&mut config);
         config
     }
@@ -332,7 +325,6 @@ impl ArbConfig {
     pub fn from_env() -> Self {
         let mut config = Self::default();
 
-        // Try to load from config.toml first (try multiple possible locations)
         let config_paths = ["config.toml", "./config.toml", "../config.toml"];
         let mut toml_content = None;
 
@@ -356,7 +348,6 @@ impl ArbConfig {
             tracing::info!("No config.toml file found in any of the expected locations, using defaults");
         }
 
-        // Override with environment variables if present
         Self::apply_env_overrides(&mut config);
         config
     }
@@ -389,12 +380,10 @@ impl ArbConfig {
             config.server.client_url = client_url;
         }
 
-        // Load JWT secret from environment
         if let Ok(jwt_secret) = std::env::var("JWT_SECRET") {
             config.api.jwt_secret = jwt_secret;
         }
 
-        // Load Google OAuth configuration from environment variables
         if let Ok(client_id) = std::env::var("GOOGLE_CLIENT_ID") {
             config.api.google_oauth.client_id = client_id;
         }
@@ -407,7 +396,6 @@ impl ArbConfig {
             config.api.google_oauth.redirect_uri = redirect_uri;
         }
 
-        // Load Apple OAuth configuration from environment variables
         if let Ok(client_id) = std::env::var("APPLE_CLIENT_ID") {
             config.api.apple_oauth.client_id = client_id;
         }
@@ -434,12 +422,10 @@ impl ArbConfig {
             }
         }
 
-        // Load SportsData.io API key from environment
         if let Ok(api_key) = std::env::var("SPORTSDATAIO_API_KEY") {
             config.api.sportsdata_api_key = api_key;
         }
 
-        // Load Reddit OAuth configuration from environment variables
         if let Ok(client_id) = std::env::var("REDDIT_CLIENT_ID") {
             config.api.reddit_oauth.client_id = client_id;
         }
@@ -452,7 +438,6 @@ impl ArbConfig {
             config.api.reddit_oauth.redirect_uri = redirect_uri;
         }
 
-        // Override seasons from environment variables
         for (sport, season_info) in &mut config.seasons.current_seasons {
             let env_key = format!("{}_REGULAR_SEASON", sport.to_uppercase());
             if let Ok(regular) = std::env::var(&env_key) {
@@ -479,12 +464,10 @@ impl ArbConfig {
     /// Check if a date is in the postseason for a specific sport
     pub fn is_postseason_date(&self, sport: &str, date: &str) -> bool {
         if let Some(season_info) = self.get_season_info(sport) {
-            // Parse the date and check if it's on or after the postseason start date
             if let Ok(parsed_date) = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d") {
                 let _month = parsed_date.month();
                 let _day = parsed_date.day();
 
-                // Parse postseason start date (MM-DD format)
                 if let Ok(postseason_start) = chrono::NaiveDate::parse_from_str(
                     &format!("{}-{}", season_info.postseason_start, parsed_date.year()),
                     "%m-%d-%Y",

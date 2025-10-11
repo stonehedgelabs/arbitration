@@ -109,7 +109,7 @@ export const ENV = {
  * API Configuration
  */
 export const API_CONFIG = {
-  baseUrl: 'https://b1c9a2101622.ngrok.app', // Rust backend URL
+  baseUrl: 'https://073c56369030.ngrok.app', // Rust backend URL
   endpoints: {
     scores: '/api/v1/scores',
     boxScoreFinal: '/api/v1/box-score-final',
@@ -200,16 +200,16 @@ export const PLAY_BY_PLAY_CONFIG = {
   apiInterval: "1min",
   
   // Maximum number of events to display
-  maxEventsDisplay: 100,
+  maxEventsDisplay: 25,
   
   // Maximum number of events to keep in memory
-  maxEventsInMemory: 50,
+  maxEventsInMemory: 25,
   
   // Whether to auto-scroll to newest events
   autoScrollToTop: true,
   
   // Supported leagues for play-by-play
-  supportedLeagues: ['mlb'] as const,
+  supportedLeagues: [League.NFL, League.MLB, League.NBA, League.NHL] as const,
 } as const;
 
 /**
@@ -217,10 +217,10 @@ export const PLAY_BY_PLAY_CONFIG = {
  */
 export const UNIFIED_FEED_CONFIG = {
   // Auto-refresh interval in milliseconds
-  autoRefreshInterval: 5000, // 5 seconds
+  autoRefreshInterval: 10000, // 10 seconds
   
   // Reddit thread refresh interval in milliseconds
-  redditThreadRefreshInterval: 300000, // 5 minutes
+  redditThreadRefreshInterval: 10000, // 10 seconds
   
   // Whether to enable auto-refresh
   enableAutoRefresh: true,
@@ -231,10 +231,10 @@ export const UNIFIED_FEED_CONFIG = {
  */
 export const TWITTER_CONFIG = {
   // Default number of tweets to fetch
-  defaultTweetLimit: 10,
+  defaultTweetLimit: 20,
   
   // Maximum number of tweets to fetch in a single request
-  maxTweetLimit: 100,
+  maxTweetLimit: 20,
   
   // Default search filter
   defaultFilter: 'latest' as const,

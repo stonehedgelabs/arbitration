@@ -42,7 +42,6 @@ impl ZeroCopyJson {
         let array = data.as_array().ok_or("Expected array data for filtering")?;
         let total_count = array.len();
 
-        // Use iterator to avoid intermediate allocations
         let filtered_items: Vec<serde_json::Value> = array
             .iter()
             .filter(|item| Self::matches_filters(item, filters))
@@ -74,7 +73,6 @@ impl ZeroCopyJson {
             let field_str = match field_value {
                 serde_json::Value::String(s) => s.as_str(),
                 serde_json::Value::Number(n) => {
-                    // Convert number to string without allocation
                     if let Some(i) = n.as_i64() {
                         return i.to_string() == *expected_value;
                     } else if let Some(f) = n.as_f64() {
@@ -88,7 +86,6 @@ impl ZeroCopyJson {
                 _ => continue,
             };
 
-            // Use case-insensitive comparison without allocation
             if !ZeroCopyString::contains_case_insensitive(field_str, expected_value) {
                 return false;
             }

@@ -730,8 +730,4 @@ pub struct BoxScore {
     pub player_games: Vec<PlayerGame>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BoxScoreResponse {
-    pub data: BoxScore,
-    pub league: String,
-}
+// BoxScoreResponse removed - use BoxScore directly

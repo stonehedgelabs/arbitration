@@ -335,7 +335,6 @@ pub struct NFLPlayStat {
     #[serde(rename = "Created")]
     pub created: String,
 
-    // Passing stats
     #[serde(rename = "PassingAttempts")]
     pub passing_attempts: i32,
 
@@ -357,7 +356,6 @@ pub struct NFLPlayStat {
     #[serde(rename = "PassingSackYards")]
     pub passing_sack_yards: i32,
 
-    // Rushing stats
     #[serde(rename = "RushingAttempts")]
     pub rushing_attempts: i32,
 
@@ -367,7 +365,6 @@ pub struct NFLPlayStat {
     #[serde(rename = "RushingTouchdowns")]
     pub rushing_touchdowns: i32,
 
-    // Receiving stats
     #[serde(rename = "ReceivingTargets")]
     pub receiving_targets: i32,
 
@@ -380,14 +377,12 @@ pub struct NFLPlayStat {
     #[serde(rename = "ReceivingTouchdowns")]
     pub receiving_touchdowns: i32,
 
-    // Fumble stats
     #[serde(rename = "Fumbles")]
     pub fumbles: i32,
 
     #[serde(rename = "FumblesLost")]
     pub fumbles_lost: i32,
 
-    // Two-point conversion stats
     #[serde(rename = "TwoPointConversionAttempts")]
     pub two_point_conversion_attempts: i32,
 
@@ -403,7 +398,6 @@ pub struct NFLPlayStat {
     #[serde(rename = "TwoPointConversionReturns")]
     pub two_point_conversion_returns: i32,
 
-    // Defensive stats
     #[serde(rename = "SoloTackles")]
     pub solo_tackles: i32,
 
@@ -446,7 +440,6 @@ pub struct NFLPlayStat {
     #[serde(rename = "InterceptionReturnTouchdowns")]
     pub interception_return_touchdowns: i32,
 
-    // Return stats
     #[serde(rename = "PuntReturns")]
     pub punt_returns: i32,
 
@@ -465,7 +458,6 @@ pub struct NFLPlayStat {
     #[serde(rename = "KickReturnTouchdowns")]
     pub kick_return_touchdowns: i32,
 
-    // Special teams stats
     #[serde(rename = "BlockedKicks")]
     pub blocked_kicks: i32,
 
@@ -487,7 +479,6 @@ pub struct NFLPlayStat {
     #[serde(rename = "FieldGoalReturnTouchdowns")]
     pub field_goal_return_touchdowns: i32,
 
-    // Kicking stats
     #[serde(rename = "Kickoffs")]
     pub kickoffs: i32,
 
@@ -530,7 +521,6 @@ pub struct NFLPlayStat {
     #[serde(rename = "ExtraPointsHadBlocked")]
     pub extra_points_had_blocked: i32,
 
-    // Penalty stats
     #[serde(rename = "Penalties")]
     pub penalties: i32,
 

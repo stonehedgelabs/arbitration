@@ -49,7 +49,6 @@ pub enum RedditReplies {
     Empty(String),                // when replies = ""
 }
 
-// Simplified structures for our API responses
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RedditComment {
     pub id: String,
@@ -99,7 +98,6 @@ pub struct RedditSearchQuery {
     pub cache: Option<bool>,
 }
 
-// Helper functions for converting Reddit API responses to our simplified format
 impl RedditPostData {
     pub fn to_reddit_post(&self, team: Option<String>) -> RedditPost {
         RedditPost {
@@ -169,9 +167,7 @@ impl RedditPostData {
                         }
                     }
                 }
-                RedditReplies::Empty(_) => {
-                    // No replies
-                }
+                RedditReplies::Empty(_) => {}
             }
         }
 

@@ -58,7 +58,7 @@ export function StatusBadge({
       fontSize={fontSize}
       px="2"
       py="1"
-      borderRadius="full"
+      borderRadius="sm"
     >
       {statusText}
     </Badge>

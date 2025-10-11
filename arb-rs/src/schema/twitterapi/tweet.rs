@@ -32,7 +32,6 @@ pub struct TwitterTweet {
     pub lang: String,
     #[serde(rename = "bookmarkCount")]
     pub bookmark_count: i64,
-    // Allow additional fields to be ignored
     #[serde(flatten)]
     pub additional_fields: serde_json::Value,
 }

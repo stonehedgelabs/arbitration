@@ -197,5 +197,4 @@ pub struct GameByDateResponse {
     pub data: Option<GameByDate>,
     pub date: String,
     pub game_id: i64,
-    pub league: String,
 }

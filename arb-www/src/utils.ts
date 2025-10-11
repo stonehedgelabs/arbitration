@@ -609,3 +609,70 @@ export const getPlayIcon = (play: PlayData): string => {
 export const delayedRedditTimestamp = (timestamp: string): string => {
   return new Date(new Date(timestamp).getTime() + REDDIT_CONFIG.eventDelay).toISOString();
 };
+
+/**
+ * Extracts the actual data array from the new backend response structure
+ * Handles multiple possible response formats:
+ * - Direct array: response.data is already an array
+ * - Single wrapped: response.data.data contains the array
+ * - Double wrapped: response.data.data.data contains the array
+ * - Games field: response.data.games contains the array
+ * 
+ * @param response - The backend response object
+ * @returns {any[]} The extracted data array
+ */
+export const extractDataFromResponse = (response: any): any[] => {
+  if (!response || !response.data) {
+    return [];
+  }
+
+  // Direct array
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  // Check for nested data structures
+  if (response.data && typeof response.data === 'object') {
+    // Double wrapped: response.data.data.data
+    if (response.data.data && typeof response.data.data === 'object' && Array.isArray(response.data.data.data)) {
+      return response.data.data.data;
+    }
+    
+    // Single wrapped: response.data.data
+    if (Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    
+    // Games field: response.data.games
+    if (Array.isArray(response.data.games)) {
+      return response.data.games;
+    }
+  }
+
+  // If we can't find an array, return empty array
+  console.warn('Could not extract data array from response:', response);
+  return [];
+};
+
+/**
+ * Extracts metadata from the backend response structure
+ * @param response - The backend response object
+ * @returns {object} Object containing league, data_type, and counts
+ */
+export const extractMetadataFromResponse = (response: any): {
+  league?: string;
+  data_type?: string;
+  filtered_count?: number;
+  total_count?: number;
+} => {
+  if (!response) {
+    return {};
+  }
+
+  return {
+    league: response.league,
+    data_type: response.data_type,
+    filtered_count: response.filtered_count,
+    total_count: response.total_count,
+  };
+};

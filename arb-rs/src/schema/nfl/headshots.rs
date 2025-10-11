@@ -36,8 +36,4 @@ pub struct NFLHeadshot {
     pub hosted_headshot_no_background_updated: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NFLHeadshotsResponse {
-    pub data: Vec<NFLHeadshot>,
-    pub league: String,
-}
+// NFLHeadshotsResponse removed - use Vec<NFLHeadshot> directly

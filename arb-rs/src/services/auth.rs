@@ -254,7 +254,6 @@ impl AppleOAuth {
 
     /// Generate Apple client secret JWT
     pub fn generate_client_secret(&self) -> Result<String, Box<dyn std::error::Error>> {
-        // Read the private key file
         let private_key = fs::read_to_string(&self.secret_key_path)?;
 
         let now = Utc::now().timestamp();
@@ -266,13 +265,9 @@ impl AppleOAuth {
             "sub": self.client_id,
         });
 
-        // Create header with key ID
         let mut header = Header::new(Algorithm::ES256);
         header.kid = Some(self.key_id.clone());
 
-        // For ES256, we need to use the private key directly
-        // Note: This is a simplified implementation. In production, you'd want to use
-        // a proper ES256 implementation with the private key
         let encoding_key = EncodingKey::from_secret(private_key.as_ref());
 
         encode(&header, &payload, &encoding_key)
@@ -335,14 +330,11 @@ impl AppleOAuth {
         &self,
         id_token: &str,
     ) -> Result<AppleIdTokenClaims, Box<dyn std::error::Error>> {
-        // For simplicity, we'll decode without signature verification
-        // In production, you should verify the signature using Apple's public keys
         let parts: Vec<&str> = id_token.split('.').collect();
         if parts.len() != 3 {
             return Err("Invalid JWT format".into());
         }
 
-        // Decode the payload (middle part)
         let payload = parts[1];
         let payload_bytes = URL_SAFE_NO_PAD.decode(payload)?;
         let claims: AppleIdTokenClaims = serde_json::from_slice(&payload_bytes)?;

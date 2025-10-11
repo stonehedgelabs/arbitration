@@ -156,8 +156,4 @@ pub struct NBAScheduleGame {
     pub quarters: Vec<NBAQuarter>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NBAScheduleResponse {
-    pub data: Vec<NBAScheduleGame>,
-    pub league: String,
-}
+// NBAScheduleResponse removed - use Vec<NBAScheduleGame> directly

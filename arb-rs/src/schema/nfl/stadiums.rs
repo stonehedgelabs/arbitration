@@ -24,8 +24,4 @@ pub struct NFLStadium {
     pub stadium_type: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NFLStadiumsResponse {
-    pub data: Vec<NFLStadium>,
-    pub league: String,
-}
+// NFLStadiumsResponse removed - use Vec<NFLStadium> directly

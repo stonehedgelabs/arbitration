@@ -12,7 +12,7 @@ import { InningBadge } from "../badge";
 import { HideVerticalScroll } from "../containers";
 
 // Internal imports - utils
-import { orEmpty } from "../../utils.ts";
+import { orEmpty, extractDataFromResponse } from "../../utils.ts";
 
 // Internal imports - config
 import {
@@ -101,15 +101,17 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
   }
 
   // Get team profiles
-  const awayTeamProfile = teamProfiles?.data?.find(
+  const teamProfilesArray = extractDataFromResponse(teamProfiles);
+  const awayTeamProfile = teamProfilesArray.find(
     (team: any) => team.TeamID === game.AwayTeamID,
   );
-  const homeTeamProfile = teamProfiles?.data?.find(
+  const homeTeamProfile = teamProfilesArray.find(
     (team: any) => team.TeamID === game.HomeTeamID,
   );
 
   // Get stadium
-  const stadium = stadiums?.data?.find(
+  const stadiumsArray = extractDataFromResponse(stadiums);
+  const stadium = stadiumsArray.find(
     (s: any) => s.StadiumID === game.StadiumID,
   );
 
@@ -163,7 +165,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
               })()}
             </Text>
             {/* Game Time */}
-            <Text textAlign="center" fontSize="xs" color="text.500">
+            <Text textAlign="center" fontSize="xs" color="text.400">
               {game.time}
             </Text>
           </VStack>
@@ -348,13 +350,13 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
           <HStack gap="2" w="full" justify={"center"}>
             <HStack gap="4" align="center">
               {stadium && (
-                <Text fontSize="xs" color="text.500">
+                <Text fontSize="xs" color="text.400">
                   {orEmpty(stadium.Name)} •
                 </Text>
               )}
             </HStack>
             {game.Weather && (
-              <Text fontSize="xs" color="text.500">
+              <Text fontSize="xs" color="text.400">
                 {orEmpty(game.Weather)}
                 {game.Temperature && ` • ${game.Temperature}°F`}
               </Text>
@@ -402,14 +404,14 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
 
                 return (
                   <HStack>
-                    <Text fontSize="xs" color="text.500">
+                    <Text fontSize="xs" color="text.400">
                       {odds.homeMoneyLine && odds.awayMoneyLine && (
                         <>
                           ML: {odds.awayMoneyLine}/{odds.homeMoneyLine} •
                         </>
                       )}
                     </Text>
-                    <Text fontSize="xs" color="text.500">
+                    <Text fontSize="xs" color="text.400">
                       {odds.overUnder && <> • O/U: {odds.overUnder}</>}
                     </Text>
                   </HStack>

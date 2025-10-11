@@ -3,7 +3,6 @@ use clap::Parser;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-// Module declarations
 pub mod cache;
 pub mod config;
 pub mod error;
@@ -27,9 +26,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Parse command line arguments
     let args = Args::parse();
-    // Load environment variables from .env file
     dotenv::dotenv().ok();
 
     tracing_subscriber::registry()
@@ -42,13 +39,11 @@ async fn main() -> Result<()> {
 
     info!("Starting arbitration proxy server...");
 
-    // Load configuration
     let config = ArbConfig::from_file(&args.config);
 
     let cache = Arc::new(Mutex::new(Cache::new(config.cache.clone()).await?));
 
     info!("Server config: {}", config);
-    // Data will be fetched from API as needed, no pre-loading from test files
 
     let server = Server::new(cache, config);
     server

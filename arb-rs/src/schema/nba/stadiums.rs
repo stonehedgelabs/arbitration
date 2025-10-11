@@ -25,9 +25,3 @@ pub struct NBAStadium {
     #[serde(rename = "GeoLong")]
     pub geo_long: f64,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NBAStadiumsResponse {
-    pub data: Vec<NBAStadium>,
-    pub league: String,
-}

@@ -16,7 +16,7 @@ export function PostseasonBadge({ size = "sm" }: PostseasonBadgeProps) {
       fontSize={fontSize}
       px="2"
       py="1"
-      borderRadius="full"
+      borderRadius="sm"
     >
       Playoffs
     </Badge>

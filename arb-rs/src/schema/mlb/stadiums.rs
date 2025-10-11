@@ -47,9 +47,3 @@ pub struct Stadium {
     #[serde(rename = "Type")]
     pub stadium_type: Option<String>,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StadiumsResponse {
-    pub data: Vec<Stadium>,
-    pub league: String,
-}

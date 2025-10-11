@@ -168,7 +168,6 @@ pub struct GameOdds {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OddsByDateResponse {
-    pub league: String,
     pub date: String,
     pub data: Vec<GameOdds>,
     pub games_count: usize,
@@ -177,14 +176,12 @@ pub struct OddsByDateResponse {
 impl OddsByDateResponse {
     pub fn from_json(
         data: serde_json::Value,
-        league: String,
         date: String,
     ) -> Result<Self, serde_json::Error> {
         let game_odds: Vec<GameOdds> = serde_json::from_value(data)?;
         let games_count = game_odds.len();
 
         Ok(OddsByDateResponse {
-            league,
             date,
             data: game_odds,
             games_count,

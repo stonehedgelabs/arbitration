@@ -238,7 +238,7 @@ export function MLBScoreCard({
     <Card.Root
       key={game.id}
       bg="primary.25"
-      borderRadius="12px"
+      borderRadius="sm"
       shadow="sm"
       border="1px"
       borderColor="text.400"
@@ -260,37 +260,6 @@ export function MLBScoreCard({
               {game.status === GameStatus.LIVE && <LiveBadge />}
             </HStack>
           </HStack>
-
-          {/* Location Information */}
-          {(game.stadium || game.city) && (
-            <HStack justify="space-between" align="center" gap="3">
-              <HStack gap="2" align="center" flexWrap="wrap">
-                {game.stadium && (
-                  <StadiumBadge stadium={orEmpty(game.stadium)} size="xs" />
-                )}
-                {game.city && game.state && (
-                  <LocationBadge
-                    city={orEmpty(game.city)}
-                    state={orEmpty(game.state)}
-                    size="xs"
-                  />
-                )}
-                {game.division && (
-                  <DivisionBadge division={orEmpty(game.division)} size="xs" />
-                )}
-              </HStack>
-
-              {/* Bases Icon for MLB Live Games */}
-              {game.status === GameStatus.LIVE && (
-                <Bases
-                  runnerOnFirst={game.runnerOnFirst || false}
-                  runnerOnSecond={game.runnerOnSecond || false}
-                  runnerOnThird={game.runnerOnThird || false}
-                  size="sm"
-                />
-              )}
-            </HStack>
-          )}
 
           {/* Away Team */}
           <HStack justify="space-between" align="center" gap="2">
@@ -349,10 +318,10 @@ export function MLBScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg="primary.25"
+                  bg={"primary.100"}
                   borderRadius="6px"
                   border="1px solid"
-                  borderColor="text.400"
+                  borderColor="text.200"
                   w="24"
                   flexShrink="0"
                 >
@@ -423,12 +392,12 @@ export function MLBScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg="primary.25"
-                  borderRadius="6px"
+                  borderRadius="sm"
                   border="1px solid"
-                  borderColor="text.400"
+                  borderColor="text.200"
                   w="24"
                   flexShrink="0"
+                  bg={"primary.100"}
                 >
                   <TeamOddsDisplay
                     odds={game.odds}

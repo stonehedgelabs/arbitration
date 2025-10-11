@@ -2,17 +2,14 @@ use axum_test::TestServer;
 use serde_json::Value;
 use std::env;
 
-// Import the main application
 use arb_rs::cache::Cache;
 use arb_rs::config::{ArbConfig, CacheConfig, CacheMode, CacheTtlConfig};
 use arb_rs::server::Server;
 
 async fn setup_test_server() -> TestServer {
-    // Set up test environment
     env::set_var("SPORTDATAIO_API_KEY", "test_api_key");
     env::set_var("REDIS_URL", "redis://127.0.0.1:6379");
 
-    // Create a test cache (this will fail if Redis is not available, but that's ok for tests)
     let redis_url =
         env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let cache_config = CacheConfig {
@@ -38,7 +35,6 @@ async fn setup_test_server() -> TestServer {
     let cache = match Cache::new(cache_config).await {
         Ok(cache) => std::sync::Arc::new(async_std::sync::Mutex::new(cache)),
         Err(_) => {
-            // If Redis is not available, create a minimal test server
             use axum::{extract::Query, response::Json, routing::get, Router};
             use std::collections::HashMap;
 
@@ -149,7 +145,6 @@ async fn setup_test_server() -> TestServer {
         }
     };
 
-    // Create a minimal test config
     let test_config = ArbConfig::default();
     let server = Server::new(cache, test_config);
     let app = server.build();
@@ -180,7 +175,6 @@ async fn test_team_profile_mlb() {
         .add_query_param("league", "mlb")
         .await;
 
-    // The response might be 200 (if API key works), 500 (if API key is invalid), or 500 (if Redis not available)
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {
@@ -200,7 +194,6 @@ async fn test_box_score_mlb() {
         .add_query_param("game_id", "76790")
         .await;
 
-    // The response might be 200 (if API key works and data is valid), 500 (if API key is invalid), or 500 (if Redis not available)
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {
@@ -232,7 +225,6 @@ async fn test_scores_mlb() {
         .add_query_param("date", "2025-01-15")
         .await;
 
-    // The response might be 200 (if API key works), 500 (if API key is invalid), or 500 (if Redis not available)
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {
@@ -255,7 +247,6 @@ async fn test_scores_mlb_default_date() {
         .add_query_param("league", "mlb")
         .await;
 
-    // The response might be 200 (if API key works), 500 (if API key is invalid), or 500 (if Redis not available)
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {
@@ -288,7 +279,6 @@ async fn test_box_score_final_mlb() {
         .add_query_param("game_id", "12345")
         .await;
 
-    // The response might be 200 (if API key works), 500 (if API key is invalid), or 500 (if Redis not available)
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {
@@ -310,7 +300,6 @@ async fn test_box_score_final_missing_game_id() {
         .add_query_param("league", "mlb")
         .await;
 
-    // Should return 400 for missing game_id
     assert_eq!(response.status_code(), 400);
 }
 
@@ -336,7 +325,6 @@ async fn test_schedule_mlb() {
         .add_query_param("league", "mlb")
         .await;
 
-    // The response might be 200 (if API key works), 500 (if API key is invalid), or 500 (if Redis not available)
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {
@@ -356,7 +344,6 @@ async fn test_headshots_mlb() {
         .add_query_param("league", "mlb")
         .await;
 
-    // The response might be 200 (if API key works), 500 (if API key is invalid), or 500 (if Redis not available)
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {
@@ -380,7 +367,6 @@ async fn test_play_by_play_mlb() {
         .add_query_param("game_id", "12345")
         .await;
 
-    // The response might be 200 (if API key works), 500 (if API key is invalid), or 500 (if Redis not available)
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {
@@ -403,7 +389,6 @@ async fn test_play_by_play_missing_game_id() {
         .add_query_param("league", "mlb")
         .await;
 
-    // Should return 400 for missing game_id
     assert_eq!(response.status_code(), 400);
 }
 
@@ -411,7 +396,6 @@ async fn test_play_by_play_missing_game_id() {
 async fn test_invalid_endpoints() {
     let server = setup_test_server().await;
 
-    // Test non-existent endpoint
     let response = server.get("/api/v1/nonexistent").await;
 
     assert_eq!(response.status_code(), 404);
@@ -427,10 +411,8 @@ async fn test_cors_headers() {
         .await;
 
     assert_eq!(response.status_code(), 200);
-    // CORS headers should be present (handled by tower-http CORS layer)
 }
 
-// Test data validation
 #[tokio::test]
 async fn test_scores_with_invalid_date_format() {
     let server = setup_test_server().await;
@@ -441,8 +423,6 @@ async fn test_scores_with_invalid_date_format() {
         .add_query_param("date", "invalid-date")
         .await;
 
-    // Should still work, just use the invalid date as-is
-    // The API will handle the validation
     assert!(response.status_code() == 200 || response.status_code() == 500);
 }
 
@@ -456,7 +436,6 @@ async fn test_scores_with_days_back_parameter() {
         .add_query_param("days_back", "5")
         .await;
 
-    // Should work with custom days_back parameter
     assert!(response.status_code() == 200 || response.status_code() == 500);
 
     if response.status_code() == 200 {

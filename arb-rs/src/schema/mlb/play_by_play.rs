@@ -310,8 +310,4 @@ pub struct Pitch {
     pub looking: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlayByPlayApiResponse {
-    pub data: PlayByPlayResponse,
-    pub league: String,
-}
+// PlayByPlayApiResponse removed - use PlayByPlayResponse directly

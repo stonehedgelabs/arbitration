@@ -3,28 +3,20 @@ use serde::{Deserialize, Serialize};
 use crate::schema::{
     data_type::DataType,
     mlb::{
-        box_score::BoxScoreResponse, game_by_date::GameByDateResponse,
-        odds::OddsByDateResponse, schedule::MLBScheduleResponse,
-        stadiums::StadiumsResponse, teams::TeamProfiles,
+        box_score::BoxScore, game_by_date::GameByDateResponse, odds::OddsByDateResponse,
+        schedule::MLBScheduleGame, stadiums::Stadium, teams::TeamProfiles,
     },
     nba::{
-        box_score::NBABoxScoreResponse,
-        headshots::PlayerHeadshots,
-        play_by_play::NBAPlayByPlayResponse,
-        schedule::NBAScheduleResponse,
-        stadiums::NBAStadiumsResponse,
-        teams::NBATeamProfilesResponse,
+        box_score::NBABoxScoreResponse, headshots::PlayerHeadshots,
+        play_by_play::NBAPlayByPlayResponse, schedule::NBAScheduleGame,
+        stadiums::NBAStadium, teams::NBATeamProfile,
     },
     nfl::{
-        box_score::NFLBoxScoreResponse, game_by_date::NFLGameByDateResponse, headshots::NFLHeadshotsResponse,
-        play_by_play::NFLPlayByPlayResponse, schedule::NFLScheduleResponse,
-        scores::NFLScoresResponse, stadiums::NFLStadiumsResponse,
-        teams::NFLTeamProfilesResponse,
+        box_score::NFLBoxScoreGame, game_by_date::NFLGameByDate, headshots::NFLHeadshot,
+        play_by_play::NFLPlayByPlayResponse, schedule::NFLScheduleGame,
+        scores::NFLScoresGame, stadiums::NFLStadium, teams::NFLTeamProfile,
     },
 };
-
-// Import the wrapper from uses.rs
-use crate::uses::MLBPlayByPlayWrapper;
 
 /// Generic response wrapper for different leagues
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,84 +30,54 @@ pub struct LeagueResponse {
 
 /// League-specific data types
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "league", content = "data")]
+#[serde(untagged)]
 pub enum LeagueData {
-    #[serde(rename = "mlb")]
     Mlb(Box<MLBData>),
-    #[serde(rename = "nba")]
     Nba(Box<NBAData>),
-    #[serde(rename = "nfl")]
     Nfl(Box<NFLData>),
 }
 
 /// MLB-specific data types
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "data_type", content = "data")]
+#[serde(untagged)]
 pub enum MLBData {
-    #[serde(rename = "schedule")]
-    Schedule(MLBScheduleResponse),
-    #[serde(rename = "current_games")]
-    CurrentGames(MLBScheduleResponse),
-    #[serde(rename = "team_profiles")]
+    Schedule(Vec<MLBScheduleGame>),
+    CurrentGames(Vec<MLBScheduleGame>),
     TeamProfiles(TeamProfiles),
-    #[serde(rename = "headshots")]
     Headshots(serde_json::Value), // MLB headshots uses generic JSON
-    #[serde(rename = "stadiums")]
-    Stadiums(StadiumsResponse),
-    #[serde(rename = "box_score")]
-    BoxScore(BoxScoreResponse),
-    #[serde(rename = "play_by_play")]
-    PlayByPlay(MLBPlayByPlayWrapper),
-    #[serde(rename = "odds")]
+    Stadiums(Vec<Stadium>),
+    BoxScore(BoxScore),
+    PlayByPlay(serde_json::Value),
     Odds(OddsByDateResponse),
-    #[serde(rename = "game_by_date")]
     GameByDate(GameByDateResponse),
-    #[serde(rename = "scores")]
     Scores(serde_json::Value), // MLB scores uses generic JSON
 }
 
 /// NBA-specific data types
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "data_type", content = "data")]
+#[serde(untagged)]
 pub enum NBAData {
-    #[serde(rename = "schedule")]
-    Schedule(NBAScheduleResponse),
-    #[serde(rename = "current_games")]
-    CurrentGames(NBAScheduleResponse),
-    #[serde(rename = "stadiums")]
-    Stadiums(NBAStadiumsResponse),
-    #[serde(rename = "team_profiles")]
-    TeamProfiles(NBATeamProfilesResponse),
-    #[serde(rename = "headshots")]
+    Schedule(Vec<NBAScheduleGame>),
+    CurrentGames(Vec<NBAScheduleGame>),
+    Stadiums(Vec<NBAStadium>),
+    TeamProfiles(Vec<NBATeamProfile>),
     Headshots(PlayerHeadshots),
-    #[serde(rename = "play_by_play")]
     PlayByPlay(NBAPlayByPlayResponse),
-    #[serde(rename = "scores")]
-    Scores(NBAScheduleResponse),
-    #[serde(rename = "box_score")]
+    Scores(Vec<NBAScheduleGame>),
     BoxScore(NBABoxScoreResponse),
 }
 
 /// NFL-specific data types
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "data_type", content = "data")]
+#[serde(untagged)]
 pub enum NFLData {
-    #[serde(rename = "schedule")]
-    Schedule(NFLScheduleResponse),
-    #[serde(rename = "current_games")]
-    CurrentGames(NFLScheduleResponse),
-    #[serde(rename = "team_profiles")]
-    TeamProfiles(NFLTeamProfilesResponse),
-    #[serde(rename = "headshots")]
-    Headshots(NFLHeadshotsResponse),
-    #[serde(rename = "game_by_date")]
-    GameByDate(NFLGameByDateResponse),
-    #[serde(rename = "play_by_play")]
+    Schedule(Vec<NFLScheduleGame>),
+    CurrentGames(Vec<NFLScheduleGame>),
+    TeamProfiles(Vec<NFLTeamProfile>),
+    Headshots(Vec<NFLHeadshot>),
+    GameByDate(Vec<NFLGameByDate>),
     PlayByPlay(Box<NFLPlayByPlayResponse>),
-    #[serde(rename = "scores")]
-    Scores(NFLScoresResponse),
-    #[serde(rename = "stadiums")]
-    Stadiums(NFLStadiumsResponse),
-    #[serde(rename = "box_score")]
-    BoxScore(NFLBoxScoreResponse),
+    Scores(Vec<NFLScoresGame>),
+    Stadiums(Vec<NFLStadium>),
+    BoxScore(Vec<NFLBoxScoreGame>),
 }

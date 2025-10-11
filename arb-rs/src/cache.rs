@@ -37,7 +37,6 @@ impl Cache {
 
         match self.config.mode {
             crate::config::CacheMode::Infinite => {
-                // Cache indefinitely - use SET without expiration
                 redis::cmd("SET")
                     .arg(key.as_ref())
                     .arg(value)
@@ -45,7 +44,6 @@ impl Cache {
                     .await?;
             }
             crate::config::CacheMode::TtlBased => {
-                // Use custom TTL - use SETEX with expiration
                 redis::cmd("SETEX")
                     .arg(key.as_ref())
                     .arg(expiry_seconds)
@@ -65,7 +63,6 @@ impl Cache {
 
         match self.config.mode {
             crate::config::CacheMode::Infinite => {
-                // Cache indefinitely - just use SET
                 redis::cmd("SET")
                     .arg(key.as_ref())
                     .arg(value)
@@ -73,7 +70,6 @@ impl Cache {
                     .await?;
             }
             crate::config::CacheMode::TtlBased => {
-                // Use sliding TTL logic
                 let script = r#"
                 local val = redis.call("GET", KEYS[1])
                 if val then

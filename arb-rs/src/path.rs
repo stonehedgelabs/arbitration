@@ -12,10 +12,8 @@ pub enum League {
     Soccer,
 }
 
-// Base URL for sportsdata.io API
 const BASE_URL: &str = "https://api.sportsdata.io/v3";
 
-// Path structs for different API endpoints
 #[derive(Debug, Clone)]
 pub struct TeamProfilePath {
     league: League,
@@ -111,7 +109,6 @@ pub struct OddsByDatePath {
     date: Option<String>,
 }
 
-// Implement Display trait for all path types
 impl std::fmt::Display for TeamProfilePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -182,7 +179,6 @@ impl std::fmt::Display for PostseasonSchedulePath {
                 )
             }
             _ => {
-                // For other leagues, fall back to regular schedule
                 write!(
                     f,
                     "{}/{}/scores/json/Games",
@@ -480,7 +476,6 @@ impl std::fmt::Display for OddsByDatePath {
     }
 }
 
-// Helper functions to create path instances
 pub fn team_profile_path(league: League) -> TeamProfilePath {
     TeamProfilePath { league }
 }

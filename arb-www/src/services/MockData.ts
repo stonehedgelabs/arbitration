@@ -12,8 +12,8 @@ export const leagues: MockLeague[] = [
   { id: 'nfl', name: 'National Football League', abbreviation: 'NFL', color: '#013369' },
   { id: 'nba', name: 'National Basketball Association', abbreviation: 'NBA', color: '#C8102E' },
   { id: 'mlb', name: 'Major League Baseball', abbreviation: 'MLB', color: '#002D72' },
-  { id: 'nhl', name: 'National Hockey League', abbreviation: 'NHL', color: '#000000' },
-  { id: 'mls', name: 'Major League Soccer', abbreviation: 'MLS', color: '#005F45' },
+  // { id: 'nhl', name: 'National Hockey League', abbreviation: 'NHL', color: '#000000' },
+  // { id: 'mls', name: 'Major League Soccer', abbreviation: 'MLS', color: '#005F45' },
 ];
 
 export const favoriteTeams = [

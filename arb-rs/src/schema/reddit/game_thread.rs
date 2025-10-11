@@ -56,12 +56,10 @@ pub fn find_live_game_thread(listing: &RedditListing) -> Option<&RedditPost> {
     listing.data.children.iter().map(|c| &c.data).find(|post| {
         let title = post.title.to_lowercase();
 
-        // Check if title contains any game thread identifier
         let is_game_thread = game_thread_identifiers
             .iter()
             .any(|identifier| title.contains(identifier));
 
-        // Check if title contains any exclusion identifier
         let is_excluded = exclude_identifiers
             .iter()
             .any(|identifier| title.contains(identifier));

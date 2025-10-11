@@ -3,8 +3,8 @@
 [server]
 host = "0.0.0.0"
 port = 3000
-cors_origins = "http://localhost:5173,http://localhost:3000,https://eaa2da739953.ngrok.app"
-client_url = "https://eaa2da739953.ngrok.app"
+cors_origins = "http://localhost:5173,http://localhost:3000,https://3a4c20497251.ngrok.app"
+client_url = "https://3a4c20497251.ngrok.app"
 
 [cache]
 enabled = true
@@ -37,13 +37,13 @@ postseason = "2025POST"
 postseason_start = "01-01"
 
 [seasons.current_seasons.nba]
-regular = "2025"
-postseason = "2025POST"
+regular = "2026"
+postseason = "2026POST"
 postseason_start = "04-01"
 
 [seasons.current_seasons.nhl]
-regular = "2025"
-postseason = "2025POST"
+regular = "2026"
+postseason = "2026POST"
 postseason_start = "04-01"
 
 [api]

@@ -71,6 +71,14 @@ const lightColors = {
     200: { value: "#2A4057" },
   },
 
+  unifiedFeed: {
+    reddit: {
+      home: { value: "#efefef" },
+      away: { value: "#fceccf" },
+    },
+    twitter: "#e1eff4",
+  },
+
   // Interactive states
   interactive: {
     hover: { value: "#D7E1EC" },
@@ -84,13 +92,6 @@ const lightColors = {
   divider: { value: "#E0E0E0" },
   overlay: { value: "rgba(0, 0, 0, 0.5)" },
 
-  unifiedFeed: {
-    reddit: {
-      home: { value: "gray.100" },
-      away: { value: "orange.100" },
-    },
-    twitter: "blue.100",
-  },
 
   // Buttons
   buttons: {
