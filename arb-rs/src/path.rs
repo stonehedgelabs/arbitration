@@ -252,23 +252,44 @@ impl std::fmt::Display for ScoresBasicFinalPath {
 impl std::fmt::Display for GamesByDatePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.date {
-            Some(ref date) => {
-                write!(
-                    f,
-                    "{}/{}/scores/json/GamesByDate/{}",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase(),
-                    date
-                )
-            }
-            None => {
-                write!(
-                    f,
-                    "{}/{}/scores/json/GamesByDate",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
-                )
-            }
+            Some(ref date) => match self.league {
+                League::Nfl => {
+                    write!(
+                        f,
+                        "{}/{}/scores/json/ScoresByDateFinal/{}",
+                        BASE_URL,
+                        self.league.to_string().to_lowercase(),
+                        date
+                    )
+                }
+                _ => {
+                    write!(
+                        f,
+                        "{}/{}/scores/json/GamesByDate/{}",
+                        BASE_URL,
+                        self.league.to_string().to_lowercase(),
+                        date
+                    )
+                }
+            },
+            None => match self.league {
+                League::Nfl => {
+                    write!(
+                        f,
+                        "{}/{}/scores/json/ScoresByDateFinal",
+                        BASE_URL,
+                        self.league.to_string().to_lowercase()
+                    )
+                }
+                _ => {
+                    write!(
+                        f,
+                        "{}/{}/scores/json/GamesByDate",
+                        BASE_URL,
+                        self.league.to_string().to_lowercase()
+                    )
+                }
+            },
         }
     }
 }
@@ -277,21 +298,48 @@ impl std::fmt::Display for GamesByDateFinalPath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.date {
             Some(ref date) => {
-                write!(
-                    f,
-                    "{}/{}/scores/json/GamesByDateFinal/{}",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase(),
-                    date
-                )
+                match self.league {
+                    League::Nfl => {
+                        // NFL uses ScoresByDateFinal instead of GamesByDateFinal
+                        write!(
+                            f,
+                            "{}/{}/scores/json/ScoresByDateFinal/{}",
+                            BASE_URL,
+                            self.league.to_string().to_lowercase(),
+                            date
+                        )
+                    }
+                    _ => {
+                        write!(
+                            f,
+                            "{}/{}/scores/json/GamesByDateFinal/{}",
+                            BASE_URL,
+                            self.league.to_string().to_lowercase(),
+                            date
+                        )
+                    }
+                }
             }
             None => {
-                write!(
-                    f,
-                    "{}/{}/scores/json/GamesByDateFinal",
-                    BASE_URL,
-                    self.league.to_string().to_lowercase()
-                )
+                match self.league {
+                    League::Nfl => {
+                        // NFL uses ScoresByDateFinal instead of GamesByDateFinal
+                        write!(
+                            f,
+                            "{}/{}/scores/json/ScoresByDateFinal",
+                            BASE_URL,
+                            self.league.to_string().to_lowercase()
+                        )
+                    }
+                    _ => {
+                        write!(
+                            f,
+                            "{}/{}/scores/json/GamesByDateFinal",
+                            BASE_URL,
+                            self.league.to_string().to_lowercase()
+                        )
+                    }
+                }
             }
         }
     }
@@ -347,13 +395,26 @@ impl std::fmt::Display for BoxScoresFinalPath {
 
 impl std::fmt::Display for BoxScorePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}/{}/stats/json/BoxScore/{}",
-            BASE_URL,
-            self.league.to_string().to_lowercase(),
-            self.id
-        )
+        match self.league {
+            League::Nfl => {
+                write!(
+                    f,
+                    "{}/{}/stats/json/BoxScoreByScoreIDV3/{}",
+                    BASE_URL,
+                    self.league.to_string().to_lowercase(),
+                    self.id
+                )
+            }
+            _ => {
+                write!(
+                    f,
+                    "{}/{}/stats/json/BoxScore/{}",
+                    BASE_URL,
+                    self.league.to_string().to_lowercase(),
+                    self.id
+                )
+            }
+        }
     }
 }
 

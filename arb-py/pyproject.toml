@@ -14,6 +14,7 @@ dependencies = [
     "playwright",
     "beautifulsoup4",
     "python-dotenv",
+    "faker",
     "spidur==0.2.0",
     "openai",
 ]

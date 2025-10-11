@@ -12,9 +12,14 @@ use crate::schema::{
         stadiums::NBAStadium, teams::NBATeamProfile,
     },
     nfl::{
-        box_score::NFLBoxScoreGame, game_by_date::NFLGameByDate, headshots::NFLHeadshot,
-        play_by_play::NFLPlayByPlayResponse, schedule::NFLScheduleGame,
-        scores::NFLScoresGame, stadiums::NFLStadium, teams::NFLTeamProfile,
+        box_score::{NFLBoxScoreByScoreIDV3Response, NFLBoxScoreGame},
+        game_by_date::NFLGameByDate,
+        headshots::NFLHeadshot,
+        play_by_play::NFLPlayByPlayResponse,
+        schedule::NFLScheduleGame,
+        scores::NFLScoresGame,
+        stadiums::NFLStadium,
+        teams::NFLTeamProfile,
     },
 };
 
@@ -80,4 +85,5 @@ pub enum NFLData {
     Scores(Vec<NFLScoresGame>),
     Stadiums(Vec<NFLStadium>),
     BoxScore(Vec<NFLBoxScoreGame>),
+    BoxScoreByScoreIDV3(Box<NFLBoxScoreByScoreIDV3Response>),
 }

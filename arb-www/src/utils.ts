@@ -86,11 +86,6 @@ export const convertUtcToLocalDate = (utcDateTime: string): string => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
 
-/**
- * Extracts date from an EST datetime string and returns it in YYYY-MM-DD format
- * @param estDateTime - EST datetime string (e.g., "2025-10-01T21:08:00")
- * @returns {string} Date in YYYY-MM-DD format
- */
 export const extractDateFromEst = (estDateTime: string): string => {
   // For EST times, we just extract the date part without timezone conversion
   return estDateTime.split("T")[0];

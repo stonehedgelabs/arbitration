@@ -407,6 +407,47 @@ async fn fetch_team_data_from_api(
             tracing::info!("Successfully fetched team profile data for NBA");
             Ok(body)
         }
+        League::Nfl => {
+            let api_key = &config.api.sportsdata_api_key;
+
+            let client = reqwest::Client::new();
+
+            tracing::info!("Making real API request for NFL team profile: {}", api_url);
+
+            let response = client
+                .get(api_url)
+                .query(&[("key", &api_key)])
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to make HTTP request: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                tracing::error!(
+                    "API request failed with status {}: {}",
+                    status,
+                    error_text
+                );
+                return Err(StatusCode::from_u16(status.as_u16())
+                    .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                    .into());
+            }
+
+            let body = response.text().await.map_err(|e| {
+                tracing::error!("Failed to read response body: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            tracing::info!("Successfully fetched team profile data for NFL");
+            Ok(body)
+        }
         _ => Err(Error::NotImplemented(format!(
             "Teams data for league: {:?}",
             league
@@ -459,7 +500,7 @@ async fn handle_schedule_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    if league != League::Mlb && league != League::Nfl {
+    if league != League::Mlb && league != League::Nfl && league != League::Nba {
         tracing::error!("Schedule not yet supported for league: {}", league);
         return Err(StatusCode::BAD_REQUEST.into());
     }
@@ -1482,6 +1523,135 @@ async fn fetch_schedule_from_api(
 
             Ok(body)
         }
+        League::Nfl => {
+            let api_key = &config.api.sportsdata_api_key;
+
+            let client = reqwest::Client::new();
+
+            tracing::info!("Making real API request for NFL schedule: {}", api_url);
+
+            let response = client
+                .get(api_url)
+                .query(&[("key", &api_key)])
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to make HTTP request: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                tracing::error!(
+                    "API request failed with status {}: {}",
+                    status,
+                    error_text
+                );
+                return Err(StatusCode::from_u16(status.as_u16())
+                    .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                    .into());
+            }
+
+            let body = response.text().await.map_err(|e| {
+                tracing::error!("Failed to read response body: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            tracing::info!(
+                "Successfully fetched NFL schedule data. Response length: {} characters",
+                body.len()
+            );
+
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body) {
+                if let Some(array) = parsed.as_array() {
+                    tracing::info!(
+                        "Response is valid JSON array with {} items",
+                        array.len()
+                    );
+                } else {
+                    tracing::warn!(
+                        "Response is valid JSON but not an array: {:?}",
+                        parsed
+                    );
+                }
+            } else {
+                tracing::error!("Response is not valid JSON");
+            }
+
+            Ok(body)
+        }
+        League::Nba => {
+            let api_key = &config.api.sportsdata_api_key;
+
+            let client = reqwest::Client::new();
+
+            tracing::info!("Making real API request for NBA schedule: {}", api_url);
+
+            let response = client
+                .get(api_url)
+                .query(&[("key", &api_key)])
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to make HTTP request: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                tracing::error!(
+                    "API request failed with status {}: {}",
+                    status,
+                    error_text
+                );
+                return Err(StatusCode::from_u16(status.as_u16())
+                    .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                    .into());
+            }
+
+            let body = response.text().await.map_err(|e| {
+                tracing::error!("Failed to read response body: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+            tracing::info!(
+                "Successfully fetched NBA schedule data. Response length: {} characters",
+                body.len()
+            );
+
+            let preview = if body.len() > 500 {
+                format!("{}...", &body[..500])
+            } else {
+                body.clone()
+            };
+            tracing::info!("Response preview: {}", preview);
+
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body) {
+                if let Some(array) = parsed.as_array() {
+                    tracing::info!(
+                        "Response is valid JSON array with {} items",
+                        array.len()
+                    );
+                } else {
+                    tracing::warn!(
+                        "Response is valid JSON but not an array: {:?}",
+                        parsed
+                    );
+                }
+            } else {
+                tracing::error!("Response is not valid JSON");
+            }
+
+            Ok(body)
+        }
         _ => {
             tracing::error!("Schedule not supported for league: {}", league);
             Err(StatusCode::BAD_REQUEST.into())
@@ -2181,7 +2351,7 @@ pub async fn handle_box_score_request(
             }
         }
         League::Nfl => {
-            let nfl_box_score: Vec<crate::schema::nfl::box_score::NFLBoxScoreGame> =
+            let nfl_box_score: crate::schema::nfl::box_score::NFLBoxScoreByScoreIDV3Response =
                 serde_json::from_str(&raw_data).map_err(|e| {
                     tracing::error!("Failed to parse NFL box score data: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
@@ -2191,7 +2361,9 @@ pub async fn handle_box_score_request(
                 league: league.to_string(),
                 data_type: DataType::BoxScore,
                 data: crate::schema::league_response::LeagueData::Nfl(Box::new(
-                    crate::schema::league_response::NFLData::BoxScore(nfl_box_score),
+                    crate::schema::league_response::NFLData::BoxScoreByScoreIDV3(
+                        Box::new(nfl_box_score),
+                    ),
                 )),
                 filtered_count: 1,
                 total_count: 1,

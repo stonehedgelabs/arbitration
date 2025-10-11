@@ -1,7 +1,7 @@
 import { Box, VStack, HStack, Flex } from "@chakra-ui/react";
 import { SkeletonCircle, SkeletonText } from "../Skeleton";
 
-export function MLBSkeleton() {
+export function NFLSkeleton() {
   return (
     <Box p="4" bg="primary.25" borderRadius="sm">
       <VStack gap="4" align="stretch" w="full">

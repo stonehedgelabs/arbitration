@@ -9,8 +9,13 @@ import { getCurrentLocalDate } from '../../utils.ts';
 // Async thunk for fetching box score data
 export const fetchBoxScore = createAsyncThunk(
   'sportsData/fetchBoxScore',
-  async ({ league, gameId }: { league: string; gameId: string }) => {
-    const apiUrl = buildApiUrl('/api/v1/box-score', { league, game_id: gameId });
+  async ({ league, gameId, scoreId }: { league: string; gameId: string; scoreId?: string }) => {
+    // For NFL, use score_id parameter; for other leagues, use game_id
+    const params: Record<string, string> = league.toLowerCase() === 'nfl' && scoreId 
+      ? { league, score_id: scoreId }
+      : { league, game_id: gameId };
+    
+    const apiUrl = buildApiUrl('/api/v1/box-score', params);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch box score');

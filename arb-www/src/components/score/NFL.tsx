@@ -5,9 +5,6 @@ import { Skeleton } from "../Skeleton";
 import {
   PostseasonBadge,
   LiveBadge,
-  StadiumBadge,
-  LocationBadge,
-  DivisionBadge,
   StatusBadge,
   QuarterBadge,
 } from "../badge";
@@ -227,7 +224,7 @@ export function NFLScoreCard({
     <Card.Root
       key={game.id}
       bg="primary.25"
-      borderRadius="12px"
+      borderRadius="sm"
       shadow="sm"
       border="1px"
       borderColor="text.400"
@@ -249,27 +246,6 @@ export function NFLScoreCard({
               {game.status === GameStatus.LIVE && <LiveBadge />}
             </HStack>
           </HStack>
-
-          {/* Location Information */}
-          {(game.stadium || game.city) && (
-            <HStack justify="space-between" align="center" gap="3">
-              <HStack gap="2" align="center" flexWrap="wrap">
-                {game.stadium && (
-                  <StadiumBadge stadium={orEmpty(game.stadium)} size="xs" />
-                )}
-                {game.city && game.state && (
-                  <LocationBadge
-                    city={orEmpty(game.city)}
-                    state={orEmpty(game.state)}
-                    size="xs"
-                  />
-                )}
-                {game.division && (
-                  <DivisionBadge division={orEmpty(game.division)} size="xs" />
-                )}
-              </HStack>
-            </HStack>
-          )}
 
           {/* Away Team */}
           <HStack justify="space-between" align="center" gap="2">
@@ -328,10 +304,9 @@ export function NFLScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg="primary.25"
+                  bg={"primary.100"}
+                  borderColor="text.200"
                   borderRadius="6px"
-                  border="1px solid"
-                  borderColor="text.400"
                   w="24"
                   flexShrink="0"
                 >
@@ -402,10 +377,9 @@ export function NFLScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg="primary.25"
                   borderRadius="6px"
-                  border="1px solid"
-                  borderColor="text.400"
+                  bg={"primary.100"}
+                  borderColor="text.200"
                   w="24"
                   flexShrink="0"
                 >

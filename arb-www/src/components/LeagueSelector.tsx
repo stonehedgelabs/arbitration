@@ -1,8 +1,12 @@
 import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
-import { setSelectedLeague } from "../store/slices/sportsDataSlice.ts";
+import {
+  setSelectedLeague,
+  setSelectedDate,
+} from "../store/slices/sportsDataSlice.ts";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Toggle } from "./Toggle";
 import { League as ConfigLeague } from "./../config.ts";
+import { getCurrentLocalDate } from "../utils.ts";
 
 export interface League {
   id: string;
@@ -22,6 +26,9 @@ export function LeagueSelector() {
 
   const handleLeagueChange = (leagueId: string) => {
     dispatch(setSelectedLeague(leagueId));
+
+    // Reset date to today when league changes
+    dispatch(setSelectedDate(getCurrentLocalDate()));
 
     // Navigate to the appropriate URL based on current path
     const currentPath = location.pathname;

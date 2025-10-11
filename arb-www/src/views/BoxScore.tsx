@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Box, VStack, HStack, Text } from "@chakra-ui/react";
+import { Box, VStack, Text } from "@chakra-ui/react";
 import { motion } from "motion/react";
 
-import { BackButton } from "../components/BackButton.tsx";
 import { BoxScoreDetailMLB } from "../components/boxscore/MLB.tsx";
+import { BoxScoreDetailNFL } from "../components/boxscore/NFL.tsx";
 import { UnifiedGameFeed } from "../components/UnifiedGameFeed.tsx";
 import { MLBSkeleton } from "../components/boxscore/MLBSkeleton.tsx";
 import { UnifiedGameFeedSkeleton } from "../components/UnifiedGameFeedSkeleton.tsx";
 import { TopNavigation } from "../components/TopNavigation.tsx";
 import { AppLayout } from "../components/containers/AppLayout.tsx";
+import { ErrorState } from "../components/ErrorStates.tsx";
 
 import { useAppSelector, useAppDispatch } from "../store/hooks.ts";
 import {
@@ -27,6 +28,12 @@ export function BoxScore({ onBack }: BoxScoreProps) {
   const { league, gameId } = useParams<{ league: string; gameId: string }>();
   const dispatch = useAppDispatch();
 
+  // For NFL games, the gameId in the URL is actually the ScoreID
+  // For other leagues, the gameId is the GameID
+  const isNFL = league?.toLowerCase() === "nfl";
+  const actualGameId = gameId; // For NFL, gameId is ScoreID; for others, it's GameID
+  const scoreId: string | undefined = isNFL ? gameId : undefined; // For NFL, use gameId as scoreId; for others, no scoreId
+
   // Get team profiles
   const { teamProfiles, fetchTeamProfiles } = useArb();
 
@@ -34,6 +41,9 @@ export function BoxScore({ onBack }: BoxScoreProps) {
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
   const boxScoreError = useAppSelector(
     (state) => state.sportsData.boxScoreError,
+  );
+  const boxScoreRequests = useAppSelector(
+    (state) => state.sportsData.boxScoreRequests,
   );
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
@@ -49,10 +59,24 @@ export function BoxScore({ onBack }: BoxScoreProps) {
   // Fetch box score data and team profiles when component mounts
   useEffect(() => {
     if (league && gameId) {
-      dispatch(fetchBoxScore({ league, gameId }));
+      dispatch(
+        fetchBoxScore({
+          league,
+          gameId: actualGameId as string,
+          scoreId: scoreId,
+        }),
+      );
       fetchTeamProfiles(league);
     }
-  }, [gameId, league, dispatch, fetchTeamProfiles]);
+  }, [
+    gameId,
+    league,
+    scoreId,
+    actualGameId,
+    isNFL,
+    dispatch,
+    fetchTeamProfiles,
+  ]);
 
   useEffect(() => {
     if (!selectedLeague && league) {
@@ -62,12 +86,21 @@ export function BoxScore({ onBack }: BoxScoreProps) {
 
   // Extract game data from box score
   useEffect(() => {
-    if (boxScoreData[gameId || ""]?.data?.Game) {
-      setGameData(boxScoreData[gameId || ""].data.Game);
+    const boxScore = boxScoreData[actualGameId || ""]?.data;
+    if (boxScore) {
+      // For NFL, the data structure has a 'Score' field (capital S) instead of 'Game'
+      const gameData = boxScore.Score || boxScore.score || boxScore.Game;
+      if (gameData) {
+        setGameData(gameData);
+      }
     }
-  }, [boxScoreData, gameId]);
+  }, [boxScoreData, actualGameId]);
 
-  if (!gameData) {
+  // Check if we're currently loading data for this specific game
+  const isLoadingThisGame = boxScoreRequests.includes(actualGameId || "");
+
+  // Show loading state if we're loading data for this game OR if we don't have data yet and no error
+  if (isLoadingThisGame || (!gameData && !boxScoreError)) {
     return (
       <AppLayout>
         <motion.div
@@ -118,62 +151,17 @@ export function BoxScore({ onBack }: BoxScoreProps) {
     );
   }
 
-  if (boxScoreError) {
+  // Show error state only if there's an error AND we're not loading AND we don't have data for this specific game
+  if (boxScoreError && !isLoadingThisGame && !gameData) {
     return (
-      <Box minH="100vh" bg="primary.25">
-        <Box
-          bg="primary.25"
-          borderBottom="1px"
-          borderColor="border.100"
-          px="4"
-          py="3"
-        >
-          <HStack justify="space-between" align="center">
-            <BackButton onClick={onBack} />
-            <Box w="8" /> {/* Spacer */}
-          </HStack>
-        </Box>
-
-        <VStack gap="4" p="4" align="center" justify="center" minH="60vh">
-          <Text color="red.500" fontSize="lg" fontWeight="semibold">
-            Error Loading Game
-          </Text>
-          <Text color="text.400" textAlign="center">
-            {boxScoreError}
-          </Text>
-        </VStack>
-      </Box>
-    );
-  }
-
-  if (!gameData) {
-    return (
-      <Box minH="100vh" bg="primary.25">
-        <Box
-          bg="primary.25"
-          borderBottom="1px"
-          borderColor="border.100"
-          px="4"
-          py="3"
-        >
-          <HStack justify="space-between" align="center">
-            <BackButton onClick={onBack} />
-            <Text fontSize="lg" fontWeight="semibold" color="text.400">
-              Game Details
-            </Text>
-            <Box w="8" /> {/* Spacer */}
-          </HStack>
-        </Box>
-
-        <VStack gap="4" p="4" align="center" justify="center" minH="60vh">
-          <Text color="text.400" fontSize="lg" fontWeight="semibold">
-            No Game Data
-          </Text>
-          <Text color="text.500" textAlign="center">
-            Unable to load game information
-          </Text>
-        </VStack>
-      </Box>
+      <ErrorState
+        title="Error Loading Game"
+        message={boxScoreError}
+        onBack={onBack}
+        showBack={true}
+        showRetry={false}
+        variant="error"
+      />
     );
   }
 
@@ -212,9 +200,25 @@ export function BoxScore({ onBack }: BoxScoreProps) {
             <VStack align="stretch">
               {/* Box Score Section - Compressed */}
               <Box bg="primary.25">
+                {(() => {
+                  console.log("BoxScore Debug:", {
+                    paramLeague,
+                    LeagueMLB: League.MLB,
+                    LeagueNFL: League.NFL,
+                    isMLB: paramLeague === League.MLB,
+                    isNFL: paramLeague === League.NFL,
+                    gameId,
+                    actualGameId,
+                  });
+                  return null;
+                })()}
                 {paramLeague === League.MLB ? (
                   <Box transformOrigin="top center">
                     <BoxScoreDetailMLB gameId={gameId} league={paramLeague} />
+                  </Box>
+                ) : paramLeague === League.NFL ? (
+                  <Box transformOrigin="top center">
+                    <BoxScoreDetailNFL gameId={gameId} league={paramLeague} />
                   </Box>
                 ) : (
                   <VStack

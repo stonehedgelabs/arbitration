@@ -227,7 +227,7 @@ export function NBAScoreCard({
     <Card.Root
       key={game.id}
       bg="primary.25"
-      borderRadius="12px"
+      borderRadius="sm"
       shadow="sm"
       border="1px"
       borderColor="text.400"

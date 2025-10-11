@@ -150,12 +150,14 @@ const useArb = () => {
   /**
    * Fetch box score for a specific game ID and league
    */
-  const fetchBoxScore = useCallback(async (league: string, gameId: string): Promise<void> => {
+  const fetchBoxScore = useCallback(async (league: string, gameId: string, scoreId?: string): Promise<void> => {
     try {
-      const url = buildApiUrl('/api/v1/box-score', { 
-        league,
-        game_id: gameId
-      });
+      // For NFL, use score_id parameter; for other leagues, use game_id
+      const params: Record<string, string> = league.toLowerCase() === 'nfl' && scoreId 
+        ? { league, score_id: scoreId }
+        : { league, game_id: gameId };
+
+      const url = buildApiUrl('/api/v1/box-score', params);
 
       const response = await fetch(url, {
         method: 'GET',

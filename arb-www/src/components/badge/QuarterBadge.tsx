@@ -1,6 +1,5 @@
 // Third-party library imports
-import { Badge, Box } from "@chakra-ui/react";
-import { ChevronRight } from "lucide-react";
+import { Badge } from "@chakra-ui/react";
 
 interface QuarterBadgeProps {
   quarter: string;
@@ -13,10 +12,10 @@ export function QuarterBadge({
   quarter,
   time,
   size = "sm",
-  showChevron = true,
 }: QuarterBadgeProps) {
   const fontSize = size === "sm" ? "xs" : "sm";
-  const displayText = time ? `${quarter} ${time}` : quarter;
+  const label = quarter === "F" ? "Final" : quarter;
+  const displayText = time ? `${quarter} ${time}` : label;
 
   return (
     <Badge
@@ -29,11 +28,6 @@ export function QuarterBadge({
       borderColor="text.400"
     >
       {displayText}
-      {showChevron && (
-        <Box ml="1" w="3" h="3">
-          <ChevronRight size={12} />
-        </Box>
-      )}
     </Badge>
   );
 }

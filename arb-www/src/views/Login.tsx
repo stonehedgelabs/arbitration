@@ -94,8 +94,6 @@ export function Login() {
 
             {/* Login Options */}
             <Box
-              borderRadius="16px"
-              shadow="2xl"
               bg="primary.25"
               w="full"
               p={6}
@@ -109,15 +107,25 @@ export function Login() {
                   onClick={() => handleLogin("apple")}
                   w="full"
                   h="56px"
-                  borderWidth="1px"
-                  borderRadius="12px"
+                  borderRadius="sm"
                   fontSize="md"
                   fontWeight="medium"
-                  className="ios-button-press"
-                  bg="primary.25"
                   color="text.400"
-                  borderColor="text.200"
-                  shadow="md"
+                  bg="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
+                  boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"
+                  border="1px solid"
+                  borderColor="rgba(255,255,255,0.2)"
+                  _hover={{
+                    bg: "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
+                    transform: "translateY(-1px)",
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.3)",
+                  }}
+                  _active={{
+                    transform: "translateY(0)",
+                    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)",
+                  }}
+                  transition="all 0.2s ease"
                 >
                   <AppleIcon />
                   Continue with Apple
@@ -128,15 +136,25 @@ export function Login() {
                   onClick={() => handleLogin("google")}
                   w="full"
                   h="56px"
-                  borderWidth="1px"
-                  borderRadius="12px"
+                  borderRadius="sm"
                   fontSize="md"
                   fontWeight="medium"
-                  className="ios-button-press"
-                  bg="primary.25"
                   color="text.400"
-                  borderColor="text.200"
-                  shadow="md"
+                  bg="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
+                  boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"
+                  border="1px solid"
+                  borderColor="rgba(255,255,255,0.2)"
+                  _hover={{
+                    bg: "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
+                    transform: "translateY(-1px)",
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.3)",
+                  }}
+                  _active={{
+                    transform: "translateY(0)",
+                    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)",
+                  }}
+                  transition="all 0.2s ease"
                 >
                   <GoogleIcon />
                   Continue with Google
@@ -147,15 +165,25 @@ export function Login() {
                   onClick={() => handleLogin("guest")}
                   w="full"
                   h="56px"
-                  borderWidth="1px"
-                  borderRadius="12px"
+                  borderRadius="sm"
                   fontSize="md"
                   fontWeight="medium"
-                  className="ios-button-press"
-                  bg="primary.25"
                   color="text.400"
-                  borderColor="text.200"
-                  shadow="md"
+                  bg="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
+                  boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"
+                  border="1px solid"
+                  borderColor="rgba(255,255,255,0.2)"
+                  _hover={{
+                    bg: "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
+                    transform: "translateY(-1px)",
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.3)",
+                  }}
+                  _active={{
+                    transform: "translateY(0)",
+                    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)",
+                  }}
+                  transition="all 0.2s ease"
                 >
                   Continue as Guest
                 </Button>

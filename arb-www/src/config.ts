@@ -143,23 +143,23 @@ export const SPORTS_CONFIG = {
  */
 export const POSTSEASON_CONFIG = {
   [League.MLB]: {
-    startDate: '10-01', // MM-DD format
+    startDate: '10-01-2025', // MM-DD-YYYY format
     seasonIdentifier: '2025POST',
   },
   [League.NFL]: {
-    startDate: '01-01', // MM-DD format
+    startDate: '01-01-2026', // MM-DD-YYYY format
     seasonIdentifier: '2025POST',
   },
   [League.NBA]: {
-    startDate: '04-01', // MM-DD format
-    seasonIdentifier: '2025POST',
+    startDate: '04-01-2027', // MM-DD-YYYY format
+    seasonIdentifier: '2026POST',
   },
   [League.NHL]: {
-    startDate: '04-01', // MM-DD format
-    seasonIdentifier: '2025POST',
+    startDate: '04-01-2027', // MM-DD-YYYY format
+    seasonIdentifier: '2026POST',
   },
   [League.MLS]: {
-    startDate: '10-01', // MM-DD format
+    startDate: '10-01-2025', // MM-DD-YYYY format
     seasonIdentifier: '2025POST',
   },
 } as const;
@@ -301,8 +301,9 @@ export const isPostseasonDate = (league: League, dateString: string): boolean =>
   
   try {
     const date = new Date(dateString);
-    const currentYear = date.getFullYear();
-    const postseasonStartDate = new Date(`${currentYear}-${config.startDate}`);
+    // Parse the full MM-DD-YYYY format
+    const [month, day, year] = config.startDate.split('-');
+    const postseasonStartDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     
     return date >= postseasonStartDate;
   } catch {

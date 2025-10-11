@@ -1,4 +1,3 @@
-use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
@@ -97,7 +96,7 @@ pub struct SeasonInfo {
     pub regular: String,
     /// Postseason identifier (e.g., "2026POST")
     pub postseason: String,
-    /// Postseason start date (MM-DD format, e.g., "10-01")
+    /// Postseason start date (MM-DD-YYYY format, e.g., "04-01-2026")
     pub postseason_start: String,
 }
 
@@ -201,7 +200,7 @@ impl Default for ArbConfig {
             SeasonInfo {
                 regular: "2025".to_string(),
                 postseason: "2025POST".to_string(),
-                postseason_start: "10-01".to_string(),
+                postseason_start: "10-01-2025".to_string(),
             },
         );
 
@@ -210,25 +209,25 @@ impl Default for ArbConfig {
             SeasonInfo {
                 regular: "2025".to_string(),
                 postseason: "2025POST".to_string(),
-                postseason_start: "01-01".to_string(),
+                postseason_start: "01-01-2026".to_string(),
             },
         );
 
         current_seasons.insert(
             "nba".to_string(),
             SeasonInfo {
-                regular: "2025".to_string(),
-                postseason: "2025POST".to_string(),
-                postseason_start: "04-01".to_string(),
+                regular: "2026".to_string(),
+                postseason: "2026POST".to_string(),
+                postseason_start: "04-01-2027".to_string(),
             },
         );
 
         current_seasons.insert(
             "nhl".to_string(),
             SeasonInfo {
-                regular: "2025".to_string(),
-                postseason: "2025POST".to_string(),
-                postseason_start: "04-01".to_string(),
+                regular: "2026".to_string(),
+                postseason: "2026POST".to_string(),
+                postseason_start: "04-01-2027".to_string(),
             },
         );
 
@@ -465,11 +464,8 @@ impl ArbConfig {
     pub fn is_postseason_date(&self, sport: &str, date: &str) -> bool {
         if let Some(season_info) = self.get_season_info(sport) {
             if let Ok(parsed_date) = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d") {
-                let _month = parsed_date.month();
-                let _day = parsed_date.day();
-
                 if let Ok(postseason_start) = chrono::NaiveDate::parse_from_str(
-                    &format!("{}-{}", season_info.postseason_start, parsed_date.year()),
+                    &season_info.postseason_start,
                     "%m-%d-%Y",
                 ) {
                     return parsed_date >= postseason_start;

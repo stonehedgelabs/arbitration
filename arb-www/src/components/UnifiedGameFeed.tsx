@@ -2,6 +2,7 @@ import { useEffect, useCallback, useState } from "react";
 import { Box, VStack, HStack, Text, Image } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "motion/react";
 import { MessageCircle, Twitter, Clock } from "lucide-react";
+import { UnifiedGameFeedSkeleton } from "./UnifiedGameFeedSkeleton";
 
 const RedditIcon = ({ size = 12 }: { size?: number }) => (
   <svg
@@ -79,6 +80,27 @@ interface PlayEvent {
   HitterTeamID?: number;
 }
 
+const deriveTwitterTerms = (
+  awayTeam: string,
+  homeTeam: string,
+  awayTeamKey: string,
+  homeTeamKey: string,
+) => {
+  if (awayTeam && homeTeam) {
+    const searchTerms = [
+      awayTeam,
+      homeTeam,
+      `#${awayTeam}`,
+      `#${homeTeam}`,
+      `#${awayTeamKey}`,
+      `#${homeTeamKey}`,
+      "#MLB",
+    ].filter(Boolean);
+    return searchTerms.join(" OR ");
+  }
+  return "";
+};
+
 export function UnifiedGameFeed({
   gameId,
   awayTeam,
@@ -136,33 +158,26 @@ export function UnifiedGameFeed({
         }),
       );
     }
+  }, [league]);
 
-    if (awayTeam && homeTeam) {
-      const searchTerms = [
-        awayTeam,
-        homeTeam,
-        `#${awayTeam}`,
-        `#${homeTeam}`,
-        `#${awayTeamKey}`,
-        `#${homeTeamKey}`,
-        "#MLB",
-      ].filter(Boolean); // Remove any undefined values
+  useEffect(() => {
+    const twitterQuery = deriveTwitterTerms(
+      awayTeam,
+      homeTeam,
+      awayTeamKey as string,
+      homeTeamKey as string,
+    );
+    dispatch(
+      fetchTwitterData({
+        query: twitterQuery,
+        queryType: "Latest",
+      }),
+    );
+  }, [awayTeam, homeTeam]);
 
-      const twitterQuery = searchTerms.join(" OR ");
-
-      dispatch(
-        fetchTwitterData({
-          query: twitterQuery,
-          queryType: "Latest",
-        }),
-      );
-    }
-  }, [gameId, awayTeam, homeTeam, awayTeamKey, homeTeamKey, league, dispatch]);
-
-  // Step 2: Fetch Reddit comments only after thread is found
   useEffect(() => {
     if (!redditGameThreadFound || redditGameThreadLoading) {
-      return; // Wait for thread to be found
+      return;
     }
 
     const awaySubreddit = getTeamSubredditByName(awayTeam, league);
@@ -189,30 +204,17 @@ export function UnifiedGameFeed({
         }),
       );
     }
-  }, [
-    redditGameThreadFound,
-    redditGameThreadLoading,
-    gameId,
-    awayTeam,
-    homeTeam,
-    league,
-    redditSortKind,
-    dispatch,
-  ]);
+  }, [redditGameThreadFound, awayTeam, homeTeam]);
 
-  // Fetch PBP data
   const fetchPlayByPlay = useCallback(async () => {
     if (!gameId || !league) return;
 
     try {
       setPbpLoading(true);
 
-      const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
       const params: Record<string, string> = {
         league: league,
         game_id: gameId,
-        interval: "1min",
-        t: now.toString(),
       };
 
       const url = buildApiUrl("/api/v1/play-by-play", params);
@@ -231,34 +233,26 @@ export function UnifiedGameFeed({
         data: data.data.slice(-PLAY_BY_PLAY_CONFIG.maxEventsInMemory),
       };
 
-      // console.log("UnifiedGameFeed: Limited PBP data:", limitedData);
       setPlayByPlayData(limitedData);
     } catch (err) {
-      // console.error("Error fetching play-by-play data:", err);
+      console.error('Failed to fetch play-by-play data:', err);
     } finally {
       setPbpLoading(false);
     }
-  }, [gameId, league]);
+  }, [league, gameId]);
 
-  // Auto-refresh functionality
   useEffect(() => {
     if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;
 
     const refreshData = () => {
-      // Refresh Twitter data
-      if (awayTeam && homeTeam) {
-        const searchTerms = [
-          awayTeam,
-          homeTeam,
-          awayTeamKey,
-          homeTeamKey,
-          "@MLB",
-        ].filter(Boolean);
-        const query = searchTerms.join(" OR ");
-        dispatch(fetchTwitterData({ query, queryType: "Latest" }));
-      }
+      const query = deriveTwitterTerms(
+        awayTeam,
+        homeTeam,
+        awayTeamKey as string,
+        homeTeamKey as string,
+      );
+      dispatch(fetchTwitterData({ query, queryType: "Latest" }));
 
-      // Refresh PBP data
       if (gameId && league) {
         fetchPlayByPlay();
       }
@@ -270,25 +264,12 @@ export function UnifiedGameFeed({
     );
 
     return () => clearInterval(interval);
-  }, [
-    UNIFIED_FEED_CONFIG.enableAutoRefresh,
-    UNIFIED_FEED_CONFIG.autoRefreshInterval,
-    gameId,
-    awayTeam,
-    homeTeam,
-    awayTeamKey,
-    homeTeamKey,
-    league,
-    dispatch,
-    fetchPlayByPlay,
-  ]);
+  }, []);
 
-  // Reddit thread refresh functionality (5-minute interval)
   useEffect(() => {
     if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;
 
     const refreshRedditThread = () => {
-      // Refresh Reddit comments
       if (
         redditGameThreadFound &&
         redditCommentsData?.posts?.[0]?.comments?.[0]?.subreddit
@@ -310,26 +291,16 @@ export function UnifiedGameFeed({
     );
 
     return () => clearInterval(redditInterval);
-  }, [
-    UNIFIED_FEED_CONFIG.enableAutoRefresh,
-    UNIFIED_FEED_CONFIG.redditThreadRefreshInterval,
-    redditGameThreadFound,
-    redditCommentsData,
-    gameId,
-    dispatch,
-  ]);
+  }, []);
 
-  // Fetch team profiles and PBP data on mount
   useEffect(() => {
     fetchTeamProfiles(league);
     fetchPlayByPlay();
-  }, [fetchTeamProfiles, fetchPlayByPlay, league]);
+  }, [league]);
 
-  // Combine and sort all events by timestamp
   const getAllEvents = useCallback((): FeedEvent[] => {
     const events: FeedEvent[] = [];
 
-    // Add Reddit comments
     if (redditCommentsData?.posts?.[0]?.comments) {
       const comments = redditCommentsData.posts[0].comments;
       const awaySubreddit = getTeamSubredditByName(awayTeam, league)
@@ -349,9 +320,6 @@ export function UnifiedGameFeed({
           team = "other";
         }
 
-        // Skip comments from other subreddits for now
-        if (team === "other") return;
-
         events.push({
           id: `reddit-${comment.id}`,
           type: "reddit",
@@ -365,11 +333,9 @@ export function UnifiedGameFeed({
       });
     }
 
-    // Add Twitter data
     if (twitterData?.tweets) {
       const tweets = twitterData.tweets;
       tweets.forEach((tweet: any) => {
-        // Extract author from URL or use a default
         const author = tweet.url
           ? tweet.url.split("/")[3] || "Unknown"
           : "Unknown";
@@ -385,7 +351,6 @@ export function UnifiedGameFeed({
       });
     }
 
-    // Add PBP data
     if (playByPlayData?.data) {
       playByPlayData.data.forEach((play: PlayEvent) => {
         // Convert EST timestamp to UTC for proper sorting
@@ -449,12 +414,10 @@ export function UnifiedGameFeed({
     redditCommentsData,
     twitterData,
     playByPlayData,
-    teamProfiles,
     awayTeam,
     homeTeam,
-    awayTeamKey,
-    homeTeamKey,
     league,
+    gameData,
   ]);
 
   const allEvents = getAllEvents();
@@ -882,7 +845,10 @@ export function UnifiedGameFeed({
                 Game feed will appear here once the game starts.
               </Text>
             </VStack>
-          ) : filteredEvents.length === 0 ? null : ( // Show nothing while loading - let the skeleton handle the loading state
+          ) : filteredEvents.length === 0 ? (
+            <UnifiedGameFeedSkeleton />
+          ) : (
+            // Show skeleton while loading
             <AnimatePresence>
               {filteredEvents.map((event) => (
                 <motion.div

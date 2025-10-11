@@ -66,7 +66,7 @@ pub struct NFLScheduleGame {
     pub over_under: Option<f64>,
 
     #[serde(rename = "StadiumID")]
-    pub stadium_id: i32,
+    pub stadium_id: Option<i32>,
 
     #[serde(rename = "Canceled")]
     pub canceled: bool,

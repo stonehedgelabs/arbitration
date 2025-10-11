@@ -170,7 +170,7 @@ default_ttl = 3600
 [seasons.current_seasons.mlb]
 regular = "2025"
 postseason = "2025POST"
-postseason_start = "10-01"
+postseason_start = "10-01-2025"
 ```
 
 ## 🎨 Frontend (React Web App)
@@ -490,7 +490,7 @@ user_auth = 604800        # 1 week (7 days)
 [seasons.current_seasons.mlb]
 regular = "2025"
 postseason = "2025POST"
-postseason_start = "10-01"
+postseason_start = "10-01-2025"
 ```
 
 ## 🔄 Development Workflow

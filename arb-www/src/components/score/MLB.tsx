@@ -2,13 +2,9 @@ import { useCallback } from "react";
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
 import { Skeleton } from "../Skeleton";
-import { Bases } from "../Bases";
 import {
   PostseasonBadge,
   LiveBadge,
-  StadiumBadge,
-  LocationBadge,
-  DivisionBadge,
   StatusBadge,
   InningBadge,
 } from "../badge";
@@ -319,9 +315,9 @@ export function MLBScoreCard({
                 <Box
                   p="2"
                   bg={"primary.100"}
+                  borderColor="text.200"
                   borderRadius="6px"
                   border="1px solid"
-                  borderColor="text.200"
                   w="24"
                   flexShrink="0"
                 >

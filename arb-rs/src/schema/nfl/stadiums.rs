@@ -9,19 +9,19 @@ pub struct NFLStadium {
     #[serde(rename = "City")]
     pub city: String,
     #[serde(rename = "State")]
-    pub state: String,
+    pub state: Option<String>,
     #[serde(rename = "Country")]
     pub country: String,
     #[serde(rename = "Capacity")]
-    pub capacity: i32,
+    pub capacity: Option<i32>,
     #[serde(rename = "PlayingSurface")]
-    pub playing_surface: String,
+    pub playing_surface: Option<String>,
     #[serde(rename = "GeoLat")]
     pub geo_lat: f64,
     #[serde(rename = "GeoLong")]
     pub geo_long: f64,
     #[serde(rename = "Type")]
-    pub stadium_type: String,
+    pub stadium_type: Option<String>,
 }
 
 // NFLStadiumsResponse removed - use Vec<NFLStadium> directly

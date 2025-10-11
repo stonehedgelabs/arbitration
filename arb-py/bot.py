@@ -6,12 +6,33 @@ import re
 import os
 import httpx
 import csv
+import sys
+import logging
 import socket
 import subprocess
 import time
 from datetime import datetime
 from typing import Optional, Dict, Any, List
+from dotenv import load_dotenv
 from playwright.async_api import async_playwright, BrowserContext
+from faker import Faker
+
+load_dotenv()
+
+
+fake = Faker()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(funcName)s() - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("sportdata.log"),
+    ],
+)
+
+logger = logging.getLogger(__name__)
+
 
 password = "Password12345*"
 ddg_extension_id = "bkdgflcldnnnapblkhphbgpggdiikppg"
@@ -51,7 +72,7 @@ def launch_chrome(debug_port: int = 9222):
             try:
                 s.settimeout(0.2)
                 s.connect(("127.0.0.1", debug_port))
-                print(
+                logger.info(
                     f"[✓] Chrome is running and listening on port {debug_port}"
                 )
                 return proc
@@ -63,9 +84,10 @@ def launch_chrome(debug_port: int = 9222):
     )
 
 
-def generate_duck_aliases(token: str, count: int = 5, delay: float = 2.0):
+def generate_duck_aliases(count: int = 5):
+    delay = 2.0
     url = "https://quack.duckduckgo.com/api/email/addresses"
-    token = "refdsbh4yc6bbzgewbvygqg6ligahjoiiv14qwqtqez5vf0f0516p8prkt2koq"
+    token = os.environ["DUCK_MAIL_TOKEN"]
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -77,12 +99,15 @@ def generate_duck_aliases(token: str, count: int = 5, delay: float = 2.0):
         data = response.json()
         alias = data.get("address")
         email = f"{alias}@duck.com" if alias else None
+        if not email:
+            logger.warning("No mail alias returned")
+            continue
         result = {
             "duck_email": email,
             "email_created_at": datetime.utcnow().isoformat(),
         }
         results.append(result)
-        print(f"[{i+1}/{count}] {email}")
+        logger.debug(f"[{i+1}/{count}] {email}")
         time.sleep(delay)
 
     return results
@@ -92,20 +117,18 @@ async def create_sportsdata_account(context: BrowserContext) -> Dict[str, Any]:
     accounts = read_accounts()
     email = None
     for row in accounts:
-        if (
-            not row.get("SDAccountCreatedAt")
-            and not row.get("SDApiKey")
-            and not row.get("SDApiKeyExhaustedAt")
-        ):
-            email = row.get("Email") or row.get("email")
-            if email:
-                break
+        if row.get("Status") == "Unused":
+            email = row.get("Email")
+            break
+
+    logger.info(f"Using unused email {email}")
+
     if not email:
         raise ValueError("No unused account found in accounts.tsv")
     page = await context.new_page()
     await page.goto("https://sportsdata.io/user/register")
-    await page.fill("#Registration_FirstName", "John")
-    await page.fill("#Registration_LastName", "Doe")
+    await page.fill("#Registration_FirstName", fake.first_name())
+    await page.fill("#Registration_LastName", fake.last_name())
     await page.fill("#Registration_Email", email)
     await page.fill("#Registration_Password", password)
     await page.fill("#Registration_ConfirmPassword", password)
@@ -184,14 +207,14 @@ async def run_step(step: str, headless: bool, count: int = 1):
     if step == "chrome":
         proc = launch_chrome(debug_port=9222)
         print(f"[✓] Chrome started (pid={proc.pid}) and ready on port 9222")
-        return
+        return None
 
     async with async_playwright() as p:
         context = await launch_context(p, headless=headless)
         result = {}
         try:
             if step == "ddg":
-                result = generate_duck_aliases(context, count)
+                result = generate_duck_aliases(count)
             elif step == "sdio":
                 result = await create_sportsdata_account(context)
         finally:
@@ -210,13 +233,13 @@ def parse_args():
     )
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--use-extension", action="store_true")
-    parser.add_argument("--count", "-c", type=int, default=1)
-    return parser.parse_configargs()
+    parser.add_argument("--alias-count", type=int, default=1)
+    return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    asyncio.run(run_step(args.step, args.headless, args.count))
+    asyncio.run(run_step(args.step, args.headless, args.alias_count))
 
 
 if __name__ == "__main__":

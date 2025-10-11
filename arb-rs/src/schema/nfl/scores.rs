@@ -12,16 +12,16 @@ pub struct NFLStadiumDetails {
     pub city: String,
 
     #[serde(rename = "State")]
-    pub state: String,
+    pub state: Option<String>,
 
     #[serde(rename = "Country")]
     pub country: String,
 
     #[serde(rename = "Capacity")]
-    pub capacity: i32,
+    pub capacity: Option<i32>,
 
     #[serde(rename = "PlayingSurface")]
-    pub playing_surface: String,
+    pub playing_surface: Option<String>,
 
     #[serde(rename = "GeoLat")]
     pub geo_lat: f64,
@@ -30,7 +30,7 @@ pub struct NFLStadiumDetails {
     pub geo_long: f64,
 
     #[serde(rename = "Type")]
-    pub r#type: String,
+    pub r#type: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,22 +57,22 @@ pub struct NFLScoresGame {
     pub home_team: String,
 
     #[serde(rename = "AwayScore")]
-    pub away_score: i32,
+    pub away_score: Option<i32>,
 
     #[serde(rename = "HomeScore")]
-    pub home_score: i32,
+    pub home_score: Option<i32>,
 
     #[serde(rename = "Channel")]
-    pub channel: String,
+    pub channel: Option<String>,
 
     #[serde(rename = "PointSpread")]
-    pub point_spread: f64,
+    pub point_spread: Option<f64>,
 
     #[serde(rename = "OverUnder")]
-    pub over_under: f64,
+    pub over_under: Option<f64>,
 
     #[serde(rename = "Quarter")]
-    pub quarter: String,
+    pub quarter: Option<String>,
 
     #[serde(rename = "TimeRemaining")]
     pub time_remaining: Option<String>,
@@ -84,46 +84,46 @@ pub struct NFLScoresGame {
     pub down: Option<i32>,
 
     #[serde(rename = "Distance")]
-    pub distance: String,
+    pub distance: Option<String>,
 
     #[serde(rename = "YardLine")]
     pub yard_line: Option<i32>,
 
     #[serde(rename = "YardLineTerritory")]
-    pub yard_line_territory: String,
+    pub yard_line_territory: Option<String>,
 
     #[serde(rename = "RedZone")]
     pub red_zone: Option<bool>,
 
     #[serde(rename = "AwayScoreQuarter1")]
-    pub away_score_quarter1: i32,
+    pub away_score_quarter1: Option<i32>,
 
     #[serde(rename = "AwayScoreQuarter2")]
-    pub away_score_quarter2: i32,
+    pub away_score_quarter2: Option<i32>,
 
     #[serde(rename = "AwayScoreQuarter3")]
-    pub away_score_quarter3: i32,
+    pub away_score_quarter3: Option<i32>,
 
     #[serde(rename = "AwayScoreQuarter4")]
-    pub away_score_quarter4: i32,
+    pub away_score_quarter4: Option<i32>,
 
     #[serde(rename = "AwayScoreOvertime")]
-    pub away_score_overtime: i32,
+    pub away_score_overtime: Option<i32>,
 
     #[serde(rename = "HomeScoreQuarter1")]
-    pub home_score_quarter1: i32,
+    pub home_score_quarter1: Option<i32>,
 
     #[serde(rename = "HomeScoreQuarter2")]
-    pub home_score_quarter2: i32,
+    pub home_score_quarter2: Option<i32>,
 
     #[serde(rename = "HomeScoreQuarter3")]
-    pub home_score_quarter3: i32,
+    pub home_score_quarter3: Option<i32>,
 
     #[serde(rename = "HomeScoreQuarter4")]
-    pub home_score_quarter4: i32,
+    pub home_score_quarter4: Option<i32>,
 
     #[serde(rename = "HomeScoreOvertime")]
-    pub home_score_overtime: i32,
+    pub home_score_overtime: Option<i32>,
 
     #[serde(rename = "HasStarted")]
     pub has_started: bool,
@@ -153,10 +153,10 @@ pub struct NFLScoresGame {
     pub down_and_distance: Option<String>,
 
     #[serde(rename = "QuarterDescription")]
-    pub quarter_description: String,
+    pub quarter_description: Option<String>,
 
     #[serde(rename = "StadiumID")]
-    pub stadium_id: i32,
+    pub stadium_id: Option<i32>,
 
     #[serde(rename = "LastUpdated")]
     pub last_updated: String,
@@ -168,25 +168,25 @@ pub struct NFLScoresGame {
     pub geo_long: Option<f64>,
 
     #[serde(rename = "ForecastTempLow")]
-    pub forecast_temp_low: i32,
+    pub forecast_temp_low: Option<i32>,
 
     #[serde(rename = "ForecastTempHigh")]
-    pub forecast_temp_high: i32,
+    pub forecast_temp_high: Option<i32>,
 
     #[serde(rename = "ForecastDescription")]
-    pub forecast_description: String,
+    pub forecast_description: Option<String>,
 
     #[serde(rename = "ForecastWindChill")]
-    pub forecast_wind_chill: i32,
+    pub forecast_wind_chill: Option<i32>,
 
     #[serde(rename = "ForecastWindSpeed")]
-    pub forecast_wind_speed: i32,
+    pub forecast_wind_speed: Option<i32>,
 
     #[serde(rename = "AwayTeamMoneyLine")]
-    pub away_team_money_line: i32,
+    pub away_team_money_line: Option<i32>,
 
     #[serde(rename = "HomeTeamMoneyLine")]
-    pub home_team_money_line: i32,
+    pub home_team_money_line: Option<i32>,
 
     #[serde(rename = "Canceled")]
     pub canceled: bool,
@@ -195,7 +195,7 @@ pub struct NFLScoresGame {
     pub closed: bool,
 
     #[serde(rename = "LastPlay")]
-    pub last_play: String,
+    pub last_play: Option<String>,
 
     #[serde(rename = "Day")]
     pub day: String,
@@ -219,10 +219,10 @@ pub struct NFLScoresGame {
     pub global_home_team_id: i64,
 
     #[serde(rename = "PointSpreadAwayTeamMoneyLine")]
-    pub point_spread_away_team_money_line: i32,
+    pub point_spread_away_team_money_line: Option<i32>,
 
     #[serde(rename = "PointSpreadHomeTeamMoneyLine")]
-    pub point_spread_home_team_money_line: i32,
+    pub point_spread_home_team_money_line: Option<i32>,
 
     #[serde(rename = "ScoreID")]
     pub score_id: i64,
@@ -231,25 +231,25 @@ pub struct NFLScoresGame {
     pub status: String,
 
     #[serde(rename = "GameEndDateTime")]
-    pub game_end_date_time: String,
+    pub game_end_date_time: Option<String>,
 
     #[serde(rename = "HomeRotationNumber")]
-    pub home_rotation_number: i32,
+    pub home_rotation_number: Option<i32>,
 
     #[serde(rename = "AwayRotationNumber")]
-    pub away_rotation_number: i32,
+    pub away_rotation_number: Option<i32>,
 
     #[serde(rename = "NeutralVenue")]
     pub neutral_venue: bool,
 
     #[serde(rename = "RefereeID")]
-    pub referee_id: i32,
+    pub referee_id: Option<i32>,
 
     #[serde(rename = "OverPayout")]
-    pub over_payout: i32,
+    pub over_payout: Option<i32>,
 
     #[serde(rename = "UnderPayout")]
-    pub under_payout: i32,
+    pub under_payout: Option<i32>,
 
     #[serde(rename = "HomeTimeouts")]
     pub home_timeouts: Option<i32>,
@@ -261,13 +261,13 @@ pub struct NFLScoresGame {
     pub date_time_utc: String,
 
     #[serde(rename = "Attendance")]
-    pub attendance: i32,
+    pub attendance: Option<i32>,
 
     #[serde(rename = "IsClosed")]
     pub is_closed: bool,
 
     #[serde(rename = "StadiumDetails")]
-    pub stadium_details: NFLStadiumDetails,
+    pub stadium_details: Option<NFLStadiumDetails>,
 }
 
 // NFLScoresResponse removed - use Vec<NFLScoresGame> directly

@@ -273,7 +273,7 @@ export function Welcome({ onComplete, onSkip }: WelcomeOnboardingProps) {
           onClick={handleNext}
           className="ios-button ios-button-press"
           px={8}
-          borderRadius="12px"
+          borderRadius="sm"
           bg={
             currentScreen === onboardingScreens.length - 1
               ? "linear-gradient(to right, #a855f7, #ec4899)"

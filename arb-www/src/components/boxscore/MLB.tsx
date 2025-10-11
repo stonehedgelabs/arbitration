@@ -7,6 +7,7 @@ import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 // Internal imports - components
 import { Bases } from "../Bases.tsx";
 import { InningBadge } from "../badge";
+import { MLBSkeleton } from "./MLBSkeleton";
 
 // Internal imports - containers
 import { HideVerticalScroll } from "../containers";
@@ -45,59 +46,25 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
   useEffect(() => {
     fetchTeamProfiles(League.MLB);
     fetchStadiums(League.MLB);
-  }, [fetchTeamProfiles, fetchStadiums]);
+  }, []);
 
   // Fetch box score data
   useEffect(() => {
     if (gameId && league && !reduxBoxScore) {
       dispatch(fetchBoxScore({ league: League.MLB, gameId }));
     }
-  }, [gameId, dispatch]);
+  }, []);
 
   // Show loading state if no game data yet
   if (!reduxBoxScore?.data?.Game && !mlbBoxScore?.data?.Game) {
-    return (
-      <Box
-        minH="100vh"
-        bg="primary.25"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap="4">
-          <Text color="gray.600" fontSize="lg" fontWeight="semibold">
-            Loading Game Data...
-          </Text>
-          <Text color="gray.500" textAlign="center">
-            Fetching game information
-          </Text>
-        </VStack>
-      </Box>
-    );
+    return <MLBSkeleton />;
   }
 
   // Get game data - prioritize Redux data if available
   const game = reduxBoxScore?.data?.Game || mlbBoxScore?.data?.Game;
 
   if (!game) {
-    return (
-      <Box
-        minH="100vh"
-        bg="primary.25"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap="4">
-          <Text color="gray.600" fontSize="lg" fontWeight="semibold">
-            No Game Data
-          </Text>
-          <Text color="gray.500" textAlign="center">
-            Unable to load game information
-          </Text>
-        </VStack>
-      </Box>
-    );
+    return null;
   }
 
   // Get team profiles
@@ -115,25 +82,9 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
     (s: any) => s.StadiumID === game.StadiumID,
   );
 
+  // If no team profiles, return null - parent component handles loading/error states
   if (!awayTeamProfile || !homeTeamProfile) {
-    return (
-      <Box
-        minH="100vh"
-        bg="primary.25"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap="4">
-          <Text color="gray.600" fontSize="lg" fontWeight="semibold">
-            Team Data Not Found
-          </Text>
-          <Text color="gray.500" textAlign="center">
-            Unable to load team information
-          </Text>
-        </VStack>
-      </Box>
-    );
+    return null;
   }
 
   return (

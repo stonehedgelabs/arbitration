@@ -1,4 +1,36 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json;
+
+fn deserialize_quarter<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    match value {
+        serde_json::Value::String(s) => Ok(s),
+        serde_json::Value::Number(n) => Ok(n.to_string()),
+        _ => Err(serde::de::Error::custom(
+            "Expected string or number for Quarter",
+        )),
+    }
+}
+
+fn deserialize_optional_quarter<'de, D>(
+    deserializer: D,
+) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    match value {
+        serde_json::Value::String(s) => Ok(Some(s)),
+        serde_json::Value::Number(n) => Ok(Some(n.to_string())),
+        serde_json::Value::Null => Ok(None),
+        _ => Err(serde::de::Error::custom(
+            "Expected string, number, or null for optional field",
+        )),
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NFLStadiumDetails {
@@ -36,7 +68,7 @@ pub struct NFLStadiumDetails {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NFLScore {
     #[serde(rename = "GameKey")]
-    pub game_key: String,
+    pub game_key: Option<String>,
 
     #[serde(rename = "SeasonType")]
     pub season_type: i32,
@@ -63,15 +95,15 @@ pub struct NFLScore {
     pub home_score: i32,
 
     #[serde(rename = "Channel")]
-    pub channel: String,
+    pub channel: Option<String>,
 
     #[serde(rename = "PointSpread")]
-    pub point_spread: f64,
+    pub point_spread: Option<f64>,
 
     #[serde(rename = "OverUnder")]
-    pub over_under: f64,
+    pub over_under: Option<f64>,
 
-    #[serde(rename = "Quarter")]
+    #[serde(rename = "Quarter", deserialize_with = "deserialize_quarter")]
     pub quarter: String,
 
     #[serde(rename = "TimeRemaining")]
@@ -83,14 +115,17 @@ pub struct NFLScore {
     #[serde(rename = "Down")]
     pub down: Option<i32>,
 
-    #[serde(rename = "Distance")]
-    pub distance: String,
+    #[serde(rename = "Distance", deserialize_with = "deserialize_optional_quarter")]
+    pub distance: Option<String>,
 
     #[serde(rename = "YardLine")]
     pub yard_line: Option<i32>,
 
-    #[serde(rename = "YardLineTerritory")]
-    pub yard_line_territory: String,
+    #[serde(
+        rename = "YardLineTerritory",
+        deserialize_with = "deserialize_optional_quarter"
+    )]
+    pub yard_line_territory: Option<String>,
 
     #[serde(rename = "RedZone")]
     pub red_zone: Option<bool>,
@@ -153,13 +188,13 @@ pub struct NFLScore {
     pub down_and_distance: Option<String>,
 
     #[serde(rename = "QuarterDescription")]
-    pub quarter_description: String,
+    pub quarter_description: Option<String>,
 
     #[serde(rename = "StadiumID")]
     pub stadium_id: i32,
 
     #[serde(rename = "LastUpdated")]
-    pub last_updated: String,
+    pub last_updated: Option<String>,
 
     #[serde(rename = "GeoLat")]
     pub geo_lat: Option<f64>,
@@ -174,7 +209,7 @@ pub struct NFLScore {
     pub forecast_temp_high: i32,
 
     #[serde(rename = "ForecastDescription")]
-    pub forecast_description: String,
+    pub forecast_description: Option<String>,
 
     #[serde(rename = "ForecastWindChill")]
     pub forecast_wind_chill: i32,
@@ -195,13 +230,13 @@ pub struct NFLScore {
     pub closed: bool,
 
     #[serde(rename = "LastPlay")]
-    pub last_play: String,
+    pub last_play: Option<String>,
 
     #[serde(rename = "Day")]
-    pub day: String,
+    pub day: Option<String>,
 
     #[serde(rename = "DateTime")]
-    pub date_time: String,
+    pub date_time: Option<String>,
 
     #[serde(rename = "AwayTeamID")]
     pub away_team_id: i32,
@@ -228,10 +263,10 @@ pub struct NFLScore {
     pub score_id: i64,
 
     #[serde(rename = "Status")]
-    pub status: String,
+    pub status: Option<String>,
 
     #[serde(rename = "GameEndDateTime")]
-    pub game_end_date_time: String,
+    pub game_end_date_time: Option<String>,
 
     #[serde(rename = "HomeRotationNumber")]
     pub home_rotation_number: i32,
@@ -258,7 +293,7 @@ pub struct NFLScore {
     pub away_timeouts: Option<i32>,
 
     #[serde(rename = "DateTimeUTC")]
-    pub date_time_utc: String,
+    pub date_time_utc: Option<String>,
 
     #[serde(rename = "Attendance")]
     pub attendance: i32,
@@ -572,7 +607,7 @@ pub struct NFLPlay {
     #[serde(rename = "YardLine")]
     pub yard_line: i32,
 
-    #[serde(rename = "YardLineTerritory")]
+    #[serde(rename = "YardLineTerritory", deserialize_with = "deserialize_quarter")]
     pub yard_line_territory: String,
 
     #[serde(rename = "YardsToEndZone")]
