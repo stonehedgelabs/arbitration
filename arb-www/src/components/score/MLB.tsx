@@ -2,12 +2,7 @@ import { useCallback } from "react";
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
 import { Skeleton } from "../Skeleton";
-import {
-  PostseasonBadge,
-  LiveBadge,
-  StatusBadge,
-  InningBadge,
-} from "../badge";
+import { PostseasonBadge, LiveBadge, StatusBadge, InningBadge } from "../badge";
 
 import { GameStatus, League } from "../../config";
 

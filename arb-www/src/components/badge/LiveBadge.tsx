@@ -22,7 +22,7 @@ export function LiveBadge({
       fontSize={fontSize}
       px="2"
       py="1"
-      borderRadius="full"
+      borderRadius="sm"
       display="flex"
       alignItems="center"
       gap="1"

@@ -21,6 +21,7 @@ import {
   fetchRedditGameThreadComments,
   findRedditGameThread,
   fetchTwitterData,
+  clearRedditData,
 } from "../store/slices/sportsDataSlice";
 import { getTeamSubredditByName } from "../teams";
 import {
@@ -158,7 +159,7 @@ export function UnifiedGameFeed({
         }),
       );
     }
-  }, [league]);
+  }, [league, awayTeam, homeTeam]);
 
   useEffect(() => {
     const twitterQuery = deriveTwitterTerms(
@@ -204,7 +205,7 @@ export function UnifiedGameFeed({
         }),
       );
     }
-  }, [redditGameThreadFound, awayTeam, homeTeam]);
+  }, [redditGameThreadFound, awayTeam, homeTeam, league]);
 
   const fetchPlayByPlay = useCallback(async () => {
     if (!gameId || !league) return;
@@ -235,7 +236,6 @@ export function UnifiedGameFeed({
 
       setPlayByPlayData(limitedData);
     } catch (err) {
-      console.error('Failed to fetch play-by-play data:', err);
     } finally {
       setPbpLoading(false);
     }
@@ -264,7 +264,16 @@ export function UnifiedGameFeed({
     );
 
     return () => clearInterval(interval);
-  }, []);
+  }, [
+    awayTeam,
+    homeTeam,
+    awayTeamKey,
+    homeTeamKey,
+    gameId,
+    league,
+    fetchPlayByPlay,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;
@@ -291,12 +300,25 @@ export function UnifiedGameFeed({
     );
 
     return () => clearInterval(redditInterval);
-  }, []);
+  }, [redditGameThreadFound, redditCommentsData, gameId, dispatch]);
 
   useEffect(() => {
     fetchTeamProfiles(league);
     fetchPlayByPlay();
-  }, [league]);
+  }, [league, gameId, fetchTeamProfiles, fetchPlayByPlay]);
+
+  // Clear Reddit data when component unmounts or gameId changes
+  useEffect(() => {
+    return () => {
+      // Clear Reddit data when component unmounts
+      dispatch(clearRedditData());
+    };
+  }, [dispatch]);
+
+  // Clear Reddit data when gameId changes (switching to different game)
+  useEffect(() => {
+    dispatch(clearRedditData());
+  }, [gameId, dispatch]);
 
   const getAllEvents = useCallback((): FeedEvent[] => {
     const events: FeedEvent[] = [];
@@ -427,8 +449,6 @@ export function UnifiedGameFeed({
 
   // Render sticky latest PBP event in old card style
   const renderStickyPBPEvent = (event: FeedEvent) => {
-    // Debug: Log the event being rendered
-
     // Get team logo for the PBP event using the actual PBP data
     const getTeamLogoForEvent = () => {
       if (!teamProfiles?.data || !playByPlayData?.data) return null;
@@ -503,7 +523,7 @@ export function UnifiedGameFeed({
                       fontSize="2xs"
                       fontWeight="bold"
                     >
-                      <Clock size={6} />
+                      <Clock size={16} />
                     </Box>
                     <Text fontSize="xs" fontWeight="semibold" color="text.400">
                       Latest Play

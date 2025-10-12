@@ -8,6 +8,7 @@ import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 import { Bases } from "../Bases.tsx";
 import { InningBadge } from "../badge";
 import { MLBSkeleton } from "./MLBSkeleton";
+import { ErrorState } from "../ErrorStates";
 
 // Internal imports - containers
 import { HideVerticalScroll } from "../containers";
@@ -40,7 +41,16 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
   // Get box score data from Redux state (persists across navigation)
   const dispatch = useAppDispatch();
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
+  const boxScoreError = useAppSelector(
+    (state) => state.sportsData.boxScoreError,
+  );
+  const boxScoreRequests = useAppSelector(
+    (state) => state.sportsData.boxScoreRequests,
+  );
   const reduxBoxScore = boxScoreData[gameId as keyof typeof boxScoreData];
+
+  // Check if we're currently loading this specific game
+  const isLoadingThisGame = boxScoreRequests.includes(gameId || "");
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -55,9 +65,29 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
     }
   }, []);
 
-  // Show loading state if no game data yet
-  if (!reduxBoxScore?.data?.Game && !mlbBoxScore?.data?.Game) {
+  // Show loading state if we're loading or if no game data yet and no error
+  if (
+    isLoadingThisGame ||
+    (!reduxBoxScore?.data?.Game && !mlbBoxScore?.data?.Game && !boxScoreError)
+  ) {
     return <MLBSkeleton />;
+  }
+
+  // Show error state if there's an error and no data
+  if (boxScoreError && !reduxBoxScore?.data?.Game && !mlbBoxScore?.data?.Game) {
+    return (
+      <HideVerticalScroll bg="primary.25">
+        <Box px="6" py="2">
+          <ErrorState
+            title="Error Loading Game"
+            message={boxScoreError}
+            showBack={false}
+            showRetry={false}
+            variant="error"
+          />
+        </Box>
+      </HideVerticalScroll>
+    );
   }
 
   // Get game data - prioritize Redux data if available

@@ -1,0 +1,7 @@
+rules:
+  - Never change any code you weren't specifically asked to change
+  - If you are ever unsure of what change to make, please ask
+  - If you are ever asked to make a change you thing will lead to a large code diff, please get approval of your code plan first
+  - Always re-use existing patterns where possible
+  - Before introducing a new pattern - always get permission to implement that pattern first
+  - Don't add code comments to your code -- ever

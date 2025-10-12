@@ -43,7 +43,6 @@ const useTwitter = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      console.error('Error fetching tweets:', err);
     } finally {
       setLoading(false);
     }

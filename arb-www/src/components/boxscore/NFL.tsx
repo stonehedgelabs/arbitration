@@ -1,5 +1,13 @@
 import { useEffect } from "react";
-import { Box, VStack, HStack, Text, Image, Flex } from "@chakra-ui/react";
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Image,
+  Flex,
+  Table,
+} from "@chakra-ui/react";
 import useArb from "../../services/Arb.ts";
 import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
@@ -62,16 +70,6 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
     reduxBoxScore?.data?.Score ||
     reduxBoxScore?.data?.score ||
     reduxBoxScore?.data?.Game;
-
-  // Debug logging
-  console.log("NFL BoxScore Debug:", {
-    gameId,
-    league,
-    reduxBoxScore: reduxBoxScore?.data,
-    game,
-    hasScore: !!reduxBoxScore?.data?.score,
-    hasGame: !!reduxBoxScore?.data?.Game,
-  });
 
   // Show loading state if we're loading or if no game data yet and no error
   if (isLoadingThisGame || (!game && !boxScoreError)) {
@@ -237,65 +235,116 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
             </VStack>
           </Flex>
 
-          {/* Quarter-by-Quarter Scores */}
+          {/* Quarter-by-Quarter Scores Table */}
           {quarters.length > 0 && (
-            <Box w="full" mt="4">
-              <Text
-                fontSize="sm"
-                fontWeight="semibold"
-                color="text.400"
-                mb="2"
-                textAlign="center"
-              >
-                Quarter Scores
-              </Text>
-              <Flex justify="space-between" align="center" w="full" px="4">
-                {/* Quarter headers */}
-                <VStack gap="1" align="center" flex="1">
-                  <Text fontSize="xs" color="text.500" fontWeight="medium">
-                    QTR
-                  </Text>
-                  {quarters.map((quarter: any) => (
-                    <Text key={quarter.Number} fontSize="xs" color="text.400">
-                      {quarter.Number}
-                    </Text>
-                  ))}
-                  <Text fontSize="xs" color="text.400" fontWeight="semibold">
-                    FINAL
-                  </Text>
-                </VStack>
-
-                {/* Away team quarter scores */}
-                <VStack gap="1" align="center" flex="1">
-                  <Text fontSize="xs" color="text.500" fontWeight="medium">
-                    {awayTeamProfile.Name}
-                  </Text>
-                  {quarters.map((quarter: any) => (
-                    <Text key={quarter.Number} fontSize="xs" color="text.400">
-                      {quarter.AwayTeamScore}
-                    </Text>
-                  ))}
-                  <Text fontSize="xs" color="text.400" fontWeight="semibold">
-                    {game.AwayScore}
-                  </Text>
-                </VStack>
-
-                {/* Home team quarter scores */}
-                <VStack gap="1" align="center" flex="1">
-                  <Text fontSize="xs" color="text.500" fontWeight="medium">
-                    {homeTeamProfile.Name}
-                  </Text>
-                  {quarters.map((quarter: any) => (
-                    <Text key={quarter.Number} fontSize="xs" color="text.400">
-                      {quarter.HomeTeamScore}
-                    </Text>
-                  ))}
-                  <Text fontSize="xs" color="text.400" fontWeight="semibold">
-                    {game.HomeScore}
-                  </Text>
-                </VStack>
-              </Flex>
-            </Box>
+            <VStack gap="2" w="full" mt="4">
+              <Box w="full" overflowX="auto">
+                <Table.Root size="sm" variant="outline">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeader
+                        fontSize="2xs"
+                        color="text.500"
+                        textAlign="left"
+                        bg="text.50"
+                        px="2"
+                        py="1"
+                      ></Table.ColumnHeader>
+                      {quarters.map((quarter: any, index: number) => (
+                        <Table.ColumnHeader
+                          key={quarter.Number || index}
+                          fontSize="2xs"
+                          color="text.500"
+                          textAlign="center"
+                          bg="text.50"
+                          px="1"
+                          py="1"
+                        >
+                          Q{quarter.Number}
+                        </Table.ColumnHeader>
+                      ))}
+                      <Table.ColumnHeader
+                        fontSize="2xs"
+                        color="text.500"
+                        textAlign="center"
+                        bg="text.50"
+                        fontWeight="semibold"
+                        px="2"
+                        py="1"
+                      ></Table.ColumnHeader>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    <Table.Row>
+                      <Table.Cell
+                        fontSize="2xs"
+                        color="text.400"
+                        fontWeight="medium"
+                        px="2"
+                        py="1"
+                      >
+                        {awayTeamProfile.Name}
+                      </Table.Cell>
+                      {quarters.map((quarter: any, index: number) => (
+                        <Table.Cell
+                          key={quarter.Number || index}
+                          fontSize="2xs"
+                          color="text.400"
+                          textAlign="center"
+                          px="1"
+                          py="1"
+                        >
+                          {quarter.AwayTeamScore}
+                        </Table.Cell>
+                      ))}
+                      <Table.Cell
+                        fontSize="2xs"
+                        color="text.400"
+                        textAlign="center"
+                        fontWeight="semibold"
+                        px="2"
+                        py="1"
+                      >
+                        {game.AwayScore}
+                      </Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell
+                        fontSize="2xs"
+                        color="text.400"
+                        fontWeight="medium"
+                        px="2"
+                        py="1"
+                      >
+                        {homeTeamProfile.Name}
+                      </Table.Cell>
+                      {quarters.map((quarter: any, index: number) => (
+                        <Table.Cell
+                          key={quarter.Number || index}
+                          fontSize="2xs"
+                          color="text.400"
+                          textAlign="center"
+                          px="1"
+                          py="1"
+                        >
+                          {quarter.HomeTeamScore}
+                        </Table.Cell>
+                      ))}
+                      <Table.Cell
+                        fontSize="2xs"
+                        color="text.400"
+                        textAlign="center"
+                        fontWeight="semibold"
+                        px="2"
+                        py="1"
+                      >
+                        {game.HomeScore}
+                      </Table.Cell>
+                    </Table.Row>
+                  </Table.Body>
+                </Table.Root>
+              </Box>
+            </VStack>
           )}
 
           {/* Game Details */}

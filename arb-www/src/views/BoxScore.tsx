@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 
 import { BoxScoreDetailMLB } from "../components/boxscore/MLB.tsx";
 import { BoxScoreDetailNFL } from "../components/boxscore/NFL.tsx";
+import { BoxScoreDetailNBA } from "../components/boxscore/NBA.tsx";
 import { UnifiedGameFeed } from "../components/UnifiedGameFeed.tsx";
 import { MLBSkeleton } from "../components/boxscore/MLBSkeleton.tsx";
 import { UnifiedGameFeedSkeleton } from "../components/UnifiedGameFeedSkeleton.tsx";
@@ -154,14 +155,41 @@ export function BoxScore({ onBack }: BoxScoreProps) {
   // Show error state only if there's an error AND we're not loading AND we don't have data for this specific game
   if (boxScoreError && !isLoadingThisGame && !gameData) {
     return (
-      <ErrorState
-        title="Error Loading Game"
-        message={boxScoreError}
-        onBack={onBack}
-        showBack={true}
-        showRetry={false}
-        variant="error"
-      />
+      <AppLayout>
+        <motion.div
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        >
+          <Box
+            minH="100vh"
+            bg="primary.25"
+            display="flex"
+            flexDirection="column"
+          >
+            {/* Top Navigation with Back Button */}
+            <TopNavigation showLeagueSelector={false} onBack={onBack} />
+
+            {/* Error Content */}
+            <Box
+              flex="1"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <ErrorState
+                title="Error Loading Game"
+                message={boxScoreError}
+                onBack={onBack}
+                showBack={true}
+                showRetry={false}
+                variant="error"
+              />
+            </Box>
+          </Box>
+        </motion.div>
+      </AppLayout>
     );
   }
 
@@ -200,18 +228,6 @@ export function BoxScore({ onBack }: BoxScoreProps) {
             <VStack align="stretch">
               {/* Box Score Section - Compressed */}
               <Box bg="primary.25">
-                {(() => {
-                  console.log("BoxScore Debug:", {
-                    paramLeague,
-                    LeagueMLB: League.MLB,
-                    LeagueNFL: League.NFL,
-                    isMLB: paramLeague === League.MLB,
-                    isNFL: paramLeague === League.NFL,
-                    gameId,
-                    actualGameId,
-                  });
-                  return null;
-                })()}
                 {paramLeague === League.MLB ? (
                   <Box transformOrigin="top center">
                     <BoxScoreDetailMLB gameId={gameId} league={paramLeague} />
@@ -219,6 +235,10 @@ export function BoxScore({ onBack }: BoxScoreProps) {
                 ) : paramLeague === League.NFL ? (
                   <Box transformOrigin="top center">
                     <BoxScoreDetailNFL gameId={gameId} league={paramLeague} />
+                  </Box>
+                ) : paramLeague === League.NBA ? (
+                  <Box transformOrigin="top center">
+                    <BoxScoreDetailNBA gameId={gameId} league={paramLeague} />
                   </Box>
                 ) : (
                   <VStack

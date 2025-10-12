@@ -27,6 +27,7 @@ export default defineConfig([
       'react-hooks/exhaustive-deps': 'off',
       '@typescript-eslint/no-unsafe-declaration-merging': 'off',
       'react-refresh/only-export-components': 'off',
+      "no-empty": ["error", { "allowEmptyCatch": true }]
     }
   },
 ])

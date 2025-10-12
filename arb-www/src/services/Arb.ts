@@ -106,7 +106,6 @@ const useArb = () => {
       // Reset loading state
       dispatch(setLeagueLoading({ league, dataType: 'scores', loading: false }));
     } catch (err) {
-      console.error('Failed to fetch scores:', err);
       // Set error state with user-friendly message
       dispatch(setLeagueError({ league, dataType: 'scores', error: getUserFriendlyError('scores', league, err) }));
       // Reset loading state
@@ -139,7 +138,6 @@ const useArb = () => {
       // Reset loading state
       dispatch(setLeagueLoading({ league, dataType: 'teamProfiles', loading: false }));
     } catch (err) {
-      console.error('Failed to fetch team profiles:', err);
       // Set error state with user-friendly message
       dispatch(setLeagueError({ league, dataType: 'teamProfiles', error: getUserFriendlyError('team profiles', league, err) }));
       // Reset loading state
@@ -176,7 +174,6 @@ const useArb = () => {
       const boxScoreResponse = BoxScoreResponse.fromJSON(data);
       setMlbBoxScore(boxScoreResponse);
     } catch (err) {
-      console.error('Failed to fetch box score:', err);
     }
   }, []);
 
@@ -204,7 +201,6 @@ const useArb = () => {
       // Reset loading state
       dispatch(setLeagueLoading({ league, dataType: 'stadiums', loading: false }));
     } catch (err) {
-      console.error('Failed to fetch stadiums:', err);
       // Set error state with user-friendly message
       dispatch(setLeagueError({ league, dataType: 'stadiums', error: getUserFriendlyError('stadiums', league, err) }));
       // Reset loading state
@@ -242,7 +238,6 @@ const useArb = () => {
       // Reset loading state
       dispatch(setLeagueLoading({ league, dataType: 'schedule', loading: false }));
     } catch (err) {
-      console.error('Failed to fetch schedule:', err);
       // Set error state with user-friendly message
       dispatch(setLeagueError({ league, dataType: 'schedule', error: getUserFriendlyError('schedule', league, err) }));
       // Reset loading state
@@ -275,7 +270,6 @@ const useArb = () => {
       // Reset loading state
       dispatch(setLeagueLoading({ league, dataType: 'odds', loading: false }));
     } catch (err) {
-      console.error('Failed to fetch odds by date:', err);
       // Set error state with user-friendly message
       dispatch(setLeagueError({ league, dataType: 'odds', error: getUserFriendlyError('odds', league, err) }));
       // Reset loading state
@@ -303,7 +297,6 @@ const useArb = () => {
       // Reset loading state
       dispatch(setLeagueLoading({ league, dataType: 'currentGames', loading: false }));
     } catch (err) {
-      console.error('Failed to fetch current games:', err);
       // Set error state with user-friendly message
       dispatch(setLeagueError({ league, dataType: 'currentGames', error: getUserFriendlyError('current games', league, err) }));
       // Reset loading state

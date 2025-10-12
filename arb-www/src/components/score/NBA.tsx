@@ -5,11 +5,8 @@ import { Skeleton } from "../Skeleton";
 import {
   PostseasonBadge,
   LiveBadge,
-  StadiumBadge,
-  LocationBadge,
-  DivisionBadge,
-  StatusBadge,
   QuarterBadge,
+  StatusBadge,
 } from "../badge";
 
 import { GameStatus, League } from "../../config";
@@ -36,6 +33,8 @@ interface Game {
   date: string;
   quarter?: string;
   timeRemaining?: string;
+  timeRemainingMinutes?: number;
+  timeRemainingSeconds?: number;
   stadium?: string;
   city?: string;
   state?: string;
@@ -152,23 +151,6 @@ const GameOddsDisplay = ({
   );
 };
 
-// Helper function to get status badge
-const getStatusBadge = (
-  status: GameStatus,
-  quarter?: string,
-  timeRemaining?: string,
-) => {
-  // For NBA games with quarter information, use QuarterBadge
-  if (
-    quarter &&
-    (status === GameStatus.LIVE || status === GameStatus.UPCOMING)
-  ) {
-    return <QuarterBadge quarter={quarter} time={timeRemaining} size="sm" />;
-  }
-  // For other cases, use StatusBadge
-  return <StatusBadge status={status} quarter={quarter} />;
-};
-
 // Helper function to format time
 const formatTime = (dateTime: string) => {
   return toLocalTime(dateTime);
@@ -244,32 +226,21 @@ export function NBAScoreCard({
               {formatTime(game.time)}
             </Text>
             <HStack gap="2" align="center">
-              {getStatusBadge(game.status, game.quarter, game.timeRemaining)}
+              {game.status === GameStatus.LIVE && game.quarter && (
+                <QuarterBadge
+                  quarter={game.quarter}
+                  timeRemainingMinutes={game.timeRemainingMinutes || null}
+                  timeRemainingSeconds={game.timeRemainingSeconds || null}
+                  size="sm"
+                />
+              )}
+              {game.status === GameStatus.FINAL && (
+                <StatusBadge status={game.status} size="sm" />
+              )}
               {game.isPostseason && <PostseasonBadge />}
               {game.status === GameStatus.LIVE && <LiveBadge />}
             </HStack>
           </HStack>
-
-          {/* Location Information */}
-          {(game.stadium || game.city) && (
-            <HStack justify="space-between" align="center" gap="3">
-              <HStack gap="2" align="center" flexWrap="wrap">
-                {game.stadium && (
-                  <StadiumBadge stadium={orEmpty(game.stadium)} size="xs" />
-                )}
-                {game.city && game.state && (
-                  <LocationBadge
-                    city={orEmpty(game.city)}
-                    state={orEmpty(game.state)}
-                    size="xs"
-                  />
-                )}
-                {game.division && (
-                  <DivisionBadge division={orEmpty(game.division)} size="xs" />
-                )}
-              </HStack>
-            </HStack>
-          )}
 
           {/* Away Team */}
           <HStack justify="space-between" align="center" gap="2">
@@ -328,10 +299,10 @@ export function NBAScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg="primary.25"
+                  bg="primary.100"
                   borderRadius="6px"
                   border="1px solid"
-                  borderColor="text.400"
+                  borderColor="text.100"
                   w="24"
                   flexShrink="0"
                 >
@@ -402,10 +373,9 @@ export function NBAScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg="primary.25"
+                  bg="primary.100"
                   borderRadius="6px"
-                  border="1px solid"
-                  borderColor="text.400"
+                  borderColor="text.200"
                   w="24"
                   flexShrink="0"
                 >

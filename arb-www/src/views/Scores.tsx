@@ -304,21 +304,31 @@ function ScoresV2() {
     }
   }, [league]);
 
-  // Fetch data when component mounts or league/date changes
+  // Fetch data when league parameter changes (from URL)
   useEffect(() => {
-    if (selectedDate && league) {
-      fetchScores(league, selectedDate);
+    if (league) {
+      const dateToUse = getCurrentLocalDate(); // Always use today's date when league changes
+      fetchScores(league, dateToUse);
       fetchTeamProfiles(league);
       fetchStadiums(league);
+      fetchSchedule(league, dateToUse);
+    }
+  }, [league]); // Only depend on league parameter
+
+  // Fetch data when selectedDate changes (for date picker changes)
+  useEffect(() => {
+    if (league && selectedDate) {
+      fetchScores(league, selectedDate);
       fetchSchedule(league, selectedDate);
     }
-  }, [selectedDate, league]);
+  }, [selectedDate]); // Only depend on selectedDate
 
   // Get all games based on the selected date and league
   const getAllGames = (): Game[] => {
-    // Determine which data source to use based on whether it's a future date
+    // Use selectedDate if available, otherwise use today's date (same logic as data fetching)
+    const dateToUse = selectedDate || getCurrentLocalDate();
     const today = getCurrentLocalDate();
-    const isFutureDate = selectedDate && selectedDate > today;
+    const isFutureDate = dateToUse > today;
 
     // Use scores data for past/current dates, schedule data for future dates
     // But if schedule data is empty, fall back to scores data
@@ -345,7 +355,7 @@ function ScoresV2() {
 
           // Filter games to only show those that actually start on the selected date
           const gameDate = game.date; // This is already converted to YYYY-MM-DD format
-          return gameDate === selectedDate;
+          return gameDate === dateToUse;
         });
 
       return scheduleGames;
@@ -375,7 +385,7 @@ function ScoresV2() {
 
           // Filter games to only show those that actually start on the selected date
           const gameDate = game.date; // This is already converted to YYYY-MM-DD format
-          return gameDate === selectedDate;
+          return gameDate === dateToUse;
         });
 
       return scoresGames;

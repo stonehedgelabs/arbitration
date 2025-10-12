@@ -20,7 +20,7 @@ export function InningBadge({
   const getInningText = () => {
     if (league === League.MLB) {
       if (inningHalf) {
-        return `${inningHalf === "Top" ? "▲ " : "▼ "}${inningNumber}`;
+        return `${inningHalf === "Top" || inningHalf === "T" ? "▲ " : "▼ "}${inningNumber}`;
       }
       return `${inningNumber}`;
     }

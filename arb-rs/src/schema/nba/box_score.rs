@@ -20,7 +20,7 @@ pub struct NBATeamGame {
     #[serde(rename = "Losses")]
     pub losses: i32,
     #[serde(rename = "Possessions")]
-    pub possessions: f64,
+    pub possessions: Option<f64>,
     #[serde(rename = "GlobalTeamID")]
     pub global_team_id: i64,
     #[serde(rename = "GameID")]
@@ -44,17 +44,17 @@ pub struct NBATeamGame {
     #[serde(rename = "Updated")]
     pub updated: String,
     #[serde(rename = "Games")]
-    pub games: i32,
+    pub games: f64,
     #[serde(rename = "FantasyPoints")]
     pub fantasy_points: f64,
     #[serde(rename = "Minutes")]
-    pub minutes: i32,
+    pub minutes: f64,
     #[serde(rename = "Seconds")]
-    pub seconds: i32,
+    pub seconds: f64,
     #[serde(rename = "FieldGoalsMade")]
     pub field_goals_made: f64,
     #[serde(rename = "FieldGoalsAttempted")]
-    pub field_goals_attempted: i32,
+    pub field_goals_attempted: f64,
     #[serde(rename = "FieldGoalsPercentage")]
     pub field_goals_percentage: f64,
     #[serde(rename = "EffectiveFieldGoalsPercentage")]
@@ -126,9 +126,9 @@ pub struct NBATeamGame {
     #[serde(rename = "PlusMinus")]
     pub plus_minus: f64,
     #[serde(rename = "DoubleDoubles")]
-    pub double_doubles: i32,
+    pub double_doubles: f64,
     #[serde(rename = "TripleDoubles")]
-    pub triple_doubles: i32,
+    pub triple_doubles: f64,
     #[serde(rename = "FantasyPointsFantasyDraft")]
     pub fantasy_points_fantasy_draft: f64,
     #[serde(rename = "IsClosed")]
@@ -158,7 +158,7 @@ pub struct NBAPlayerGame {
     #[serde(rename = "Position")]
     pub position: String,
     #[serde(rename = "Started")]
-    pub started: i32,
+    pub started: f64,
     #[serde(rename = "FanDuelSalary")]
     pub fan_duel_salary: Option<i32>,
     #[serde(rename = "DraftKingsSalary")]
@@ -182,9 +182,9 @@ pub struct NBAPlayerGame {
     #[serde(rename = "YahooPosition")]
     pub yahoo_position: Option<String>,
     #[serde(rename = "OpponentRank")]
-    pub opponent_rank: i32,
+    pub opponent_rank: Option<i32>,
     #[serde(rename = "OpponentPositionRank")]
-    pub opponent_position_rank: i32,
+    pub opponent_position_rank: Option<i32>,
     #[serde(rename = "GlobalTeamID")]
     pub global_team_id: i64,
     #[serde(rename = "FantasyDraftSalary")]
@@ -212,13 +212,13 @@ pub struct NBAPlayerGame {
     #[serde(rename = "Updated")]
     pub updated: String,
     #[serde(rename = "Games")]
-    pub games: i32,
+    pub games: f64,
     #[serde(rename = "FantasyPoints")]
     pub fantasy_points: f64,
     #[serde(rename = "Minutes")]
-    pub minutes: i32,
+    pub minutes: f64,
     #[serde(rename = "Seconds")]
-    pub seconds: i32,
+    pub seconds: f64,
     #[serde(rename = "FieldGoalsMade")]
     pub field_goals_made: f64,
     #[serde(rename = "FieldGoalsAttempted")]
@@ -252,11 +252,11 @@ pub struct NBAPlayerGame {
     #[serde(rename = "Rebounds")]
     pub rebounds: f64,
     #[serde(rename = "OffensiveReboundsPercentage")]
-    pub offensive_rebounds_percentage: f64,
+    pub offensive_rebounds_percentage: Option<f64>,
     #[serde(rename = "DefensiveReboundsPercentage")]
-    pub defensive_rebounds_percentage: f64,
+    pub defensive_rebounds_percentage: Option<f64>,
     #[serde(rename = "TotalReboundsPercentage")]
-    pub total_rebounds_percentage: f64,
+    pub total_rebounds_percentage: Option<f64>,
     #[serde(rename = "Assists")]
     pub assists: f64,
     #[serde(rename = "Steals")]
@@ -274,17 +274,17 @@ pub struct NBAPlayerGame {
     #[serde(rename = "TrueShootingPercentage")]
     pub true_shooting_percentage: f64,
     #[serde(rename = "PlayerEfficiencyRating")]
-    pub player_efficiency_rating: f64,
+    pub player_efficiency_rating: Option<f64>,
     #[serde(rename = "AssistsPercentage")]
-    pub assists_percentage: f64,
+    pub assists_percentage: Option<f64>,
     #[serde(rename = "StealsPercentage")]
-    pub steals_percentage: f64,
+    pub steals_percentage: Option<f64>,
     #[serde(rename = "BlocksPercentage")]
-    pub blocks_percentage: f64,
+    pub blocks_percentage: Option<f64>,
     #[serde(rename = "TurnOversPercentage")]
-    pub turn_overs_percentage: f64,
+    pub turn_overs_percentage: Option<f64>,
     #[serde(rename = "UsageRatePercentage")]
-    pub usage_rate_percentage: f64,
+    pub usage_rate_percentage: Option<f64>,
     #[serde(rename = "FantasyPointsFanDuel")]
     pub fantasy_points_fan_duel: f64,
     #[serde(rename = "FantasyPointsDraftKings")]
@@ -294,15 +294,15 @@ pub struct NBAPlayerGame {
     #[serde(rename = "PlusMinus")]
     pub plus_minus: f64,
     #[serde(rename = "DoubleDoubles")]
-    pub double_doubles: i32,
+    pub double_doubles: f64,
     #[serde(rename = "TripleDoubles")]
-    pub triple_doubles: i32,
+    pub triple_doubles: f64,
     #[serde(rename = "FantasyPointsFantasyDraft")]
     pub fantasy_points_fantasy_draft: f64,
     #[serde(rename = "IsClosed")]
     pub is_closed: bool,
     #[serde(rename = "LineupConfirmed")]
-    pub lineup_confirmed: bool,
+    pub lineup_confirmed: Option<bool>,
     #[serde(rename = "LineupStatus")]
     pub lineup_status: String,
 }

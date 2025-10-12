@@ -154,13 +154,20 @@ const getStatusBadge = (
   status: GameStatus,
   quarter?: string,
   timeRemaining?: string,
+  timeRemainingMinutes?: number,
+  timeRemainingSeconds?: number,
 ) => {
   // For NFL games with quarter information, use QuarterBadge
-  if (
-    quarter &&
-    (status === GameStatus.LIVE || status === GameStatus.UPCOMING)
-  ) {
-    return <QuarterBadge quarter={quarter} time={timeRemaining} size="sm" />;
+  if (quarter && status === GameStatus.LIVE) {
+    return (
+      <QuarterBadge
+        quarter={quarter}
+        time={timeRemaining}
+        timeRemainingMinutes={timeRemainingMinutes}
+        timeRemainingSeconds={timeRemainingSeconds}
+        size="sm"
+      />
+    );
   }
   // For other cases, use StatusBadge
   return <StatusBadge status={status} quarter={quarter} />;

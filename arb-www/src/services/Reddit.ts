@@ -46,7 +46,6 @@ const useReddit = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      console.error('Error finding Reddit game thread:', err);
     } finally {
       setLoading(false);
     }
@@ -92,7 +91,6 @@ const useReddit = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      console.error('Error fetching Reddit comments:', err);
     } finally {
       setLoading(false);
     }

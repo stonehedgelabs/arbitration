@@ -147,7 +147,6 @@ export const formatRelativeESTTime = (timestamp: string): string => {
     // Get relative time
     return formatDistanceToNow(utcDate, { addSuffix: true });
   } catch (error) {
-    console.error("Error formatting relative time:", timestamp, error);
     return "Just now";
   }
 };
@@ -160,7 +159,6 @@ export const formatRelativeUTCTime = (timestamp: string): string => {
     // Get relative time
     return formatDistanceToNow(date, { addSuffix: true });
   } catch (error) {
-    console.error("Error formatting relative UTC time:", timestamp, error);
     return "Just now";
   }
 };
@@ -176,7 +174,6 @@ export const estToUTC = (estTimestamp: string): string => {
     const utcDate = fromZonedTime(estTimestamp, "America/New_York");
     return utcDate.toISOString();
   } catch (error) {
-    console.error("Error converting EST to UTC:", estTimestamp, error);
     return estTimestamp; // Return original if conversion fails
   }
 };
@@ -238,7 +235,6 @@ export const toLocalTime = (estDateTime: string): string => {
 
     return `${dayName}. ${monthName} ${day}${getOrdinalSuffix(day)} at ${time}`;
   } catch (error) {
-    console.error("Error converting to local time:", estDateTime, error);
     return "TBD";
   }
 };
@@ -645,7 +641,6 @@ export const extractDataFromResponse = (response: any): any[] => {
   }
 
   // If we can't find an array, return empty array
-  console.warn('Could not extract data array from response:', response);
   return [];
 };
 

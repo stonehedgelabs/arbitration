@@ -40,7 +40,7 @@ export function StatusBadge({
       case GameStatus.LIVE:
         return { bg: "danger.100", color: "text.100" }; // Red for live
       case GameStatus.FINAL:
-        return { bg: "green", color: "text.600" }; // Grey for final
+        return { bg: "green.500", color: "white" }; // Green background, white text for final
       case GameStatus.UPCOMING:
         return { bg: "text.350", color: "text.600" }; // Grey for upcoming
       default:

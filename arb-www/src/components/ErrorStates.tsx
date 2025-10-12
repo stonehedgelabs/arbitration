@@ -62,11 +62,13 @@ export function ErrorState({
 
   return (
     <Box
-      minH="100vh"
+      minH="400px"
       bg="primary.25"
       display="flex"
       justifyContent="center"
+      alignItems="center"
       p="4"
+      w="100vw"
     >
       <Card.Root maxW="md" w="full" bg="primary.25" borderWidth={0}>
         <Card.Body p="8" textAlign="center">

@@ -5,23 +5,23 @@ pub struct NBAStadium {
     #[serde(rename = "StadiumID")]
     pub stadium_id: i32,
     #[serde(rename = "Active")]
-    pub active: bool,
+    pub active: Option<bool>,
     #[serde(rename = "Name")]
-    pub name: String,
+    pub name: Option<String>,
     #[serde(rename = "Address")]
-    pub address: String,
+    pub address: Option<String>,
     #[serde(rename = "City")]
-    pub city: String,
+    pub city: Option<String>,
     #[serde(rename = "State")]
-    pub state: String,
+    pub state: Option<String>,
     #[serde(rename = "Zip")]
-    pub zip: String,
+    pub zip: Option<String>,
     #[serde(rename = "Country")]
-    pub country: String,
+    pub country: Option<String>,
     #[serde(rename = "Capacity")]
-    pub capacity: i32,
+    pub capacity: Option<i32>,
     #[serde(rename = "GeoLat")]
-    pub geo_lat: f64,
+    pub geo_lat: Option<f64>,
     #[serde(rename = "GeoLong")]
-    pub geo_long: f64,
+    pub geo_long: Option<f64>,
 }

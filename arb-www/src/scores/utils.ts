@@ -25,6 +25,9 @@ export interface Game {
   date: string;
   quarter?: string;
   inningHalf?: string;
+  timeRemaining?: string;
+  timeRemainingMinutes?: number;
+  timeRemainingSeconds?: number;
   // Location/Venue information
   stadium?: string;
   city?: string;
@@ -365,12 +368,12 @@ export const convertNBAGameToGame = (
     id: gameId,
     homeTeam: {
       name: homeTeamProfile.Name,
-      score: gameData.HomeTeamRuns || 0,
+      score: gameData.HomeTeamScore,
       logo: homeTeamProfile.WikipediaLogoUrl,
     },
     awayTeam: {
       name: awayTeamProfile.Name,
-      score: gameData.AwayTeamRuns || 0,
+      score: gameData.AwayTeamScore,
       logo: awayTeamProfile.WikipediaLogoUrl,
     },
     status: getStatus(gameData.Status),
@@ -378,8 +381,11 @@ export const convertNBAGameToGame = (
     date: gameData.DateTime
       ? convertUtcToLocalDate(gameData.DateTime)
       : new Date().toISOString().split("T")[0],
-    quarter: gameData.Inning || undefined,
-    inningHalf: gameData.InningHalf || undefined,
+    quarter: gameData.Quarter || undefined,
+    inningHalf: undefined, // Not applicable to NBA
+    timeRemaining: undefined, // NBA uses separate minutes/seconds
+    timeRemainingMinutes: gameData.TimeRemainingMinutes,
+    timeRemainingSeconds: gameData.TimeRemainingSeconds,
     // Location/Venue information
     stadium: stadium?.Name,
     city: stadium?.City,
@@ -402,8 +408,26 @@ export const convertNBAGameToGame = (
     runnerOnFirst: false,
     runnerOnSecond: false,
     runnerOnThird: false,
-    // Odds information
-    odds: getGameOdds(gameId, oddsData) || undefined,
+    // Odds information - try direct game data first, then odds data
+    odds: gameData.HomeTeamMoneyLine !== undefined ? {
+      homeMoneyLine: gameData.HomeTeamMoneyLine,
+      awayMoneyLine: gameData.AwayTeamMoneyLine,
+      homePointSpread: gameData.PointSpread,
+      awayPointSpread: gameData.PointSpread ? -gameData.PointSpread : undefined,
+      overUnder: gameData.OverUnder,
+      sportsbook: "SportsData.io",
+      homeTeam: {
+        moneyLine: gameData.HomeTeamMoneyLine,
+        pointSpread: gameData.PointSpread,
+      },
+      awayTeam: {
+        moneyLine: gameData.AwayTeamMoneyLine,
+        pointSpread: gameData.PointSpread ? -gameData.PointSpread : undefined,
+      },
+      total: gameData.OverUnder,
+      totalOverOdds: gameData.OverPayout,
+      totalUnderOdds: gameData.UnderPayout,
+    } : getGameOdds(gameId, oddsData) || undefined,
     // League
     league: League.NBA,
   };
@@ -428,7 +452,6 @@ export const convertGameToGame = (
     case League.NBA:
       return convertNBAGameToGame(rawGame, teamProfiles, stadiums, oddsData, boxScoreData);
     default:
-      console.warn(`No converter found for league: ${league}`);
       return null;
   }
 };
@@ -727,8 +750,26 @@ export const convertNBAScheduleGameToGame = (
     runnerOnFirst: false,
     runnerOnSecond: false,
     runnerOnThird: false,
-    // Odds information
-    odds: getGameOdds(gameId, oddsData) || undefined,
+    // Odds information - try direct game data first, then odds data
+    odds: gameData.HomeTeamMoneyLine !== undefined ? {
+      homeMoneyLine: gameData.HomeTeamMoneyLine,
+      awayMoneyLine: gameData.AwayTeamMoneyLine,
+      homePointSpread: gameData.PointSpread,
+      awayPointSpread: gameData.PointSpread ? -gameData.PointSpread : undefined,
+      overUnder: gameData.OverUnder,
+      sportsbook: "SportsData.io",
+      homeTeam: {
+        moneyLine: gameData.HomeTeamMoneyLine,
+        pointSpread: gameData.PointSpread,
+      },
+      awayTeam: {
+        moneyLine: gameData.AwayTeamMoneyLine,
+        pointSpread: gameData.PointSpread ? -gameData.PointSpread : undefined,
+      },
+      total: gameData.OverUnder,
+      totalOverOdds: gameData.OverPayout,
+      totalUnderOdds: gameData.UnderPayout,
+    } : getGameOdds(gameId, oddsData) || undefined,
     // League
     league: League.NBA,
   };
@@ -753,7 +794,6 @@ export const convertScheduleGameToGame = (
     case League.NBA:
       return convertNBAScheduleGameToGame(scheduleGame, teamProfiles, stadiums, oddsData, boxScoreData);
     default:
-      console.warn(`No schedule converter found for league: ${league}`);
       return null;
   }
 };

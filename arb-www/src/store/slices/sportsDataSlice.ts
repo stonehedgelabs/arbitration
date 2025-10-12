@@ -37,7 +37,6 @@ export const fetchTwitterData = createAsyncThunk(
     const response = await fetch(apiUrl);
     
     if (!response.ok) {
-      console.error('❌ API request failed:', response.status, response.statusText);
       if (response.status === 429) {
         throw new Error('Twitter API rate limit exceeded. Please try again in a few minutes.');
       } else if (response.status === 401) {
@@ -652,7 +651,6 @@ const sportsDataSlice = createSlice({
         state.boxScoreError = action.error.message || 'Failed to fetch box score';
         // Remove the gameId from the requests array
         state.boxScoreRequests = state.boxScoreRequests.filter(id => id !== action.meta.arg.gameId);
-        console.error('Failed to fetch box score:', action.error);
       })
       .addCase(fetchTwitterData.pending, (state) => {
         state.twitterLoading = true;
@@ -722,40 +720,49 @@ const sportsDataSlice = createSlice({
       .addCase(fetchRedditGameThreadComments.fulfilled, (state, action) => {
         state.redditCommentsLoading = false;
         
-        // Combine comments from both teams and sort by timestamp
-        if (state.redditCommentsData) {
-          // Merge with existing comments
-          const existingComments = state.redditCommentsData.posts?.[0]?.comments || [];
-          const newComments = action.payload.posts?.[0]?.comments || [];
-          
-          // Create a map to deduplicate by comment ID
-          const commentMap = new Map();
-          
-          // Add existing comments to map
-          existingComments.forEach(comment => {
-            commentMap.set(comment.id, comment);
-          });
-          
-          // Add new comments to map (this will overwrite duplicates)
-          newComments.forEach(comment => {
-            commentMap.set(comment.id, comment);
-          });
-          
-          // Convert back to array and sort by timestamp (newest first)
-          const combinedComments = Array.from(commentMap.values())
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-          
-          // Update the data with combined comments
-          state.redditCommentsData = {
-            ...action.payload,
-            posts: [{
-              ...action.payload.posts[0],
-              comments: combinedComments
-            }]
-          };
-        } else {
-          // First set of comments
+        // Get the gameId from the action meta to check if we're switching games
+        const newGameId = action.meta.arg.gameId;
+        const currentGameId = state.redditCommentsData?.game_id;
+        
+        // If we're switching to a different game, clear existing comments
+        if (currentGameId && currentGameId !== newGameId) {
           state.redditCommentsData = action.payload;
+        } else {
+          // Combine comments from both teams and sort by timestamp (same game)
+          if (state.redditCommentsData) {
+            // Merge with existing comments
+            const existingComments = state.redditCommentsData.posts?.[0]?.comments || [];
+            const newComments = action.payload.posts?.[0]?.comments || [];
+            
+            // Create a map to deduplicate by comment ID
+            const commentMap = new Map();
+            
+            // Add existing comments to map
+            existingComments.forEach(comment => {
+              commentMap.set(comment.id, comment);
+            });
+            
+            // Add new comments to map (this will overwrite duplicates)
+            newComments.forEach(comment => {
+              commentMap.set(comment.id, comment);
+            });
+            
+            // Convert back to array and sort by timestamp (newest first)
+            const combinedComments = Array.from(commentMap.values())
+              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            
+            // Update the data with combined comments
+            state.redditCommentsData = {
+              ...action.payload,
+              posts: [{
+                ...action.payload.posts[0],
+                comments: combinedComments
+              }]
+            };
+          } else {
+            // First set of comments
+            state.redditCommentsData = action.payload;
+          }
         }
         
         state.redditCommentsError = null;
