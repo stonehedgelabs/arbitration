@@ -1,9 +1,9 @@
 // Third-party library imports
-import { Badge } from "@chakra-ui/react";
+import {Badge} from "@chakra-ui/react";
 
 // Internal imports - config
-import { GameStatus } from "../../config";
-import { Wifi } from "lucide-react";
+import {GameStatus} from "../../config";
+import {Wifi} from "lucide-react";
 
 interface StatusBadgeProps {
   status: GameStatus;
@@ -14,10 +14,12 @@ export function StatusBadge({ status, size }: StatusBadgeProps) {
   const getStatusText = () => {
     switch (status) {
       case GameStatus.LIVE:
+      case GameStatus.IN_PROGRESS:
         return "Live";
       case GameStatus.FINAL:
         return "Final";
       case GameStatus.UPCOMING:
+      case GameStatus.SCHEDULED:
         return "Upcoming";
       default:
         return "";
@@ -36,6 +38,7 @@ export function StatusBadge({ status, size }: StatusBadgeProps) {
       case GameStatus.FINAL:
         return { bg: "green.500", color: "white" }; // Green background, white text for final
       case GameStatus.UPCOMING:
+      case GameStatus.SCHEDULED:
         return { bg: "text.350", color: "text.600" }; // Grey for upcoming
       default:
         return { bg: "text.200", color: "text.600" }; // Default grey

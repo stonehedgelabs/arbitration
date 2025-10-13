@@ -4,7 +4,6 @@ import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 import { Skeleton } from "../Skeleton";
 import {
   PostseasonBadge,
-  LiveBadge,
   QuarterBadge,
   StatusBadge,
 } from "../badge";
@@ -208,11 +207,11 @@ export function NBAScoreCard({
   return (
     <Card.Root
       key={game.id}
-      bg="primary.25"
+      bg="primary.100"
       borderRadius="sm"
       shadow="sm"
       border="1px"
-      borderColor="text.400"
+      borderColor="primary.400"
       _active={{ transform: "scale(0.98)" }}
       transition="all 0.2s"
       cursor="pointer"
@@ -235,11 +234,8 @@ export function NBAScoreCard({
                   size="2xs"
                 />
               )}
-              {game.status === GameStatus.FINAL && (
-                <StatusBadge status={game.status} size="2xs" />
-              )}
+              {<StatusBadge status={game.status} size="2xs" />}
               {game.isPostseason && <PostseasonBadge size={"2xs"} />}
-              {game.status === GameStatus.LIVE && <LiveBadge size={"2xs"} />}
             </HStack>
           </HStack>
 
@@ -300,10 +296,10 @@ export function NBAScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg="primary.100"
-                  borderRadius="6px"
-                  border="1px solid"
-                  borderColor="text.100"
+                  bg="primary.200"
+                  borderRadius="sm"
+                  borderColor="primary.300"
+                  borderWidth="1px"
                   w="24"
                   flexShrink="0"
                 >
@@ -374,9 +370,9 @@ export function NBAScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg="primary.100"
-                  borderRadius="6px"
-                  borderColor="text.200"
+                  bg="primary.200"
+                  borderRadius="sm"
+                  borderColor="primary.300"
                   w="24"
                   flexShrink="0"
                 >

@@ -260,5 +260,4 @@ pub struct NBAPlayByPlayResponse {
     pub plays: Vec<NBAPlay>,
 }
 
-
 pub type NBAPlayByPlayResponseUnknown = serde_json::Value;

@@ -109,7 +109,7 @@ export const ENV = {
  * API Configuration
  */
 export const API_CONFIG = {
-  baseUrl: 'https://8e740138f517.ngrok.app', // Rust backend URL
+  baseUrl: 'https://f73cfbd9c891.ngrok.app',
   endpoints: {
     scores: '/api/v1/scores',
     boxScoreFinal: '/api/v1/box-score-final',

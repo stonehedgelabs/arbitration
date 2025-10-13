@@ -225,7 +225,7 @@ export function NFLScoreCard({
   return (
     <Card.Root
       key={game.id}
-      bg="primary.25"
+      bg="primary.100"
       borderRadius="sm"
       shadow="sm"
       border="1px"
@@ -306,9 +306,10 @@ export function NFLScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg={"primary.100"}
-                  borderColor="text.200"
-                  borderRadius="6px"
+                  bg="primary.200"
+                  borderRadius="sm"
+                  borderColor="primary.300"
+                  borderWidth="1px"
                   w="24"
                   flexShrink="0"
                 >
@@ -379,9 +380,10 @@ export function NFLScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  borderRadius="6px"
-                  bg={"primary.100"}
-                  borderColor="text.200"
+                  bg="primary.200"
+                  borderRadius="sm"
+                  borderColor="primary.300"
+                  borderWidth="1px"
                   w="24"
                   flexShrink="0"
                 >

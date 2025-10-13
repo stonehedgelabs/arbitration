@@ -20,7 +20,7 @@ export function UnifiedGameFeedSkeleton() {
       >
         <Box
           bg="primary.100"
-          borderRadius="6px"
+          borderRadius="sm"
           shadow="sm"
           border="1px"
           borderColor="text.400"

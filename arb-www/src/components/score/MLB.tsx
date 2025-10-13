@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
 import { Skeleton } from "../Skeleton";
-import { InningBadge, LiveBadge, PostseasonBadge } from "../badge";
+import { InningBadge, PostseasonBadge, StatusBadge } from "../badge";
 
 import { GameStatus, League } from "../../config";
 
@@ -115,7 +115,6 @@ const GameOddsDisplay = ({
   odds: Game["odds"];
   isLoading?: boolean;
 }) => {
-  console.log("odds", odds);
   if (isLoading) {
     return (
       <HStack justify="space-between" align="center" fontSize="xs" w="full">
@@ -205,7 +204,7 @@ export function MLBScoreCard({
   return (
     <Card.Root
       key={game.id}
-      bg="primary.25"
+      bg="primary.100"
       borderRadius="sm"
       shadow="sm"
       border="1px"
@@ -231,8 +230,8 @@ export function MLBScoreCard({
                   size="sm"
                 />
               )}
+              {<StatusBadge status={game.status} size={"2xs"} />}
               {game.isPostseason && <PostseasonBadge size={"2xs"} />}
-              {game.status === GameStatus.LIVE && <LiveBadge size={"2xs"} />}
             </HStack>
           </HStack>
 
@@ -293,10 +292,10 @@ export function MLBScoreCard({
                   ))) && (
                 <Box
                   p="2"
-                  bg={"primary.100"}
-                  borderColor="text.200"
-                  borderRadius="6px"
-                  border="1px solid"
+                  bg="primary.200"
+                  borderRadius="sm"
+                  borderColor="primary.300"
+                  borderWidth="1px"
                   w="24"
                   flexShrink="0"
                 >
@@ -367,12 +366,12 @@ export function MLBScoreCard({
                   ))) && (
                 <Box
                   p="2"
+                  bg="primary.200"
                   borderRadius="sm"
-                  border="1px solid"
-                  borderColor="text.200"
+                  borderColor="primary.300"
+                  borderWidth="1px"
                   w="24"
                   flexShrink="0"
-                  bg={"primary.100"}
                 >
                   <TeamOddsDisplay
                     odds={game.odds}

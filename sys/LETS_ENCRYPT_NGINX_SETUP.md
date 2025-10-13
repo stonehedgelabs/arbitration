@@ -36,6 +36,18 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 100M; 
+        
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+        
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
     }
 }
 ```
@@ -102,6 +114,10 @@ server: nginx/1.18.0 (Ubuntu)
 Certbot installs a cron job automatically, but you can test it:
 
 ```bash
+# Check if auto-renewal is configured
+sudo systemctl list-timers | grep certbot
+
+# Test renewal
 sudo certbot renew --dry-run
 ```
 

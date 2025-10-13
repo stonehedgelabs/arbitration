@@ -107,7 +107,7 @@ export function Login() {
                   onClick={() => handleLogin("apple")}
                   w="full"
                   h="56px"
-                  borderRadius="sm"
+                  borderRadius="xl"
                   fontSize="md"
                   fontWeight="medium"
                   color="text.400"
@@ -136,7 +136,7 @@ export function Login() {
                   onClick={() => handleLogin("google")}
                   w="full"
                   h="56px"
-                  borderRadius="sm"
+                  borderRadius="xl"
                   fontSize="md"
                   fontWeight="medium"
                   color="text.400"
@@ -165,7 +165,7 @@ export function Login() {
                   onClick={() => handleLogin("guest")}
                   w="full"
                   h="56px"
-                  borderRadius="sm"
+                  borderRadius="xl"
                   fontSize="md"
                   fontWeight="medium"
                   color="text.400"

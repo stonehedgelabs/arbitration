@@ -2380,7 +2380,9 @@ pub async fn handle_box_score_request(
                 league: league.to_string(),
                 data_type: DataType::BoxScore,
                 data: crate::schema::league_response::LeagueData::Nba(Box::new(
-                    crate::schema::league_response::NBAData::BoxScore(Box::new(nba_box_score)),
+                    crate::schema::league_response::NBAData::BoxScore(Box::new(
+                        nba_box_score,
+                    )),
                 )),
                 filtered_count: 1,
                 total_count: 1,

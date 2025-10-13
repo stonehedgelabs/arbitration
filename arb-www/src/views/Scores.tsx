@@ -80,7 +80,7 @@ const GameCardSkeleton = () => {
             </HStack>
             <HStack gap="2" align="center">
               <Skeleton w="6" h="5" bg={"primary.300"} />
-              <Skeleton w="20" h="8" borderRadius="6px" bg={"primary.300"} />
+              <Skeleton w="20" h="8" borderRadius="sm" bg={"primary.300"} />
             </HStack>
           </HStack>
 
@@ -95,7 +95,7 @@ const GameCardSkeleton = () => {
             </HStack>
             <HStack gap="2" align="center">
               <Skeleton w="6" h="5" bg={"primary.300"} />
-              <Skeleton w="20" h="8" borderRadius="6px" bg={"primary.300"} />
+              <Skeleton w="20" h="8" borderRadius="sm" bg={"primary.300"} />
             </HStack>
           </HStack>
 
