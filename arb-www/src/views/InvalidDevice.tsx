@@ -61,25 +61,25 @@ export function InvalidDevice() {
             </Text>
             <VStack gap="2" align="start" w="full">
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="accent.100" borderRadius="full" />
+                <Box w="2" h="2" bg="accent.100" borderRadius="sm" />
                 <Text fontSize="sm" color="text.200">
                   Optimized for touch interactions
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="accent.100" borderRadius="full" />
+                <Box w="2" h="2" bg="accent.100" borderRadius="sm" />
                 <Text fontSize="sm" color="text.200">
                   Real-time sports updates on the go
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="accent.100" borderRadius="full" />
+                <Box w="2" h="2" bg="accent.100" borderRadius="sm" />
                 <Text fontSize="sm" color="text.200">
                   Location-based features
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="accent.100" borderRadius="full" />
+                <Box w="2" h="2" bg="accent.100" borderRadius="sm" />
                 <Text fontSize="sm" color="text.200">
                   Push notifications for live events
                 </Text>

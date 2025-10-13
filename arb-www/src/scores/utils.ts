@@ -137,15 +137,18 @@ export const convertNFLGameToGame = (
   // Get stadium
   const stadium = getStadium(rawGame.StadiumID);
 
-  if (!homeTeamProfile || !awayTeamProfile) {
-    return null;
-  }
+  // If team profiles are not available, we'll use the team abbreviations from the raw data
+  // This allows games to be displayed even when team profiles haven't loaded yet
 
   const gameId = rawGame.GameKey.toString();
 
   // Check if we have more accurate box score data for this game
   // For NFL, the data structure is different - it has a 'score' field instead of 'Game'
-  const boxScoreGame = boxScoreData?.[gameId]?.data?.score || boxScoreData?.[gameId]?.data?.Game;
+  // Also handle case where data is returned directly without wrapper
+  const boxScoreGame = boxScoreData?.[gameId]?.data?.score || 
+                      boxScoreData?.[gameId]?.data?.Score || 
+                      boxScoreData?.[gameId]?.data?.Game ||
+                      boxScoreData?.[gameId]?.data;
 
   // Use box score data if available, otherwise use raw game data
   const gameData = boxScoreGame || rawGame;
@@ -153,14 +156,14 @@ export const convertNFLGameToGame = (
   const convertedGame: Game = {
     id: gameId,
     homeTeam: {
-      name: homeTeamProfile.Name,
+      name: homeTeamProfile?.Name || rawGame.HomeTeam || "Home Team",
       score: gameData.HomeScore || 0,
-      logo: homeTeamProfile.WikipediaLogoUrl,
+      logo: homeTeamProfile?.WikipediaLogoUrl,
     },
     awayTeam: {
-      name: awayTeamProfile.Name,
+      name: awayTeamProfile?.Name || rawGame.AwayTeam || "Away Team",
       score: gameData.AwayScore || 0,
-      logo: awayTeamProfile.WikipediaLogoUrl,
+      logo: awayTeamProfile?.WikipediaLogoUrl,
     },
     status: getStatus(gameData.Status),
     time: gameData.DateTime || "",
@@ -172,6 +175,7 @@ export const convertNFLGameToGame = (
     // Location/Venue information
     stadium: stadium?.Name,
     city: stadium?.City,
+    timeRemaining: gameData.TimeRemaining,
     state: stadium?.State,
     country: stadium?.Country,
     capacity: stadium?.Capacity,
@@ -308,8 +312,26 @@ export const convertMLBGameToGame = (
     runnerOnFirst: gameData.RunnerOnFirst || false,
     runnerOnSecond: gameData.RunnerOnSecond || false,
     runnerOnThird: gameData.RunnerOnThird || false,
-    // Odds information
-    odds: getGameOdds(gameId, oddsData) || undefined,
+    // Odds information - try direct game data first, then odds data
+    odds: gameData.HomeTeamMoneyLine !== undefined ? {
+      homeMoneyLine: gameData.HomeTeamMoneyLine,
+      awayMoneyLine: gameData.AwayTeamMoneyLine,
+      homePointSpread: gameData.PointSpread,
+      awayPointSpread: gameData.PointSpread ? -gameData.PointSpread : undefined,
+      overUnder: gameData.OverUnder,
+      sportsbook: "SportsData.io",
+      homeTeam: {
+        moneyLine: gameData.HomeTeamMoneyLine,
+        pointSpread: gameData.PointSpread,
+      },
+      awayTeam: {
+        moneyLine: gameData.AwayTeamMoneyLine,
+        pointSpread: gameData.PointSpread ? -gameData.PointSpread : undefined,
+      },
+      total: gameData.OverUnder,
+      totalOverOdds: gameData.OverPayout,
+      totalUnderOdds: gameData.UnderPayout,
+    } : getGameOdds(gameId, oddsData) || undefined,
     // League
     league: League.MLB,
   };
@@ -491,15 +513,18 @@ export const convertNFLScheduleGameToGame = (
   // Get stadium
   const stadium = getStadium(scheduleGame.StadiumID);
 
-  if (!homeTeamProfile || !awayTeamProfile) {
-    return null;
-  }
+  // If team profiles are not available, we'll use the team abbreviations from the raw data
+  // This allows games to be displayed even when team profiles haven't loaded yet
 
   const gameId = scheduleGame.GameKey.toString();
 
   // Check if we have more accurate box score data for this game
   // For NFL, the data structure is different - it has a 'score' field instead of 'Game'
-  const boxScoreGame = boxScoreData?.[gameId]?.data?.score || boxScoreData?.[gameId]?.data?.Game;
+  // Also handle case where data is returned directly without wrapper
+  const boxScoreGame = boxScoreData?.[gameId]?.data?.score || 
+                      boxScoreData?.[gameId]?.data?.Score || 
+                      boxScoreData?.[gameId]?.data?.Game ||
+                      boxScoreData?.[gameId]?.data;
 
   // Use box score data if available, otherwise use schedule game data
   const gameData = boxScoreGame || scheduleGame;
@@ -511,14 +536,14 @@ export const convertNFLScheduleGameToGame = (
   const convertedGame: Game = {
     id: gameId,
     homeTeam: {
-      name: homeTeamProfile.Name,
+      name: homeTeamProfile?.Name || scheduleGame.HomeTeam || "Home Team",
       score: gameData.HomeScore || 0,
-      logo: homeTeamProfile.WikipediaLogoUrl,
+      logo: homeTeamProfile?.WikipediaLogoUrl,
     },
     awayTeam: {
-      name: awayTeamProfile.Name,
+      name: awayTeamProfile?.Name || scheduleGame.AwayTeam || "Away Team",
       score: gameData.AwayScore || 0,
-      logo: awayTeamProfile.WikipediaLogoUrl,
+      logo: awayTeamProfile?.WikipediaLogoUrl,
     },
     status: getStatus(gameData.Status || ""),
     time: gameData.DateTime || "",
@@ -656,8 +681,26 @@ export const convertMLBScheduleGameToGame = (
     runnerOnFirst: gameData.RunnerOnFirst || false,
     runnerOnSecond: gameData.RunnerOnSecond || false,
     runnerOnThird: gameData.RunnerOnThird || false,
-    // Odds information
-    odds: getGameOdds(gameId, oddsData) || undefined,
+    // Odds information - try direct game data first, then odds data
+    odds: gameData.HomeTeamMoneyLine !== undefined ? {
+      homeMoneyLine: gameData.HomeTeamMoneyLine,
+      awayMoneyLine: gameData.AwayTeamMoneyLine,
+      homePointSpread: gameData.PointSpread,
+      awayPointSpread: gameData.PointSpread ? -gameData.PointSpread : undefined,
+      overUnder: gameData.OverUnder,
+      sportsbook: "SportsData.io",
+      homeTeam: {
+        moneyLine: gameData.HomeTeamMoneyLine,
+        pointSpread: gameData.PointSpread,
+      },
+      awayTeam: {
+        moneyLine: gameData.AwayTeamMoneyLine,
+        pointSpread: gameData.PointSpread ? -gameData.PointSpread : undefined,
+      },
+      total: gameData.OverUnder,
+      totalOverOdds: gameData.OverPayout,
+      totalUnderOdds: gameData.UnderPayout,
+    } : getGameOdds(gameId, oddsData) || undefined,
     // League
     league: League.MLB,
   };

@@ -1,340 +1,172 @@
 import { useCallback, useState } from "react";
-
 import { buildApiUrl } from '../config';
 import { BoxScoreResponse } from '../schema';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { 
-  setLeagueScores,
-  setLeagueTeamProfiles, 
-  setLeagueStadiums, 
-  setLeagueSchedule,
-  setLeagueOdds,
-  setLeagueCurrentGames,
-  setLeagueLoading,
-  setLeagueError 
+import {
+  setLeagueScores, setLeagueTeamProfiles, setLeagueStadiums, setLeagueSchedule,
+  setLeagueOdds, setLeagueCurrentGames, setLeagueLoading, setLeagueError
 } from '../store/slices/sportsDataSlice';
 
-/**
- * Generate user-friendly error messages
- */
 const getUserFriendlyError = (dataType: string, league: string, error: any): string => {
-  const leagueUpper = league.toUpperCase();
-  
-  // Check if it's a network error
-  if (error?.message?.includes('fetch') || error?.message?.includes('NetworkError') || error?.message?.includes('Failed to fetch')) {
-    return `Failed to fetch ${leagueUpper} ${dataType}. Network issue`;
-  }
-  
-  // Check if it's a 404 or similar
-  if (error?.message?.includes('404') || error?.message?.includes('Not Found')) {
-    return `Failed to fetch ${leagueUpper} ${dataType}. Data not available`;
-  }
-  
-  // Check if it's a server error
-  if (error?.message?.includes('500') || error?.message?.includes('503') || error?.message?.includes('502')) {
-    return `Failed to fetch ${leagueUpper} ${dataType}. Server issue`;
-  }
-  
-  // Default user-friendly message
-  return `Failed to fetch ${leagueUpper} ${dataType}. Please try again`;
+  const L = league.toUpperCase();
+  if (error?.message?.includes('fetch') || error?.message?.includes('NetworkError') || error?.message?.includes('Failed to fetch')) return `Failed to fetch ${L} ${dataType}. Network issue`;
+  if (error?.message?.includes('404') || error?.message?.includes('Not Found')) return `Failed to fetch ${L} ${dataType}. Data not available`;
+  if (error?.message?.includes('500') || error?.message?.includes('503') || error?.message?.includes('502')) return `Failed to fetch ${L} ${dataType}. Server issue`;
+  return `Failed to fetch ${L} ${dataType}. Please try again`;
 };
 
-
-
-/**
- * Hook for Arbitration API calls
- */
 const useArb = () => {
   const [mlbBoxScore, setMlbBoxScore] = useState<BoxScoreResponse | null>(null);
-  
   const dispatch = useAppDispatch();
-  const selectedLeague = useAppSelector((state) => state.sportsData.selectedLeague);
-  
-  const leagueData = useAppSelector((state) => state.sportsData.leagueData);
-  const currentLeagueData = leagueData[selectedLeague];
-  
-  const scores = currentLeagueData?.scores || null;
-  const scoresLoading = currentLeagueData?.scoresLoading || false;
-  const scoresError = currentLeagueData?.scoresError || null;
-  
-  const teamProfiles = currentLeagueData?.teamProfiles || null;
-  const teamProfilesLoading = currentLeagueData?.teamProfilesLoading || false;
-  const teamProfilesError = currentLeagueData?.teamProfilesError || null;
-  
-  const stadiums = currentLeagueData?.stadiums || null;
-  const stadiumsLoading = currentLeagueData?.stadiumsLoading || false;
-  const stadiumsError = currentLeagueData?.stadiumsError || null;
-  
-  const schedule = currentLeagueData?.schedule || null;
-  const scheduleLoading = currentLeagueData?.scheduleLoading || false;
-  const scheduleError = currentLeagueData?.scheduleError || null;
-  
-  const odds = currentLeagueData?.odds || null;
-  const oddsLoading = currentLeagueData?.oddsLoading || false;
-  const oddsError = currentLeagueData?.oddsError || null;
-  
-  const currentGames = currentLeagueData?.currentGames || null;
-  const currentGamesLoading = currentLeagueData?.currentGamesLoading || false;
-  const currentGamesError = currentLeagueData?.currentGamesError || null;
+  const leagueData = useAppSelector((s) => s.sportsData.leagueData);
 
-  /**
-   * Fetch scores for a specific league and date
-   */
-  const fetchScores = useCallback(async (league: string, date?: string): Promise<void> => {
-    // Don't fetch if already loading
-    if (scoresLoading) {
-      return;
-    }
+  const selectedLeague = useAppSelector((s) => s.sportsData.selectedLeague);
+  const current = leagueData[selectedLeague] ?? {};
+  const scores = current.scores ?? null;
+  const teamProfiles = current.teamProfiles ?? null;
+  const stadiums = current.stadiums ?? null;
+  const schedule = current.schedule ?? null;
+  const odds = current.odds ?? null;
+  const currentGames = current.currentGames ?? null;
 
+  const scoresLoading = current.scoresLoading ?? false;
+  const teamProfilesLoading = current.teamProfilesLoading ?? false;
+  const stadiumsLoading = current.stadiumsLoading ?? false;
+  const scheduleLoading = current.scheduleLoading ?? false;
+  const oddsLoading = current.oddsLoading ?? false;
+  const currentGamesLoading = current.currentGamesLoading ?? false;
+
+  const scoresError = current.scoresError ?? null;
+  const teamProfilesError = current.teamProfilesError ?? null;
+  const stadiumsError = current.stadiumsError ?? null;
+  const scheduleError = current.scheduleError ?? null;
+  const oddsError = current.oddsError ?? null;
+  const currentGamesError = current.currentGamesError ?? null;
+
+  const norm = (l: string) => l?.toLowerCase?.() ?? l;
+
+  const fetchScores = useCallback(async (leagueArg: string, date?: string) => {
+    const L = norm(leagueArg);
+    const ld = leagueData[L] ?? {};
+    if (ld.scoresLoading) return;
     try {
-      // Set loading state
-      dispatch(setLeagueLoading({ league, dataType: 'scores', loading: true }));
-      
-      const params: Record<string, string> = { league };
-      if (date) {
-        params.date = date;
-      }
-      const apiUrl = buildApiUrl('/api/v1/scores', params);
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch scores: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Update Redux state
-      dispatch(setLeagueScores({ league, data }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'scores', loading: false }));
+      dispatch(setLeagueLoading({ league: L, dataType: 'scores', loading: true }));
+      const params: Record<string,string> = { league: L };
+      if (date) params.date = date;
+      const res = await fetch(buildApiUrl('/api/v1/scores', params));
+      if (!res.ok) throw new Error(`Failed to fetch scores: ${res.status}`);
+      const data = await res.json();
+      dispatch(setLeagueScores({ league: L, data }));
     } catch (err) {
-      // Set error state with user-friendly message
-      dispatch(setLeagueError({ league, dataType: 'scores', error: getUserFriendlyError('scores', league, err) }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'scores', loading: false }));
+      dispatch(setLeagueError({ league: L, dataType: 'scores', error: getUserFriendlyError('scores', L, err) }));
+    } finally {
+      dispatch(setLeagueLoading({ league: L, dataType: 'scores', loading: false }));
     }
-  }, [dispatch]);
+  }, [dispatch, leagueData]);
 
-  /**
-   * Fetch team profiles for a specific league
-   */
-  const fetchTeamProfiles = useCallback(async (league?: string): Promise<void> => {
-    // Don't fetch if already loading or data exists
-    if (teamProfilesLoading || teamProfiles || !league) {
-      return;
-    }
-
+  const fetchTeamProfiles = useCallback(async (leagueArg?: string) => {
+    if (!leagueArg) return;
+    const L = norm(leagueArg);
+    const ld = leagueData[L] ?? {};
+    if (ld.teamProfilesLoading) return;
     try {
-      // Set loading state
-      dispatch(setLeagueLoading({ league, dataType: 'teamProfiles', loading: true }));
-      
-      const apiUrl = buildApiUrl('/api/team-profile', { league });
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch team profiles: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Update Redux state
-      dispatch(setLeagueTeamProfiles({ league, data }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'teamProfiles', loading: false }));
+      dispatch(setLeagueLoading({ league: L, dataType: 'teamProfiles', loading: true }));
+      const res = await fetch(buildApiUrl('/api/team-profile', { league: L }));
+      if (!res.ok) throw new Error(`Failed to fetch team profiles: ${res.status}`);
+      const data = await res.json();
+      dispatch(setLeagueTeamProfiles({ league: L, data }));
     } catch (err) {
-      // Set error state with user-friendly message
-      dispatch(setLeagueError({ league, dataType: 'teamProfiles', error: getUserFriendlyError('team profiles', league, err) }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'teamProfiles', loading: false }));
+      dispatch(setLeagueError({ league: L, dataType: 'teamProfiles', error: getUserFriendlyError('team profiles', L, err) }));
+    } finally {
+      dispatch(setLeagueLoading({ league: L, dataType: 'teamProfiles', loading: false }));
     }
-  }, [teamProfiles, dispatch]);
+  }, [dispatch, leagueData]);
 
-  /**
-   * Fetch box score for a specific game ID and league
-   */
-  const fetchBoxScore = useCallback(async (league: string, gameId: string, scoreId?: string): Promise<void> => {
+  const fetchBoxScore = useCallback(async (leagueArg: string, gameId: string, scoreId?: string) => {
+    const L = norm(leagueArg);
     try {
-      // For NFL, use score_id parameter; for other leagues, use game_id
-      const params: Record<string, string> = league.toLowerCase() === 'nfl' && scoreId 
-        ? { league, score_id: scoreId }
-        : { league, game_id: gameId };
-
-      const url = buildApiUrl('/api/v1/box-score', params);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Deserialize the response and update state
-      const boxScoreResponse = BoxScoreResponse.fromJSON(data);
-      setMlbBoxScore(boxScoreResponse);
-    } catch (err) {
-    }
+      const params: Record<string,string> = L === 'NFL' && scoreId ? { league: L, score_id: scoreId } : { league: L, game_id: gameId };
+      const res = await fetch(buildApiUrl('/api/v1/box-score', params), { method: 'GET', headers: { 'Content-Type': 'application/json' }});
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      setMlbBoxScore(BoxScoreResponse.fromJSON(data));
+    } catch {}
   }, []);
 
-  /**
-   * Fetch stadiums/venues for a specific league
-   */
-  const fetchStadiums = useCallback(async (league: string): Promise<void> => {
-    // Don't fetch if already loading or data exists
-    if (stadiumsLoading || stadiums || !league || !selectedLeague) {
-      return;
-    }
+  const fetchStadiums = useCallback(async (leagueArg: string) => {
+    if (!leagueArg) return;
+    const L = norm(leagueArg);
+    const ld = leagueData[L] ?? {};
+    if (ld.stadiumsLoading) return;
     try {
-      // Set loading state
-      dispatch(setLeagueLoading({ league, dataType: 'stadiums', loading: true }));
-      
-      const apiUrl = buildApiUrl('/api/v1/stadiums', { league });
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch stadiums: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Update Redux state
-      dispatch(setLeagueStadiums({ league, data }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'stadiums', loading: false }));
+      dispatch(setLeagueLoading({ league: L, dataType: 'stadiums', loading: true }));
+      const res = await fetch(buildApiUrl('/api/v1/stadiums', { league: L }));
+      if (!res.ok) throw new Error(`Failed to fetch stadiums: ${res.status}`);
+      const data = await res.json();
+      dispatch(setLeagueStadiums({ league: L, data }));
     } catch (err) {
-      // Set error state with user-friendly message
-      dispatch(setLeagueError({ league, dataType: 'stadiums', error: getUserFriendlyError('stadiums', league, err) }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'stadiums', loading: false }));
+      dispatch(setLeagueError({ league: L, dataType: 'stadiums', error: getUserFriendlyError('stadiums', L, err) }));
+    } finally {
+      dispatch(setLeagueLoading({ league: L, dataType: 'stadiums', loading: false }));
     }
-  }, [dispatch]);
+  }, [dispatch, leagueData]);
 
-  /**
-   * Fetch schedule for specific league and dates (both regular season and postseason)
-   */
-  const fetchSchedule = useCallback(async (league: string, date?: string): Promise<void> => {
-    // Don't fetch if already loading or data exists
-    if (scheduleLoading || schedule) {
-      return;
-    }
-
+  const fetchSchedule = useCallback(async (leagueArg: string, date?: string) => {
+    const L = norm(leagueArg);
+    const ld = leagueData[L] ?? {};
+    if (ld.scheduleLoading) return;
     try {
-      // Set loading state
-      dispatch(setLeagueLoading({ league, dataType: 'schedule', loading: true }));
-      
-      const params: Record<string, string> = { league };
-      if (date) {
-        params.date = date;
-      }
-      
-      const apiUrl = buildApiUrl('/api/v1/schedule', params);
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch schedule: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Update Redux state
-      dispatch(setLeagueSchedule({ league, data }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'schedule', loading: false }));
+      dispatch(setLeagueLoading({ league: L, dataType: 'schedule', loading: true }));
+      const params: Record<string,string> = { league: L };
+      if (date) params.date = date;
+      const res = await fetch(buildApiUrl('/api/v1/schedule', params));
+      if (!res.ok) throw new Error(`Failed to fetch schedule: ${res.status}`);
+      const data = await res.json();
+      dispatch(setLeagueSchedule({ league: L, data }));
     } catch (err) {
-      // Set error state with user-friendly message
-      dispatch(setLeagueError({ league, dataType: 'schedule', error: getUserFriendlyError('schedule', league, err) }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'schedule', loading: false }));
+      dispatch(setLeagueError({ league: L, dataType: 'schedule', error: getUserFriendlyError('schedule', L, err) }));
+    } finally {
+      dispatch(setLeagueLoading({ league: L, dataType: 'schedule', loading: false }));
     }
-  }, [schedule, dispatch]);
+  }, [dispatch, leagueData]);
 
-  /**
-   * Fetch odds for a specific league and date
-   */
-  const fetchOdds = useCallback(async (league: string, date: string): Promise<void> => {
-    // Don't fetch if already loading or data exists
-    if (oddsLoading || odds) {
-      return;
-    }
-
+  const fetchOdds = useCallback(async (leagueArg: string, date: string) => {
+    const L = norm(leagueArg);
+    const ld = leagueData[L] ?? {};
+    if (ld.oddsLoading) return;
     try {
-      // Set loading state
-      dispatch(setLeagueLoading({ league, dataType: 'odds', loading: true }));
-      
-      const apiUrl = buildApiUrl('/api/v1/odds-by-date', { league, date });
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch odds: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Update Redux state
-      dispatch(setLeagueOdds({ league, data }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'odds', loading: false }));
+      dispatch(setLeagueLoading({ league: L, dataType: 'odds', loading: true }));
+      const res = await fetch(buildApiUrl('/api/v1/odds-by-date', { league: L, date }));
+      if (!res.ok) throw new Error(`Failed to fetch odds: ${res.status}`);
+      const data = await res.json();
+      dispatch(setLeagueOdds({ league: L, data }));
     } catch (err) {
-      // Set error state with user-friendly message
-      dispatch(setLeagueError({ league, dataType: 'odds', error: getUserFriendlyError('odds', league, err) }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'odds', loading: false }));
+      dispatch(setLeagueError({ league: L, dataType: 'odds', error: getUserFriendlyError('odds', L, err) }));
+    } finally {
+      dispatch(setLeagueLoading({ league: L, dataType: 'odds', loading: false }));
     }
-  }, [odds, dispatch]);
+  }, [dispatch, leagueData]);
 
-  /**
-   * Fetch current games for a date range
-   */
-  const fetchCurrentGames = useCallback(async (league: string, start: string, end: string): Promise<void> => {
+  const fetchCurrentGames = useCallback(async (leagueArg: string, start: string, end: string) => {
+    const L = norm(leagueArg);
     try {
-      // Set loading state
-      dispatch(setLeagueLoading({ league, dataType: 'currentGames', loading: true }));
-      
-      const apiUrl = buildApiUrl('/api/v1/current-games', { league, start, end });
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch current games: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Update Redux state
-      dispatch(setLeagueCurrentGames({ league, data }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'currentGames', loading: false }));
+      dispatch(setLeagueLoading({ league: L, dataType: 'currentGames', loading: true }));
+      const res = await fetch(buildApiUrl('/api/v1/current-games', { league: L, start, end }));
+      if (!res.ok) throw new Error(`Failed to fetch current games: ${res.status}`);
+      const data = await res.json();
+      dispatch(setLeagueCurrentGames({ league: L, data }));
     } catch (err) {
-      // Set error state with user-friendly message
-      dispatch(setLeagueError({ league, dataType: 'currentGames', error: getUserFriendlyError('current games', league, err) }));
-      // Reset loading state
-      dispatch(setLeagueLoading({ league, dataType: 'currentGames', loading: false }));
+      dispatch(setLeagueError({ league: L, dataType: 'currentGames', error: getUserFriendlyError('current games', L, err) }));
+    } finally {
+      dispatch(setLeagueLoading({ league: L, dataType: 'currentGames', loading: false }));
     }
   }, [dispatch]);
 
   return {
-    // State
-    scores,
-    teamProfiles,
-    stadiums,
-    schedule,
-    odds,
-    currentGames,
-    mlbBoxScore, // Keep this for now as it's used in box score components
-    // Loading states
-    scoresLoading,
-    teamProfilesLoading,
-    stadiumsLoading,
-    scheduleLoading,
-    oddsLoading,
-    currentGamesLoading,
-    // Error states
-    scoresError,
-    teamProfilesError,
-    stadiumsError,
-    scheduleError,
-    oddsError,
-    currentGamesError,
-    // Actions
-    fetchScores,
-    fetchTeamProfiles,
-    fetchBoxScore,
-    fetchStadiums,
-    fetchSchedule,
-    fetchCurrentGames,
-    fetchOddsByDate: fetchOdds,
+    scores, teamProfiles, stadiums, schedule, odds, currentGames, mlbBoxScore,
+    scoresLoading, teamProfilesLoading, stadiumsLoading, scheduleLoading, oddsLoading, currentGamesLoading,
+    scoresError, teamProfilesError, stadiumsError, scheduleError, oddsError, currentGamesError,
+    fetchScores, fetchTeamProfiles, fetchBoxScore, fetchStadiums, fetchSchedule, fetchCurrentGames, fetchOddsByDate: fetchOdds,
   };
 };
 

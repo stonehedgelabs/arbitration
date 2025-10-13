@@ -256,7 +256,7 @@ impl std::fmt::Display for GamesByDatePath {
                 League::Nfl => {
                     write!(
                         f,
-                        "{}/{}/scores/json/ScoresByDateFinal/{}",
+                        "{}/{}/scores/json/ScoresByDate/{}",
                         BASE_URL,
                         self.league.to_string().to_lowercase(),
                         date
@@ -276,7 +276,7 @@ impl std::fmt::Display for GamesByDatePath {
                 League::Nfl => {
                     write!(
                         f,
-                        "{}/{}/scores/json/ScoresByDateFinal",
+                        "{}/{}/scores/json/ScoresByDate",
                         BASE_URL,
                         self.league.to_string().to_lowercase()
                     )

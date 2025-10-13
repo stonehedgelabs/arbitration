@@ -126,7 +126,7 @@ export default function GoogleLogin() {
                       w="8"
                       h="8"
                       bg="blue.600"
-                      borderRadius="full"
+                      borderRadius="sm"
                       display="flex"
                       alignItems="center"
                       justifyContent="center"

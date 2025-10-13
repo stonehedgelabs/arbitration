@@ -40,7 +40,7 @@ export {
   PlayByPlayGame,
   SeriesInfo as PlayByPlaySeriesInfo,
   PlayByPlayInning,
-  Play,
+  MLBPlay,
   Pitch,
   PlayByPlayApiResponse
 } from './playByPlay.ts';

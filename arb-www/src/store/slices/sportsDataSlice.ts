@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
 import { leagues, boxScoreData, MockLeague, forYouFeed } from '../../services/MockData.ts';
-import { buildApiUrl, Tab } from '../../config';
+import {buildApiUrl, League, Tab} from '../../config';
 import { TwitterSearchResponse } from '../../schema/twitterapi';
 import { RedditGameThreadCommentsResponse } from '../../schema/redditGameThreadComments';
 import { getCurrentLocalDate } from '../../utils.ts';
@@ -9,10 +9,10 @@ import { getCurrentLocalDate } from '../../utils.ts';
 // Async thunk for fetching box score data
 export const fetchBoxScore = createAsyncThunk(
   'sportsData/fetchBoxScore',
-  async ({ league, gameId, scoreId }: { league: string; gameId: string; scoreId?: string }) => {
+  async ({ league, gameId }: { league: string; gameId: string; scoreId?: string }) => {
     // For NFL, use score_id parameter; for other leagues, use game_id
-    const params: Record<string, string> = league.toLowerCase() === 'nfl' && scoreId 
-      ? { league, score_id: scoreId }
+    const params: Record<string, string> = league === League.NFL && gameId
+      ? { league, score_id: gameId }
       : { league, game_id: gameId };
     
     const apiUrl = buildApiUrl('/api/v1/box-score', params);

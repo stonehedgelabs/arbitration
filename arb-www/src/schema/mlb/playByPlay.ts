@@ -2,7 +2,7 @@ import { BaseDTO } from "../BaseDTO";
 
 export class PlayByPlayResponse extends BaseDTO {
   Game!: PlayByPlayGame;
-  Plays!: Play[];
+  Plays!: MLBPlay[];
 }
 
 export class PlayByPlayGame extends BaseDTO {
@@ -105,7 +105,7 @@ export class PlayByPlayInning extends BaseDTO {
   HomeTeamRuns!: number;
 }
 
-export class Play extends BaseDTO {
+export class MLBPlay extends BaseDTO {
   PlayID!: number;
   InningID!: number;
   InningNumber!: number;

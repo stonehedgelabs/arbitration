@@ -83,7 +83,7 @@ export default function AppleLogin() {
                 w="16"
                 h="16"
                 bg="black"
-                borderRadius="full"
+                borderRadius="sm"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"

@@ -229,16 +229,17 @@ export function NBAScoreCard({
               {game.status === GameStatus.LIVE && game.quarter && (
                 <QuarterBadge
                   quarter={game.quarter}
-                  timeRemainingMinutes={game.timeRemainingMinutes || null}
-                  timeRemainingSeconds={game.timeRemainingSeconds || null}
-                  size="sm"
+                  timeRemaining={game.timeRemaining}
+                  timeRemainingMinutes={game.timeRemainingMinutes}
+                  timeRemainingSeconds={game.timeRemainingSeconds}
+                  size="2xs"
                 />
               )}
               {game.status === GameStatus.FINAL && (
-                <StatusBadge status={game.status} size="sm" />
+                <StatusBadge status={game.status} size="2xs" />
               )}
-              {game.isPostseason && <PostseasonBadge />}
-              {game.status === GameStatus.LIVE && <LiveBadge />}
+              {game.isPostseason && <PostseasonBadge size={"2xs"} />}
+              {game.status === GameStatus.LIVE && <LiveBadge size={"2xs"} />}
             </HStack>
           </HStack>
 
@@ -249,7 +250,7 @@ export function NBAScoreCard({
                 w="8"
                 h="8"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -262,10 +263,10 @@ export function NBAScoreCard({
                     alt={orEmpty(game.awayTeam.name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <Text
@@ -289,7 +290,7 @@ export function NBAScoreCard({
                 minW="8"
                 textAlign="right"
               >
-                {orEmpty(game.awayTeam.score.toString())}
+                {orEmpty(game.awayTeam.score?.toString())}
               </Text>
               {(game.odds ||
                 oddsLoading ||
@@ -323,7 +324,7 @@ export function NBAScoreCard({
                 w="8"
                 h="8"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -336,10 +337,10 @@ export function NBAScoreCard({
                     alt={orEmpty(game.homeTeam.name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <Text
@@ -363,7 +364,7 @@ export function NBAScoreCard({
                 minW="8"
                 textAlign="right"
               >
-                {orEmpty(game.homeTeam.score.toString())}
+                {orEmpty(game.homeTeam.score?.toString())}
               </Text>
               {(game.odds ||
                 oddsLoading ||

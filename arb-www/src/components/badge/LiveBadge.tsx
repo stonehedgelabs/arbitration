@@ -2,24 +2,22 @@ import { Badge } from "@chakra-ui/react";
 import { Wifi } from "lucide-react";
 
 interface LiveBadgeProps {
-  size?: "sm" | "md";
+  size: "2xs" | "xs" | "sm" | "md";
   showIcon?: boolean;
   text?: string;
 }
 
 export function LiveBadge({
-  size = "sm",
+  size,
   showIcon = true,
   text = "Live",
 }: LiveBadgeProps) {
-  const fontSize = size === "sm" ? "2xs" : "xs";
-
   return (
     <Badge
       variant="solid"
-      bg="danger.100"
+      bg="red.500"
       color="text.100"
-      fontSize={fontSize}
+      fontSize={size}
       px="2"
       py="1"
       borderRadius="sm"

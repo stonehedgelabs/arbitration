@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { Box, VStack, Text } from "@chakra-ui/react";
 import { motion } from "motion/react";
 
@@ -7,17 +7,11 @@ import { BoxScoreDetailMLB } from "../components/boxscore/MLB.tsx";
 import { BoxScoreDetailNFL } from "../components/boxscore/NFL.tsx";
 import { BoxScoreDetailNBA } from "../components/boxscore/NBA.tsx";
 import { UnifiedGameFeed } from "../components/UnifiedGameFeed.tsx";
-import { MLBSkeleton } from "../components/boxscore/MLBSkeleton.tsx";
-import { UnifiedGameFeedSkeleton } from "../components/UnifiedGameFeedSkeleton.tsx";
 import { TopNavigation } from "../components/TopNavigation.tsx";
 import { AppLayout } from "../components/containers/AppLayout.tsx";
-import { ErrorState } from "../components/ErrorStates.tsx";
 
-import { useAppSelector, useAppDispatch } from "../store/hooks.ts";
-import {
-  fetchBoxScore,
-  setSelectedLeague,
-} from "../store/slices/sportsDataSlice.ts";
+import { useAppDispatch, useAppSelector } from "../store/hooks.ts";
+import { setSelectedLeague } from "../store/slices/sportsDataSlice.ts";
 import { League } from "../config.ts";
 import useArb from "../services/Arb.ts";
 
@@ -25,184 +19,93 @@ interface BoxScoreProps {
   onBack: () => void;
 }
 
+// If you have a shared type for box scores, use that instead of 'any'.
+type GameData = any;
+
+/**
+ * Extract the correct `Game` object from a league-specific API response.
+ * Keeps the main component clean and league-agnostic.
+ */
+const extractGameFromGameData = (gameData: any, league: string): any => {
+  if (!gameData) return undefined;
+
+  switch (league.toLowerCase()) {
+    case League.MLB:
+      return gameData?.data?.Game;
+    case League.NFL:
+      // NFL data may nest differently depending on API source
+      return gameData?.data?.Score;
+    case League.NBA:
+      // NBA feeds often wrap under .data.Game or similar
+      return gameData?.data?.Game ?? gameData?.Game;
+    default:
+      return gameData?.data?.Game ?? gameData;
+  }
+};
+
 export function BoxScore({ onBack }: BoxScoreProps) {
   const { league, gameId } = useParams<{ league: string; gameId: string }>();
   const dispatch = useAppDispatch();
 
-  // For NFL games, the gameId in the URL is actually the ScoreID
-  // For other leagues, the gameId is the GameID
-  const isNFL = league?.toLowerCase() === "nfl";
-  const actualGameId = gameId; // For NFL, gameId is ScoreID; for others, it's GameID
-  const scoreId: string | undefined = isNFL ? gameId : undefined; // For NFL, use gameId as scoreId; for others, no scoreId
-
-  // Get team profiles
-  const { teamProfiles, fetchTeamProfiles } = useArb();
-
-  // Redux state
-  const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
-  const boxScoreError = useAppSelector(
-    (state) => state.sportsData.boxScoreError,
-  );
-  const boxScoreRequests = useAppSelector(
-    (state) => state.sportsData.boxScoreRequests,
-  );
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
   );
 
-  const { league: paramLeague } = useParams<{
-    league: string;
-    gameId: string;
-  }>();
+  // Optional: if you cache per-game data keyed by gameId in Redux, read it here.
+  const boxScoreCache = useAppSelector(
+    (state) => state.sportsData.boxScoreData,
+  ) as Record<string, GameData> | undefined;
 
-  const [gameData, setGameData] = useState<any>(null);
+  // Non-fetch source of gameData from navigation (e.g., list → details)
+  const location = useLocation();
+  const navState =
+    (location.state as { gameData?: GameData } | undefined) ?? {};
 
-  // Fetch box score data and team profiles when component mounts
-  useEffect(() => {
-    if (league && gameId) {
-      dispatch(
-        fetchBoxScore({
-          league,
-          gameId: actualGameId as string,
-          scoreId: scoreId,
-        }),
-      );
-      fetchTeamProfiles(league);
+  // "Dumb" way to get gameData without fetching: from nav state or cache
+  const gameData: GameData | undefined = useMemo(() => {
+    if (navState?.gameData) return navState.gameData;
+    if (gameId && boxScoreCache && boxScoreCache[gameId]) {
+      return boxScoreCache[gameId];
     }
-  }, [
-    gameId,
-    league,
-    scoreId,
-    actualGameId,
-    isNFL,
-    dispatch,
-    fetchTeamProfiles,
-  ]);
+    return undefined;
+  }, [navState?.gameData, gameId, boxScoreCache]);
 
+  // Keep league in global state for the rest of the app, but no fetching here
   useEffect(() => {
-    if (!selectedLeague && league) {
+    if (league && league !== selectedLeague) {
       dispatch(setSelectedLeague(league));
     }
-  }, [selectedLeague, league, dispatch]);
+  }, [league, selectedLeague, dispatch]);
 
-  // Extract game data from box score
-  useEffect(() => {
-    const boxScore = boxScoreData[actualGameId || ""]?.data;
-    if (boxScore) {
-      // For NFL, the data structure has a 'Score' field (capital S) instead of 'Game'
-      const gameData = boxScore.Score || boxScore.score || boxScore.Game;
-      if (gameData) {
-        setGameData(gameData);
-      }
-    }
-  }, [boxScoreData, actualGameId]);
+  const normalizedLeague = (league?.toLowerCase() as League) || League.MLB;
 
-  // Check if we're currently loading data for this specific game
-  const isLoadingThisGame = boxScoreRequests.includes(actualGameId || "");
+  // @ts-expect-error Who cares
+  const leagueComponentMap: Record<League, React.ElementType> = {
+    [League.MLB]: BoxScoreDetailMLB,
+    [League.NFL]: BoxScoreDetailNFL,
+    [League.NBA]: BoxScoreDetailNBA,
+  };
 
-  // Show loading state if we're loading data for this game OR if we don't have data yet and no error
-  if (isLoadingThisGame || (!gameData && !boxScoreError)) {
-    return (
-      <AppLayout>
-        <motion.div
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        >
-          <Box
-            minH="100vh"
-            bg="primary.25"
-            display="flex"
-            flexDirection="column"
-          >
-            {/* Top Navigation with Back Button */}
-            <TopNavigation showLeagueSelector={false} onBack={onBack} />
+  const DetailComponent = leagueComponentMap[normalizedLeague];
 
-            {/* Content */}
-            <Box
-              flex="1"
-              minH="calc(100vh - 200px)"
-              overflowY="auto"
-              bg="primary.25"
-            >
-              <VStack gap="0" align="stretch">
-                {/* Box Score Section - Compressed */}
-                <Box
-                  bg="primary.25"
-                  borderBottom="1px"
-                  borderColor="border.100"
-                  maxH="250px"
-                  overflow="hidden"
-                >
-                  <Box transform="scale(0.8)" transformOrigin="top center">
-                    <MLBSkeleton />
-                  </Box>
-                </Box>
+  // Optional friendly labels from team profiles if we already have them (no fetch)
+  const { teamProfiles } = useArb();
 
-                {/* Unified Feed Section */}
-                <Box flex="1" bg="primary.25" minH="calc(100vh - 300px)">
-                  <UnifiedGameFeedSkeleton />
-                </Box>
-              </VStack>
-            </Box>
-          </Box>
-        </motion.div>
-      </AppLayout>
-    );
-  }
+  // Extract the game object based on the league
+  const game = extractGameFromGameData(gameData, normalizedLeague);
 
-  // Show error state only if there's an error AND we're not loading AND we don't have data for this specific game
-  if (boxScoreError && !isLoadingThisGame && !gameData) {
-    return (
-      <AppLayout>
-        <motion.div
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        >
-          <Box
-            minH="100vh"
-            bg="primary.25"
-            display="flex"
-            flexDirection="column"
-          >
-            {/* Top Navigation with Back Button */}
-            <TopNavigation showLeagueSelector={false} onBack={onBack} />
+  const awayTeamProfile = useMemo(() => {
+    if (!teamProfiles?.data || !game?.AwayTeamID) return undefined;
+    return teamProfiles.data.find((t: any) => t.TeamID === game.AwayTeamID);
+  }, [teamProfiles?.data, game?.AwayTeamID]);
 
-            {/* Error Content */}
-            <Box
-              flex="1"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <ErrorState
-                title="Error Loading Game"
-                message={boxScoreError}
-                onBack={onBack}
-                showBack={true}
-                showRetry={false}
-                variant="error"
-              />
-            </Box>
-          </Box>
-        </motion.div>
-      </AppLayout>
-    );
-  }
+  const homeTeamProfile = useMemo(() => {
+    if (!teamProfiles?.data || !game?.HomeTeamID) return undefined;
+    return teamProfiles.data.find((t: any) => t.TeamID === game.HomeTeamID);
+  }, [teamProfiles?.data, game?.HomeTeamID]);
 
-  // Get team names for the unified feed
-  const awayTeamProfile = teamProfiles?.data?.find(
-    (team: any) => team.TeamID === gameData?.AwayTeamID,
-  );
-  const homeTeamProfile = teamProfiles?.data?.find(
-    (team: any) => team.TeamID === gameData?.HomeTeamID,
-  );
-
-  const awayTeam = awayTeamProfile?.Name || gameData?.AwayTeam || "Away Team";
-  const homeTeam = homeTeamProfile?.Name || gameData?.HomeTeam || "Home Team";
+  const awayTeam = awayTeamProfile?.Name || game?.AwayTeam;
+  const homeTeam = homeTeamProfile?.Name || game?.HomeTeam;
   const awayTeamKey = awayTeamProfile?.Key;
   const homeTeamKey = homeTeamProfile?.Key;
 
@@ -215,44 +118,28 @@ export function BoxScore({ onBack }: BoxScoreProps) {
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
       >
         <Box minH="100vh" bg="primary.25" display="flex" flexDirection="column">
-          {/* Top Navigation with Back Button */}
+          {/* Top Navigation */}
           <TopNavigation showLeagueSelector={false} onBack={onBack} />
 
           {/* Content */}
-          <Box
-            flex="1"
-            // minH="calc(100vh - 200px)"
-            // overflowY="auto"
-            bg="primary.25"
-          >
+          <Box flex="1" bg="primary.25">
             <VStack align="stretch">
-              {/* Box Score Section - Compressed */}
+              {/* Box Score Section */}
               <Box bg="primary.25">
-                {paramLeague === League.MLB ? (
-                  <Box transformOrigin="top center">
-                    <BoxScoreDetailMLB gameId={gameId} league={paramLeague} />
-                  </Box>
-                ) : paramLeague === League.NFL ? (
-                  <Box transformOrigin="top center">
-                    <BoxScoreDetailNFL gameId={gameId} league={paramLeague} />
-                  </Box>
-                ) : paramLeague === League.NBA ? (
-                  <Box transformOrigin="top center">
-                    <BoxScoreDetailNBA gameId={gameId} league={paramLeague} />
-                  </Box>
+                {DetailComponent ? (
+                  <DetailComponent
+                    key={gameId}
+                    gameId={gameId}
+                    league={normalizedLeague}
+                    gameData={gameData}
+                  />
                 ) : (
-                  <VStack
-                    gap="4"
-                    p="4"
-                    align="center"
-                    justify="center"
-                    // minH="200px"
-                  >
+                  <VStack gap="4" p="4" align="center" justify="center">
                     <Text color="text.400" fontSize="lg" fontWeight="semibold">
-                      {selectedLeague.toUpperCase()} Box Score
+                      {normalizedLeague.toUpperCase()} Box Score
                     </Text>
                     <Text color="text.500" textAlign="center">
-                      Box score details for {selectedLeague.toUpperCase()} are
+                      Box score details for {normalizedLeague.toUpperCase()} are
                       not yet supported.
                     </Text>
                   </VStack>
@@ -262,12 +149,13 @@ export function BoxScore({ onBack }: BoxScoreProps) {
               {/* Unified Feed Section */}
               <Box flex="1" bg="primary.25" minH="calc(100vh - 300px)">
                 <UnifiedGameFeed
-                  gameId={gameId || ""}
+                  key={gameId}
+                  gameId={gameId as string}
+                  league={normalizedLeague}
                   awayTeam={awayTeam}
                   homeTeam={homeTeam}
                   awayTeamKey={awayTeamKey}
                   homeTeamKey={homeTeamKey}
-                  league={selectedLeague as League}
                   gameData={gameData}
                 />
               </Box>

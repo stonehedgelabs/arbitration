@@ -3,26 +3,34 @@ import { Badge } from "@chakra-ui/react";
 
 interface QuarterBadgeProps {
   quarter?: string;
-  time?: string;
+  timeRemaining?: string;
   timeRemainingMinutes?: number | null;
   timeRemainingSeconds?: number | null;
-  size?: "sm" | "md";
+  size: "2xs" | "xs" | "sm" | "md";
   showChevron?: boolean;
 }
 
 export function QuarterBadge({
   quarter,
-  time,
+  timeRemaining,
   timeRemainingMinutes,
   timeRemainingSeconds,
-  size = "sm",
+  size,
 }: QuarterBadgeProps) {
-  const fontSize = size === "sm" ? "xs" : "sm";
-
   // Format the display text based on whether we have time and quarter
   const getDisplayText = () => {
     if (quarter === "F") {
       return "Final";
+    }
+
+    if (
+      !timeRemainingMinutes &&
+      !timeRemainingSeconds &&
+      timeRemaining &&
+      quarter
+    ) {
+      const quarterSuffix = getQuarterSuffix(quarter);
+      return `${timeRemaining} - ${quarter}${quarterSuffix}`;
     }
 
     // Use raw time data if available, otherwise fall back to formatted time
@@ -32,7 +40,7 @@ export function QuarterBadge({
       timeRemainingSeconds !== undefined &&
       timeRemainingSeconds !== null
         ? `${timeRemainingMinutes}:${timeRemainingSeconds.toString().padStart(2, "0")}`
-        : time;
+        : timeRemaining;
 
     if (timeString && quarter) {
       // NBA format: "0:17 - 1st"
@@ -61,13 +69,12 @@ export function QuarterBadge({
 
   return (
     <Badge
-      variant="outline"
-      color="text.400"
-      fontSize={fontSize}
+      color="text.100"
+      bg="red.500"
+      fontSize={size}
       px="2"
       py="1"
       borderRadius="sm"
-      borderColor="text.400"
     >
       {getDisplayText()}
     </Badge>

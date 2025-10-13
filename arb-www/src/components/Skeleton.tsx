@@ -98,7 +98,7 @@ export const SkeletonCircle = ({
   size = "40px",
   ...props
 }: SkeletonProps & { size?: string }) => (
-  <Skeleton w={size} h={size} borderRadius="full" {...props} />
+  <Skeleton w={size} h={size} borderRadius="sm" {...props} />
 );
 
 /**

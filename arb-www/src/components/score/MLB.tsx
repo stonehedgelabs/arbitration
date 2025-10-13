@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
 import { Skeleton } from "../Skeleton";
-import { PostseasonBadge, LiveBadge, StatusBadge, InningBadge } from "../badge";
+import { InningBadge, LiveBadge, PostseasonBadge } from "../badge";
 
 import { GameStatus, League } from "../../config";
 
@@ -115,6 +115,7 @@ const GameOddsDisplay = ({
   odds: Game["odds"];
   isLoading?: boolean;
 }) => {
+  console.log("odds", odds);
   if (isLoading) {
     return (
       <HStack justify="space-between" align="center" fontSize="xs" w="full">
@@ -145,30 +146,6 @@ const GameOddsDisplay = ({
       </Text>
     </HStack>
   );
-};
-
-// Helper function to get status badge
-const getStatusBadge = (
-  status: GameStatus,
-  quarter?: string,
-  inningHalf?: string,
-) => {
-  // For MLB games with quarter information, use InningBadge
-  if (
-    quarter &&
-    (status === GameStatus.LIVE || status === GameStatus.UPCOMING)
-  ) {
-    return (
-      <InningBadge
-        inningNumber={parseInt(quarter) || 1}
-        inningHalf={inningHalf}
-        league={League.MLB}
-        size="sm"
-      />
-    );
-  }
-  // For other cases, use StatusBadge
-  return <StatusBadge status={status} quarter={quarter} />;
 };
 
 // Helper function to format time
@@ -246,9 +223,16 @@ export function MLBScoreCard({
               {formatTime(game.time)}
             </Text>
             <HStack gap="2" align="center">
-              {getStatusBadge(game.status, game.quarter, game.inningHalf)}
-              {game.isPostseason && <PostseasonBadge />}
-              {game.status === GameStatus.LIVE && <LiveBadge />}
+              {game.status === GameStatus.LIVE && (
+                <InningBadge
+                  inningNumber={parseInt(game.quarter as string)}
+                  inningHalf={game.inningHalf}
+                  league={League.MLB}
+                  size="sm"
+                />
+              )}
+              {game.isPostseason && <PostseasonBadge size={"2xs"} />}
+              {game.status === GameStatus.LIVE && <LiveBadge size={"2xs"} />}
             </HStack>
           </HStack>
 
@@ -259,7 +243,7 @@ export function MLBScoreCard({
                 w="8"
                 h="8"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -272,10 +256,10 @@ export function MLBScoreCard({
                     alt={orEmpty(game.awayTeam.name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <Text
@@ -299,7 +283,7 @@ export function MLBScoreCard({
                 minW="8"
                 textAlign="right"
               >
-                {orEmpty(game.awayTeam.score.toString())}
+                {orEmpty(game.awayTeam.score?.toString())}
               </Text>
               {(game.odds ||
                 oddsLoading ||
@@ -333,7 +317,7 @@ export function MLBScoreCard({
                 w="8"
                 h="8"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -346,10 +330,10 @@ export function MLBScoreCard({
                     alt={orEmpty(game.homeTeam.name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <Text
@@ -373,7 +357,7 @@ export function MLBScoreCard({
                 minW="8"
                 textAlign="right"
               >
-                {orEmpty(game.homeTeam.score.toString())}
+                {orEmpty(game.homeTeam.score?.toString())}
               </Text>
               {(game.odds ||
                 oddsLoading ||

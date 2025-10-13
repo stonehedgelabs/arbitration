@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Card, HStack, Text, VStack } from "@chakra-ui/react";
-import { AlertCircle, RefreshCw, Tv } from "lucide-react";
+import { Tv } from "lucide-react";
 
 import { Skeleton, SkeletonCircle } from "../components/Skeleton";
 import {
@@ -37,73 +37,7 @@ import {
   convertScheduleGameToGame,
   Game,
 } from "../scores/utils";
-
-// Compact Error State Component for Scores View
-interface ScoresErrorStateProps {
-  title: string;
-  message: string;
-  onRetry?: () => void;
-}
-
-function ScoresErrorState({ title, message, onRetry }: ScoresErrorStateProps) {
-  return (
-    <Card.Root bg="primary.25" borderWidth={0}>
-      <Card.Body p="8" textAlign="center">
-        <VStack gap="4">
-          {/* Icon */}
-          <Box
-            w="16"
-            h="16"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            color="text.300"
-          >
-            <AlertCircle size={32} />
-          </Box>
-
-          {/* Content */}
-          <VStack gap="2">
-            <Text fontSize="lg" fontWeight="semibold" color="text.300">
-              {title}
-            </Text>
-            <Text
-              fontSize="sm"
-              color="text.300"
-              textAlign="center"
-              lineHeight="1.4"
-            >
-              {message}
-            </Text>
-          </VStack>
-
-          {/* Retry Button */}
-          {onRetry && (
-            <Box
-              as="button"
-              onClick={onRetry}
-              bg="buttons.primary.bg"
-              color="white"
-              px="6"
-              py="3"
-              borderRadius="md"
-              fontSize="sm"
-              fontWeight="medium"
-              _hover={{ bg: "primary.600" }}
-              _active={{ bg: "primary.700" }}
-              display="flex"
-              alignItems="center"
-              gap="2"
-            >
-              <RefreshCw size={16} />
-              Try Again
-            </Box>
-          )}
-        </VStack>
-      </Card.Body>
-    </Card.Root>
-  );
-}
+import { ErrorState } from "../components/ErrorStates.tsx";
 
 // Game Card Skeleton Component
 const GameCardSkeleton = () => {
@@ -124,15 +58,15 @@ const GameCardSkeleton = () => {
           <HStack justify="space-between" align="center">
             <Skeleton w="20%" h="3" bg={"primary.300"} />
             <HStack gap="2">
-              <Skeleton w="12" h="5" borderRadius="full" bg={"primary.300"} />
-              <Skeleton w="16" h="5" borderRadius="full" bg={"primary.300"} />
+              <Skeleton w="12" h="5" borderRadius="sm" bg={"primary.300"} />
+              <Skeleton w="16" h="5" borderRadius="sm" bg={"primary.300"} />
             </HStack>
           </HStack>
 
           {/* Location */}
           <HStack gap="2" flexWrap="wrap">
-            <Skeleton w="24" h="5" borderRadius="full" bg={"primary.300"} />
-            <Skeleton w="20" h="5" borderRadius="full" bg={"primary.300"} />
+            <Skeleton w="24" h="5" borderRadius="sm" bg={"primary.300"} />
+            <Skeleton w="20" h="5" borderRadius="sm" bg={"primary.300"} />
           </HStack>
 
           {/* Away Team */}
@@ -320,8 +254,10 @@ function ScoresV2() {
     if (league && selectedDate) {
       fetchScores(league, selectedDate);
       fetchSchedule(league, selectedDate);
+      fetchTeamProfiles(league);
+      fetchStadiums(league);
     }
-  }, [selectedDate]); // Only depend on selectedDate
+  }, [league, selectedDate]);
 
   // Get all games based on the selected date and league
   const getAllGames = (): Game[] => {
@@ -396,27 +332,24 @@ function ScoresV2() {
 
   const allGames = getAllGames();
 
-  // Sort games by time (most recent first for live games, then by start time)
   const sortedGames = [...allGames].sort((a, b) => {
-    // Live games first
-    if (a.status === GameStatus.LIVE && b.status !== GameStatus.LIVE) {
-      return -1;
-    }
-    if (b.status === GameStatus.LIVE && a.status !== GameStatus.LIVE) {
-      return 1;
-    }
-
-    // Then sort by time
-    const timeA = new Date(a.time).getTime();
-    const timeB = new Date(b.time).getTime();
-
-    // For NFL, sort by timestamp ASC (earlier games first)
-    if (league === League.NFL) {
-      return timeA - timeB; // Earlier games first
-    }
-
-    // For other leagues, keep most recent first
-    return timeB - timeA; // Most recent first
+    const label = (g: any) =>
+      g.label ??
+      (g.status === GameStatus.LIVE
+        ? 1
+        : g.status === GameStatus.UPCOMING
+          ? 3
+          : g.status === GameStatus.FINAL
+            ? 2
+            : 99);
+    const rank = (x: any) =>
+      (({ 1: 0, 3: 1, 2: 2 }) as Record<number, number>)[label(x)] ?? 99;
+    const time = (t: any) =>
+      t ? new Date(t).getTime() : Number.POSITIVE_INFINITY;
+    const ra = rank(a),
+      rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    return time(a.time) - time(b.time);
   });
 
   // Retry function for error state
@@ -453,7 +386,7 @@ function ScoresV2() {
 
               {/* Error State or Games List */}
               {hasCriticalError ? (
-                <ScoresErrorState
+                <ErrorState
                   title="Error Loading Scores"
                   message={hasCriticalError}
                   onRetry={handleRetry}
@@ -465,8 +398,7 @@ function ScoresV2() {
                     scoresLoading ||
                     teamProfilesLoading ||
                     stadiumsLoading ||
-                    scheduleLoading ||
-                    oddsLoading ? (
+                    scheduleLoading ? (
                       // Show skeleton cards while loading
                       Array.from({ length: 3 }, (_, index) => (
                         <GameCardSkeleton key={`skeleton-${index}`} />
@@ -483,12 +415,12 @@ function ScoresV2() {
                               w="16"
                               h="16"
                               bg="primary.25"
-                              borderRadius="full"
+                              borderRadius="sm"
                               display="flex"
                               alignItems="center"
                               justifyContent="center"
                             >
-                              <Tv size={32} />
+                              <Tv color={"gray.300"} size={32} />
                             </Box>
                             <VStack gap="2">
                               <Text

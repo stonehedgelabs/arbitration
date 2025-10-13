@@ -36,7 +36,7 @@ export function Bases({
         w={config.base}
         h={config.base}
         bg={runnerOnSecond ? "green.500" : "gray.400"}
-        borderRadius="full"
+        borderRadius="sm"
         border="1px"
         borderColor={runnerOnSecond ? "green.700" : "gray.500"}
       />
@@ -49,7 +49,7 @@ export function Bases({
         w={config.base}
         h={config.base}
         bg={runnerOnFirst ? "green.500" : "gray.400"}
-        borderRadius="full"
+        borderRadius="sm"
         border="1px"
         borderColor={runnerOnFirst ? "green.700" : "gray.500"}
       />
@@ -62,7 +62,7 @@ export function Bases({
         w={config.base}
         h={config.base}
         bg={runnerOnThird ? "green.500" : "gray.400"}
-        borderRadius="full"
+        borderRadius="sm"
         border="1px"
         borderColor={runnerOnThird ? "green.700" : "gray.500"}
       />

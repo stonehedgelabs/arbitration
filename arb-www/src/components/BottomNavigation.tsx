@@ -21,7 +21,7 @@ export function BottomNavigation() {
         <Box
           px="6"
           py="2"
-          borderRadius="full"
+          borderRadius="sm"
           bg={isScoresActive ? "primary.100" : "transparent"}
           transition="all 0.2s"
         >

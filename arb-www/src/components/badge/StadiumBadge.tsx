@@ -16,7 +16,7 @@ export function StadiumBadge({ stadium, size = "sm" }: StadiumBadgeProps) {
       fontSize={fontSize}
       px="2"
       py="1"
-      borderRadius="full"
+      borderRadius="sm"
       borderColor="text.400"
     >
       {stadium}

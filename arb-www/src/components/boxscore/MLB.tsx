@@ -1,5 +1,13 @@
 import { useEffect } from "react";
-import { Box, VStack, HStack, Text, Image, Flex } from "@chakra-ui/react";
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Image,
+  Flex,
+  Table,
+} from "@chakra-ui/react";
 import useArb from "../../services/Arb.ts";
 import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
@@ -124,7 +132,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
         {/* Game Title */}
         {game.SeriesInfo && (
           <VStack gap="1" mb="4">
-            <Text textAlign="center" fontSize="sm" color="text.400">
+            <Text textAlign="center" fontSize="xs" color="text.400">
               {(() => {
                 const series = game.SeriesInfo;
                 const awayWins = series.AwayTeamWins || 0;
@@ -162,7 +170,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                 w="12"
                 h="12"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="sm"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -174,10 +182,10 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                     alt={orEmpty(awayTeamProfile.Name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="sm" />
                 )}
               </Box>
               <VStack gap="0" align="center">
@@ -204,7 +212,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                       key={i}
                       w="2"
                       h="2"
-                      borderRadius="full"
+                      borderRadius="sm"
                       bg={i < (game.Strikes || 0) ? "red.500" : "text.200"}
                     />
                   ))}
@@ -257,7 +265,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                       key={i}
                       w="2"
                       h="2"
-                      borderRadius="full"
+                      borderRadius="sm"
                       bg={i < (game.Outs || 0) ? "yellow.500" : "text.200"}
                     />
                   ))}
@@ -274,6 +282,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                 w="12"
                 h="12"
                 bg="text.200"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -285,10 +294,10 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                     alt={orEmpty(homeTeamProfile.Name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <VStack gap="0" align="center">
@@ -315,7 +324,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                       key={i}
                       w="2"
                       h="2"
-                      borderRadius="full"
+                      borderRadius="sm"
                       bg={i < (game.Balls || 0) ? "blue.500" : "text.200"}
                     />
                   ))}
@@ -327,79 +336,126 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
             </VStack>
           </Flex>
 
-          {/* Bottom row - Game info */}
-          <HStack gap="2" w="full" justify={"center"}>
-            <HStack gap="4" align="center">
-              {stadium && (
-                <Text fontSize="xs" color="text.400">
-                  {orEmpty(stadium.Name)} •
-                </Text>
-              )}
-            </HStack>
-            {game.Weather && (
-              <Text fontSize="xs" color="text.400">
-                {orEmpty(game.Weather)}
-                {game.Temperature && ` • ${game.Temperature}°F`}
-              </Text>
-            )}
+          {/* Stadium Information */}
+          {stadium && (
+            <Text fontSize="xs" color="text.400" textAlign="center">
+              {orEmpty(stadium.Name)}
+            </Text>
+          )}
 
-            {/* TV and Odds Information */}
-            <VStack gap="0" align="center" lineHeight="1">
-              {/* Odds Information */}
-              {(() => {
-                const odds = (() => {
-                  // Check if odds are directly on the game object (schedule format)
-                  if (game.HomeTeamMoneyLine !== undefined) {
-                    return {
-                      homeMoneyLine: game.HomeTeamMoneyLine,
-                      awayMoneyLine: game.AwayTeamMoneyLine,
-                      homePointSpread: game.PointSpreadHomeTeamMoneyLine,
-                      awayPointSpread: game.PointSpreadAwayTeamMoneyLine,
-                      overUnder: game.OverUnder,
-                      sportsbook: game.Sportsbook || "Unknown",
-                    };
-                  }
-
-                  // Check if odds are in PregameOdds/LiveOdds arrays (scores format)
-                  if (game.PregameOdds || game.LiveOdds) {
-                    const pregameOdds = game.PregameOdds?.[0];
-                    const liveOdds = game.LiveOdds?.[0];
-                    const oddsEntry = liveOdds || pregameOdds;
-
-                    if (oddsEntry) {
-                      return {
-                        homeMoneyLine: oddsEntry.HomeTeamMoneyLine,
-                        awayMoneyLine: oddsEntry.AwayTeamMoneyLine,
-                        homePointSpread: oddsEntry.PointSpreadHomeTeamMoneyLine,
-                        awayPointSpread: oddsEntry.PointSpreadAwayTeamMoneyLine,
-                        overUnder: oddsEntry.OverUnder,
-                        sportsbook: oddsEntry.Sportsbook || "Unknown",
-                      };
-                    }
-                  }
-
-                  return null;
-                })();
-
-                if (!odds) return null;
-
-                return (
-                  <HStack>
-                    <Text fontSize="xs" color="text.400">
-                      {odds.homeMoneyLine && odds.awayMoneyLine && (
-                        <>
-                          ML: {odds.awayMoneyLine}/{odds.homeMoneyLine} •
-                        </>
-                      )}
-                    </Text>
-                    <Text fontSize="xs" color="text.400">
-                      {odds.overUnder && <> • O/U: {odds.overUnder}</>}
-                    </Text>
-                  </HStack>
-                );
-              })()}
+          {/* Inning-by-Inning Scores Table */}
+          {game.Innings && game.Innings.length > 0 && (
+            <VStack gap="2" w="full" mt="4">
+              <Box w="full" overflowX="auto">
+                <Table.Root size="sm" variant="outline">
+                  <Table.Header bg="primary.200">
+                    <Table.Row>
+                      <Table.ColumnHeader
+                        fontSize="2xs"
+                        color="text.500"
+                        textAlign="left"
+                        bg="text.50"
+                        px="2"
+                        py="1"
+                      ></Table.ColumnHeader>
+                      {game.Innings.map((inning: any) => (
+                        <Table.ColumnHeader
+                          key={inning.InningNumber}
+                          fontSize="2xs"
+                          color="text.500"
+                          textAlign="center"
+                          bg="text.50"
+                          px="1"
+                          py="1"
+                        >
+                          {inning.InningNumber}
+                        </Table.ColumnHeader>
+                      ))}
+                      <Table.ColumnHeader
+                        fontSize="2xs"
+                        color="text.500"
+                        textAlign="center"
+                        bg="text.50"
+                        fontWeight="semibold"
+                        px="2"
+                        py="1"
+                      >
+                        Total
+                      </Table.ColumnHeader>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    <Table.Row>
+                      <Table.Cell
+                        fontSize="2xs"
+                        color="text.400"
+                        fontWeight="medium"
+                        px="2"
+                        py="1"
+                      >
+                        {game.AwayTeam}
+                      </Table.Cell>
+                      {game.Innings.map((inning: any, index: number) => (
+                        <Table.Cell
+                          key={inning.InningID || index}
+                          fontSize="2xs"
+                          color="text.400"
+                          textAlign="center"
+                          px="1"
+                          py="1"
+                        >
+                          {inning.AwayTeamRuns}
+                        </Table.Cell>
+                      ))}
+                      <Table.Cell
+                        fontSize="2xs"
+                        color="text.400"
+                        textAlign="center"
+                        fontWeight="semibold"
+                        px="2"
+                        py="1"
+                      >
+                        {game.AwayTeamRuns}
+                      </Table.Cell>
+                    </Table.Row>
+                    <Table.Row>
+                      <Table.Cell
+                        fontSize="2xs"
+                        color="text.400"
+                        fontWeight="medium"
+                        px="2"
+                        py="1"
+                      >
+                        {game.HomeTeam}
+                      </Table.Cell>
+                      {game.Innings.map((inning: any, index: number) => (
+                        <Table.Cell
+                          key={inning.InningID || index}
+                          fontSize="2xs"
+                          color="text.400"
+                          textAlign="center"
+                          px="1"
+                          py="1"
+                        >
+                          {inning.HomeTeamRuns}
+                        </Table.Cell>
+                      ))}
+                      <Table.Cell
+                        fontSize="2xs"
+                        color="text.400"
+                        textAlign="center"
+                        fontWeight="semibold"
+                        px="2"
+                        py="1"
+                      >
+                        {game.HomeTeamRuns}
+                      </Table.Cell>
+                    </Table.Row>
+                  </Table.Body>
+                </Table.Root>
+              </Box>
             </VStack>
-          </HStack>
+          )}
         </VStack>
       </Box>
     </HideVerticalScroll>

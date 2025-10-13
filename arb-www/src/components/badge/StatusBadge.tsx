@@ -3,28 +3,22 @@ import { Badge } from "@chakra-ui/react";
 
 // Internal imports - config
 import { GameStatus } from "../../config";
+import { Wifi } from "lucide-react";
 
 interface StatusBadgeProps {
   status: GameStatus;
-  quarter?: string;
-  size?: "sm" | "md";
+  size: "2xs" | "xs" | "sm" | "md";
 }
 
-export function StatusBadge({
-  status,
-  quarter,
-  size = "sm",
-}: StatusBadgeProps) {
-  const fontSize = size === "sm" ? "2xs" : "xs";
-
+export function StatusBadge({ status, size }: StatusBadgeProps) {
   const getStatusText = () => {
     switch (status) {
       case GameStatus.LIVE:
-        return quarter ? quarter : "Live";
+        return "Live";
       case GameStatus.FINAL:
         return "Final";
       case GameStatus.UPCOMING:
-        return quarter ? quarter : "Upcoming";
+        return "Upcoming";
       default:
         return "";
     }
@@ -38,7 +32,7 @@ export function StatusBadge({
   const getBadgeColors = () => {
     switch (status) {
       case GameStatus.LIVE:
-        return { bg: "danger.100", color: "text.100" }; // Red for live
+        return { bg: "red.500", color: "text.100" }; // Red for live
       case GameStatus.FINAL:
         return { bg: "green.500", color: "white" }; // Green background, white text for final
       case GameStatus.UPCOMING:
@@ -55,12 +49,13 @@ export function StatusBadge({
       variant="solid"
       bg={colors.bg}
       color={colors.color}
-      fontSize={fontSize}
+      fontSize={size}
       px="2"
       py="1"
       borderRadius="sm"
     >
       {statusText}
+      {status === GameStatus.LIVE && <Wifi size={12} />}
     </Badge>
   );
 }

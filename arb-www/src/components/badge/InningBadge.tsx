@@ -38,7 +38,7 @@ export function InningBadge({
       fontSize={size}
       px="2"
       py="1"
-      borderRadius="full"
+      borderRadius="sm"
     >
       {displayText}
     </Badge>

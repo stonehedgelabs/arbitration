@@ -49,6 +49,15 @@ export const allTeams: Team[] = [
     abbreviation: "BAL",
   },
   {
+    id: generateTeamId("NFL", "Cincinnati", "bengals"),
+    name: "Cincinnati Bengals",
+    league: "NFL",
+    leagueColor: "#F6F6F6",
+    city: "Cincinnati",
+    subreddit: "r/bengals",
+    abbreviation: "CIN",
+  },
+  {
     id: generateTeamId("NFL", "Buffalo", "bills"),
     name: "Buffalo Bills",
     league: "NFL",
@@ -189,7 +198,7 @@ export const allTeams: Team[] = [
     league: "NFL",
     leagueColor: "#003594",
     city: "Los Angeles",
-    subreddit: "r/losangelesrams",
+    subreddit: "r/LosAngelesRams",
     abbreviation: "LAR",
   },
   {
@@ -1406,7 +1415,7 @@ export const allTeams: Team[] = [
 
 
 // Helper function to get team subreddit from team name (for score cards)
-export const getTeamSubredditByName = (teamName: string, league: League = League.MLB): string | null => {
+export const getTeamSubredditByName = (teamName: string, league: League): string | null => {
   if (!teamName) return null;
   
   // Create Fuse instance for fuzzy matching
@@ -1419,13 +1428,13 @@ export const getTeamSubredditByName = (teamName: string, league: League = League
   
   // Search for the team
   const results = fuse.search(teamName);
-  
+
   // If we found a match with a good score, return the subreddit
   if (results.length > 0) {
     const { item, score } = results[0];
     // Lower score = better match (0.0 is perfect match)
     // Use case-insensitive comparison for league
-    if (score !== undefined && score < 0.3 && item.league.toLowerCase() === league.toLowerCase()) {
+    if (score !== undefined && item.league.toLowerCase() === league.toLowerCase()) {
       return item.subreddit || null;
     }
   }

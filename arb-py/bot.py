@@ -3,6 +3,7 @@ import asyncio
 import argparse
 import json
 import re
+import pathlib
 import os
 import httpx
 import csv
@@ -41,13 +42,20 @@ email_pattern = re.compile(r"[a-z0-9._%+-]+@duck\.com", re.IGNORECASE)
 
 
 def read_accounts() -> List[Dict[str, str]]:
-    file = os.path.join(basedir, "accounts.csv")
-    if not os.path.exists(file):
-        raise FileNotFoundError(f"{file} not found")
-    with open(file, "r", encoding="utf-8") as file:
-        reader = csv.DictReader(file, delimiter="\t")
-        rows = [row for row in reader]
-    return rows
+    filename = "accounts.csv"
+    path = pathlib.Path(basedir) / filename
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found")
+
+    with path.open("r", encoding="utf-8", newline="") as fh:
+        sample = fh.read(4096)
+        fh.seek(0)
+        try:
+            dialect = csv.Sniffer().sniff(sample, delimiters=",\t;|")
+        except csv.Error:
+            dialect = csv.get_dialect("excel")  # default comma
+        reader = csv.DictReader(fh, dialect=dialect)
+        return [row for row in reader]
 
 
 def launch_chrome(debug_port: int = 9222):

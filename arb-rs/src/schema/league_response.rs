@@ -8,14 +8,14 @@ use crate::schema::{
     },
     nba::{
         box_score::NBABoxScoreResponse, headshots::PlayerHeadshots,
-        play_by_play::NBAPlayByPlayResponse, schedule::NBAScheduleGame,
+        play_by_play::NBAPlayByPlayResponseUnknown, schedule::NBAScheduleGame,
         stadiums::NBAStadium, teams::NBATeamProfile,
     },
     nfl::{
         box_score::{NFLBoxScoreByScoreIDV3Response, NFLBoxScoreGame},
         game_by_date::NFLGameByDate,
         headshots::NFLHeadshot,
-        play_by_play::NFLPlayByPlayResponse,
+        play_by_play::NFLPlayByPlayResponseUnknown,
         schedule::NFLScheduleGame,
         scores::NFLScoresGame,
         stadiums::NFLStadium,
@@ -67,9 +67,9 @@ pub enum NBAData {
     Stadiums(Vec<NBAStadium>),
     TeamProfiles(Vec<NBATeamProfile>),
     Headshots(PlayerHeadshots),
-    PlayByPlay(NBAPlayByPlayResponse),
+    PlayByPlay(NBAPlayByPlayResponseUnknown),
     Scores(Vec<NBAScheduleGame>),
-    BoxScore(NBABoxScoreResponse),
+    BoxScore(Box<NBABoxScoreResponse>),
 }
 
 /// NFL-specific data types
@@ -81,7 +81,7 @@ pub enum NFLData {
     TeamProfiles(Vec<NFLTeamProfile>),
     Headshots(Vec<NFLHeadshot>),
     GameByDate(Vec<NFLGameByDate>),
-    PlayByPlay(Box<NFLPlayByPlayResponse>),
+    PlayByPlay(Box<NFLPlayByPlayResponseUnknown>),
     Scores(Vec<NFLScoresGame>),
     Stadiums(Vec<NFLStadium>),
     BoxScore(Vec<NFLBoxScoreGame>),

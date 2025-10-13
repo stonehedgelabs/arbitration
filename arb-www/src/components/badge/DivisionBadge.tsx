@@ -16,7 +16,7 @@ export function DivisionBadge({ division, size = "sm" }: DivisionBadgeProps) {
       fontSize={fontSize}
       px="2"
       py="1"
-      borderRadius="full"
+      borderRadius="sm"
       borderColor="text.400"
     >
       {division} Division

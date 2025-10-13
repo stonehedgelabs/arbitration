@@ -306,7 +306,7 @@ export function Welcome({ onComplete, onSkip }: WelcomeOnboardingProps) {
             w="8px"
             h="8px"
             minW="8px"
-            borderRadius="full"
+            borderRadius="sm"
           >
             <motion.div
               style={{

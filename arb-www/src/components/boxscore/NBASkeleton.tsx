@@ -17,7 +17,7 @@ export function NBASkeleton() {
           <Flex justify="space-between" align="center" w="full">
             {/* Away Team */}
             <VStack gap="2" align="center" flex="1">
-              <Skeleton w="12" h="12" borderRadius="full" bg="primary.300" />
+              <Skeleton w="12" h="12" borderRadius="sm" bg="primary.300" />
               <VStack gap="0" align="center">
                 <Skeleton height="14px" width="80px" bg="primary.300" />
                 <Skeleton height="12px" width="60px" bg="primary.300" />
@@ -33,7 +33,7 @@ export function NBASkeleton() {
 
             {/* Home Team */}
             <VStack gap="2" align="center" flex="1">
-              <Skeleton w="12" h="12" borderRadius="full" bg="primary.300" />
+              <Skeleton w="12" h="12" borderRadius="sm" bg="primary.300" />
               <VStack gap="0" align="center">
                 <Skeleton height="14px" width="80px" bg="primary.300" />
                 <Skeleton height="12px" width="60px" bg="primary.300" />

@@ -2,12 +2,7 @@ import { useCallback } from "react";
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
 import { Skeleton } from "../Skeleton";
-import {
-  PostseasonBadge,
-  LiveBadge,
-  StatusBadge,
-  QuarterBadge,
-} from "../badge";
+import { PostseasonBadge, StatusBadge, QuarterBadge } from "../badge";
 
 import { GameStatus, League } from "../../config";
 
@@ -162,15 +157,15 @@ const getStatusBadge = (
     return (
       <QuarterBadge
         quarter={quarter}
-        time={timeRemaining}
+        timeRemaining={timeRemaining}
         timeRemainingMinutes={timeRemainingMinutes}
         timeRemainingSeconds={timeRemainingSeconds}
-        size="sm"
+        size="2xs"
       />
     );
   }
   // For other cases, use StatusBadge
-  return <StatusBadge status={status} quarter={quarter} />;
+  return <StatusBadge status={status} size="2xs" />;
 };
 
 // Helper function to format time
@@ -249,8 +244,8 @@ export function NFLScoreCard({
             </Text>
             <HStack gap="2" align="center">
               {getStatusBadge(game.status, game.quarter, game.timeRemaining)}
-              {game.isPostseason && <PostseasonBadge />}
-              {game.status === GameStatus.LIVE && <LiveBadge />}
+              {game.isPostseason && <PostseasonBadge size={"2xs"} />}
+              {/*{game.status === GameStatus.LIVE && <LiveBadge />}*/}
             </HStack>
           </HStack>
 
@@ -261,7 +256,7 @@ export function NFLScoreCard({
                 w="8"
                 h="8"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -274,10 +269,10 @@ export function NFLScoreCard({
                     alt={orEmpty(game.awayTeam.name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <Text
@@ -301,7 +296,7 @@ export function NFLScoreCard({
                 minW="8"
                 textAlign="right"
               >
-                {orEmpty(game.awayTeam.score.toString())}
+                {orEmpty(game.awayTeam.score?.toString())}
               </Text>
               {(game.odds ||
                 oddsLoading ||
@@ -334,7 +329,7 @@ export function NFLScoreCard({
                 w="8"
                 h="8"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -347,10 +342,10 @@ export function NFLScoreCard({
                     alt={orEmpty(game.homeTeam.name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <Text
@@ -374,7 +369,7 @@ export function NFLScoreCard({
                 minW="8"
                 textAlign="right"
               >
-                {orEmpty(game.homeTeam.score.toString())}
+                {orEmpty(game.homeTeam.score?.toString())}
               </Text>
               {(game.odds ||
                 oddsLoading ||

@@ -1145,7 +1145,7 @@ async fn handle_play_by_play_request(
             total_count: total_events_count,
         },
         League::Nfl => {
-            let nfl_play_by_play: crate::schema::nfl::play_by_play::NFLPlayByPlayResponse = serde_json::from_value(events)
+            let nfl_play_by_play: crate::schema::nfl::play_by_play::NFLPlayByPlayResponseUnknown = serde_json::from_value(events)
                 .map_err(|e| {
                     tracing::error!("Failed to parse NFL play-by-play data: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
@@ -1164,7 +1164,7 @@ async fn handle_play_by_play_request(
             }
         }
         League::Nba => {
-            let nba_play_by_play: crate::schema::nba::play_by_play::NBAPlayByPlayResponse = serde_json::from_value(events)
+            let nba_play_by_play: crate::schema::nba::play_by_play::NBAPlayByPlayResponseUnknown = serde_json::from_value(events)
                 .map_err(|e| {
                     tracing::error!("Failed to parse NBA play-by-play data: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
@@ -2380,7 +2380,7 @@ pub async fn handle_box_score_request(
                 league: league.to_string(),
                 data_type: DataType::BoxScore,
                 data: crate::schema::league_response::LeagueData::Nba(Box::new(
-                    crate::schema::league_response::NBAData::BoxScore(nba_box_score),
+                    crate::schema::league_response::NBAData::BoxScore(Box::new(nba_box_score)),
                 )),
                 filtered_count: 1,
                 total_count: 1,

@@ -5,7 +5,7 @@ import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - components
-import { QuarterBadge } from "../badge";
+import { QuarterBadge, StatusBadge } from "../badge";
 import { NBASkeleton } from "./NBASkeleton.tsx";
 import { ErrorState } from "../ErrorStates";
 
@@ -16,12 +16,7 @@ import { HideVerticalScroll } from "../containers";
 import { orEmpty, extractDataFromResponse } from "../../utils.ts";
 
 // Internal imports - config
-import {
-  mapApiStatusToGameStatus,
-  getStatusDisplayText,
-  League,
-  GameStatus,
-} from "../../config.ts";
+import { mapApiStatusToGameStatus, League, GameStatus } from "../../config.ts";
 
 interface BoxScoreDetailNBAProps {
   gameId?: string;
@@ -159,7 +154,7 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
                 w="12"
                 h="12"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="sm"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -171,10 +166,10 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
                     alt={orEmpty(awayTeamProfile.Name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="sm" />
                 )}
               </Box>
               <VStack gap="0" align="center">
@@ -226,31 +221,14 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
               game.Quarter ? (
                 <QuarterBadge
                   quarter={game.Quarter}
+                  timeRemaining={game.TimeRemaining}
                   timeRemainingMinutes={game.TimeRemainingMinutes}
                   timeRemainingSeconds={game.TimeRemainingSeconds}
-                  size="md"
+                  size="2xs"
                 />
               ) : (
-                <Text fontSize="sm" fontWeight="semibold" color="text.400">
-                  {getStatusDisplayText(mapApiStatusToGameStatus(game.Status))}
-                </Text>
+                <StatusBadge status={game.Status} size={"2xs"} />
               )}
-
-              {/* Basketball Court Icon */}
-              <Box
-                w="12"
-                h="12"
-                bg="primary.25"
-                borderRadius="md"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                position="relative"
-              >
-                <Text fontSize="lg" color="text.400">
-                  🏀
-                </Text>
-              </Box>
             </VStack>
 
             {/* Home Team */}
@@ -259,6 +237,7 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
                 w="12"
                 h="12"
                 bg="text.200"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -270,10 +249,10 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
                     alt={orEmpty(homeTeamProfile.Name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <VStack gap="0" align="center">
@@ -327,75 +306,6 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
                 {orEmpty(stadium.Name)}
               </Text>
             )}
-
-            {/* Channel Information */}
-            {game.Channel && (
-              <Text fontSize="xs" color="text.400">
-                {game.Channel}
-              </Text>
-            )}
-
-            {/* Odds Information */}
-            {(() => {
-              const odds = (() => {
-                // Check if odds are directly on the game object (schedule format)
-                if (game.HomeTeamMoneyLine !== undefined) {
-                  return {
-                    homeMoneyLine: game.HomeTeamMoneyLine,
-                    awayMoneyLine: game.AwayTeamMoneyLine,
-                    homePointSpread: game.PointSpreadHomeTeamMoneyLine,
-                    awayPointSpread: game.PointSpreadAwayTeamMoneyLine,
-                    overUnder: game.OverUnder,
-                    pointSpread: game.PointSpread,
-                    sportsbook: game.Sportsbook || "Unknown",
-                  };
-                }
-
-                // Check if odds are in PregameOdds/LiveOdds arrays (scores format)
-                if (game.PregameOdds || game.LiveOdds) {
-                  const pregameOdds = game.PregameOdds?.[0];
-                  const liveOdds = game.LiveOdds?.[0];
-                  const oddsEntry = liveOdds || pregameOdds;
-
-                  if (oddsEntry) {
-                    return {
-                      homeMoneyLine: oddsEntry.HomeTeamMoneyLine,
-                      awayMoneyLine: oddsEntry.AwayTeamMoneyLine,
-                      homePointSpread: oddsEntry.PointSpreadHomeTeamMoneyLine,
-                      awayPointSpread: oddsEntry.PointSpreadAwayTeamMoneyLine,
-                      overUnder: oddsEntry.OverUnder,
-                      pointSpread: oddsEntry.PointSpread,
-                      sportsbook: oddsEntry.Sportsbook || "Unknown",
-                    };
-                  }
-                }
-
-                return null;
-              })();
-
-              if (!odds) return null;
-
-              return (
-                <VStack gap="1" align="center">
-                  {odds.homeMoneyLine && odds.awayMoneyLine && (
-                    <Text fontSize="xs" color="text.400">
-                      ML: {odds.awayMoneyLine}/{odds.homeMoneyLine}
-                    </Text>
-                  )}
-                  {odds.pointSpread && (
-                    <Text fontSize="xs" color="text.400">
-                      Spread: {odds.pointSpread > 0 ? "+" : ""}
-                      {odds.pointSpread}
-                    </Text>
-                  )}
-                  {odds.overUnder && (
-                    <Text fontSize="xs" color="text.400">
-                      O/U: {odds.overUnder}
-                    </Text>
-                  )}
-                </VStack>
-              );
-            })()}
           </VStack>
 
           {/* Quarter-by-Quarter Scores Table */}
@@ -403,7 +313,7 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
             <VStack gap="2" w="full" mt="4">
               <Box w="full" overflowX="auto">
                 <Table.Root size="sm" variant="outline">
-                  <Table.Header>
+                  <Table.Header bg="primary.200">
                     <Table.Row>
                       <Table.ColumnHeader
                         fontSize="2xs"
@@ -434,7 +344,9 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
                         fontWeight="semibold"
                         px="2"
                         py="1"
-                      ></Table.ColumnHeader>
+                      >
+                        Total
+                      </Table.ColumnHeader>
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>

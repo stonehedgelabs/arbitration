@@ -56,20 +56,22 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
   useEffect(() => {
     fetchTeamProfiles(League.NFL);
     fetchStadiums(League.NFL);
-  }, [fetchTeamProfiles, fetchStadiums]);
+  }, []);
 
   // Fetch box score data
   useEffect(() => {
     if (gameId && league && !reduxBoxScore) {
       dispatch(fetchBoxScore({ league: League.NFL, gameId }));
     }
-  }, [gameId, dispatch]);
+  }, [dispatch]);
 
   // For NFL, the data structure has a 'Score' field (capital S) instead of 'Game'
+  // Also handle case where data is returned directly without wrapper
   const game =
     reduxBoxScore?.data?.Score ||
     reduxBoxScore?.data?.score ||
-    reduxBoxScore?.data?.Game;
+    reduxBoxScore?.data?.Game ||
+    reduxBoxScore?.data;
 
   // Show loading state if we're loading or if no game data yet and no error
   if (isLoadingThisGame || (!game && !boxScoreError)) {
@@ -125,8 +127,8 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
       <Box px="6" py="2">
         {/* Game Title */}
         <VStack gap="1" mb="4">
-          <Text textAlign="center" fontSize="sm" color="text.400">
-            Week {game.Week} • {game.Season} Season
+          <Text textAlign="center" fontSize="xs" color="text.400">
+            Week {game.Week} • {game.Season}
           </Text>
           {/* Game Time */}
           <Text textAlign="center" fontSize="xs" color="text.400">
@@ -144,7 +146,7 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
                 w="12"
                 h="12"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -156,10 +158,10 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
                     alt={orEmpty(awayTeamProfile.Name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
               <VStack gap="0" align="center">
@@ -186,9 +188,9 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
                 VS
               </Text>
               <QuarterBadge
-                quarter={game.Quarter || "F"}
-                time={game.TimeRemaining || undefined}
-                size="sm"
+                quarter={game.Quarter}
+                timeRemaining={game.TimeRemaining}
+                size="2xs"
               />
             </VStack>
 
@@ -198,7 +200,7 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
                 w="12"
                 h="12"
                 bg="text.200"
-                borderRadius="full"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -210,10 +212,10 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
                     alt={orEmpty(homeTeamProfile.Name)}
                     w="full"
                     h="full"
-                    objectFit="cover"
+                    objectFit="contain"
                   />
                 ) : (
-                  <Box w="full" h="full" bg="text.200" borderRadius="full" />
+                  <Box w="full" h="full" bg="text.200" borderRadius="100" />
                 )}
               </Box>
               <VStack gap="0" align="center">
@@ -271,7 +273,9 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
                         fontWeight="semibold"
                         px="2"
                         py="1"
-                      ></Table.ColumnHeader>
+                      >
+                        Total
+                      </Table.ColumnHeader>
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>

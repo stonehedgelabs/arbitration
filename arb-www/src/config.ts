@@ -109,7 +109,7 @@ export const ENV = {
  * API Configuration
  */
 export const API_CONFIG = {
-  baseUrl: 'https://073c56369030.ngrok.app', // Rust backend URL
+  baseUrl: 'https://8e740138f517.ngrok.app', // Rust backend URL
   endpoints: {
     scores: '/api/v1/scores',
     boxScoreFinal: '/api/v1/box-score-final',
@@ -174,18 +174,18 @@ export const CACHE_CONFIG = {
   
   // Specific TTL values matching backend config (in milliseconds)
   ttlValues: {
-    team_profiles: 3600 * 1000,      // 1 hour
-    schedule: 3600 * 1000,           // 1 hour
-    postseason_schedule: 3600 * 1000, // 1 hour
-    scores: 60 * 1000,               // 1 minute
-    play_by_play: 60 * 1000,         // 1 minute
-    box_scores: 60 * 1000,           // 1 minute
-    stadiums: 21600 * 1000,          // 6 hours
-    twitter_search: 60 * 1000,       // 1 minute
-    reddit_thread: 600 * 1000,       // 10 minutes
-    reddit_thread_comments: 60 * 1000, // 1 minute
-    odds: 3600 * 1000,               // 1 hour
-    user_auth: 604800 * 1000,        // 1 week (7 days)
+    team_profiles: 60 * 60 * 1000,      // 1 hour
+    schedule: 60 * 60 * 1000,           // 1 hour
+    postseason_schedule: 60 * 60 * 1000, // 1 hour
+    scores: 60 * 1 * 1000   ,            // 1 minute
+    play_by_play: 60 * 1 * 1000,         // 1 minute
+    box_scores: 60 * 1 * 1000,           // 1 minute
+    stadiums: 60 * 60 * 6 * 1000,          // 6 hours
+    twitter_search: 60 * 1 * 1000,       // 1 minute
+    reddit_thread: 60 * 10 * 1000,       // 10 minutes
+    reddit_thread_comments: 60 * 1 * 1000, // 1 minute
+    odds: 60 * 60 * 1000,               // 1 hour
+    user_auth: 60 * 60 * 24 * 7 * 1000,        // 1 week (7 days)
   },
 } as const;
 

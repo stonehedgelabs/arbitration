@@ -3,8 +3,8 @@
 [server]
 host = "0.0.0.0"
 port = 3000
-cors_origins = "http://localhost:5173,http://localhost:3000,https://3a4c20497251.ngrok.app"
-client_url = "https://3a4c20497251.ngrok.app"
+cors_origins = "http://localhost:5173,http://localhost:3000,https://444037a67f75.ngrok.app"
+client_url = "https://444037a67f75.ngrok.app"
 
 [cache]
 enabled = true

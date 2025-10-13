@@ -71,7 +71,7 @@ export class NFLGameByDate extends BaseDTO {
   ForecastWindSpeed?: number;
   AwayTeamMoneyLine?: number;
   HomeTeamMoneyLine?: number;
-  Canceled!: boolean;
+  Canceled?: boolean;
   Closed?: boolean;
   LastPlay?: string;
   Day!: string;

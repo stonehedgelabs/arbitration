@@ -282,7 +282,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ w, h, borderRadius, children
 );
 
 export const SkeletonCircle: React.FC<SkeletonProps & { size?: string }> = ({ size = "8" }) => (
-  <Skeleton w={size} h={size} borderRadius="full" />
+  <Skeleton w={size} h={size} borderRadius="sm" />
 );
 
 export const SkeletonText: React.FC<SkeletonProps & { noOfLines?: number }> = ({ noOfLines = 1 }) => (

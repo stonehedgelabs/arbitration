@@ -1,8 +1,36 @@
-import { useEffect, useCallback, useState } from "react";
-import { Box, VStack, HStack, Text, Image } from "@chakra-ui/react";
-import { motion, AnimatePresence } from "motion/react";
-import { MessageCircle, Twitter, Clock } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Box, HStack, Image, Text, VStack } from "@chakra-ui/react";
+import { AnimatePresence, motion } from "motion/react";
+import { Clock, MessageCircle, Twitter } from "lucide-react";
 import { UnifiedGameFeedSkeleton } from "./UnifiedGameFeedSkeleton";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import {
+  clearRedditData,
+  fetchRedditGameThreadComments,
+  fetchTwitterData,
+  findRedditGameThread,
+} from "../store/slices/sportsDataSlice";
+import { getTeamSubredditByName } from "../teams";
+import {
+  buildApiUrl,
+  League,
+  PLAY_BY_PLAY_CONFIG,
+  REDDIT_CONFIG,
+  UNIFIED_FEED_CONFIG,
+} from "../config";
+import {
+  delayedRedditTimestamp,
+  estToUTC,
+  formatRelativeUTCTime,
+  getPlayLabelMLB,
+  getPlayLabelNBA,
+  getPlayLabelNFL,
+} from "../utils";
+import useArb from "../services/Arb";
+import { InningBadge } from "./badge";
+import { NFLPlay } from "../schema";
+import { NBAPlay } from "../schema/nba";
+import { MLBPlay } from "../schema/mlb/playByPlay.ts";
 
 const RedditIcon = ({ size = 12 }: { size?: number }) => (
   <svg
@@ -16,30 +44,6 @@ const RedditIcon = ({ size = 12 }: { size?: number }) => (
   </svg>
 );
 
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import {
-  fetchRedditGameThreadComments,
-  findRedditGameThread,
-  fetchTwitterData,
-  clearRedditData,
-} from "../store/slices/sportsDataSlice";
-import { getTeamSubredditByName } from "../teams";
-import {
-  League,
-  REDDIT_CONFIG,
-  buildApiUrl,
-  PLAY_BY_PLAY_CONFIG,
-  UNIFIED_FEED_CONFIG,
-} from "../config";
-import {
-  formatRelativeUTCTime,
-  estToUTC,
-  getPlayLabel,
-  delayedRedditTimestamp,
-} from "../utils";
-import useArb from "../services/Arb";
-import { InningBadge } from "./badge";
-
 interface UnifiedGameFeedProps {
   gameId: string;
   awayTeam: string;
@@ -47,7 +51,7 @@ interface UnifiedGameFeedProps {
   awayTeamKey?: string;
   homeTeamKey?: string;
   league: League;
-  gameData?: any; // Add game data for scores and inning info
+  gameData?: any;
 }
 
 interface FeedEvent {
@@ -67,19 +71,7 @@ interface ActualPlayByPlayResponse {
   data: PlayEvent[];
 }
 
-interface PlayEvent {
-  PlayID: string;
-  Description: string;
-  Updated: string;
-  Team: string;
-  InningNumber?: number;
-  InningHalf?: string;
-  Balls?: number;
-  Strikes?: number;
-  Walks?: number;
-  CurrentPitcher?: string;
-  HitterTeamID?: number;
-}
+type PlayEvent = NFLPlay | NBAPlay | MLBPlay;
 
 const deriveTwitterTerms = (
   awayTeam: string,
@@ -159,9 +151,10 @@ export function UnifiedGameFeed({
         }),
       );
     }
-  }, [league, awayTeam, homeTeam]);
+  }, [awayTeam, homeTeam, league, dispatch]);
 
   useEffect(() => {
+    if (!awayTeamKey || !homeTeamKey || !awayTeam || !homeTeam) return;
     const twitterQuery = deriveTwitterTerms(
       awayTeam,
       homeTeam,
@@ -174,7 +167,14 @@ export function UnifiedGameFeed({
         queryType: "Latest",
       }),
     );
-  }, [awayTeam, homeTeam]);
+  }, [
+    awayTeam,
+    homeTeam,
+    awayTeamKey,
+    homeTeamKey,
+    fetchTwitterData,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (!redditGameThreadFound || redditGameThreadLoading) {
@@ -184,7 +184,6 @@ export function UnifiedGameFeed({
     const awaySubreddit = getTeamSubredditByName(awayTeam, league);
     const homeSubreddit = getTeamSubredditByName(homeTeam, league);
 
-    // Now fetch comments since thread is found
     if (awaySubreddit) {
       dispatch(
         fetchRedditGameThreadComments({
@@ -205,7 +204,14 @@ export function UnifiedGameFeed({
         }),
       );
     }
-  }, [redditGameThreadFound, awayTeam, homeTeam, league]);
+  }, [
+    redditGameThreadFound,
+    awayTeam,
+    homeTeam,
+    gameId,
+    redditGameThreadLoading,
+    dispatch,
+  ]);
 
   const fetchPlayByPlay = useCallback(async () => {
     if (!gameId || !league) return;
@@ -228,7 +234,6 @@ export function UnifiedGameFeed({
       }
 
       const data: ActualPlayByPlayResponse = await response.json();
-      // Limit to latest events
       const limitedData = {
         ...data,
         data: data.data.slice(-PLAY_BY_PLAY_CONFIG.maxEventsInMemory),
@@ -239,19 +244,21 @@ export function UnifiedGameFeed({
     } finally {
       setPbpLoading(false);
     }
-  }, [league, gameId]);
+  }, []);
 
   useEffect(() => {
     if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;
 
     const refreshData = () => {
-      const query = deriveTwitterTerms(
-        awayTeam,
-        homeTeam,
-        awayTeamKey as string,
-        homeTeamKey as string,
-      );
-      dispatch(fetchTwitterData({ query, queryType: "Latest" }));
+      if (awayTeamKey && homeTeamKey && awayTeam && homeTeam) {
+        const query = deriveTwitterTerms(
+          awayTeam,
+          homeTeam,
+          awayTeamKey as string,
+          homeTeamKey as string,
+        );
+        dispatch(fetchTwitterData({ query, queryType: "Latest" }));
+      }
 
       if (gameId && league) {
         fetchPlayByPlay();
@@ -265,13 +272,11 @@ export function UnifiedGameFeed({
 
     return () => clearInterval(interval);
   }, [
-    awayTeam,
     homeTeam,
-    awayTeamKey,
+    awayTeam,
     homeTeamKey,
-    gameId,
-    league,
-    fetchPlayByPlay,
+    fetchTwitterData,
+    awayTeamKey,
     dispatch,
   ]);
 
@@ -300,25 +305,22 @@ export function UnifiedGameFeed({
     );
 
     return () => clearInterval(redditInterval);
-  }, [redditGameThreadFound, redditCommentsData, gameId, dispatch]);
+  }, [
+    gameId,
+    redditGameThreadFound,
+    redditCommentsData,
+    fetchRedditGameThreadComments,
+    dispatch,
+  ]);
 
   useEffect(() => {
     fetchTeamProfiles(league);
     fetchPlayByPlay();
-  }, [league, gameId, fetchTeamProfiles, fetchPlayByPlay]);
+  }, [league]);
 
-  // Clear Reddit data when component unmounts or gameId changes
-  useEffect(() => {
-    return () => {
-      // Clear Reddit data when component unmounts
-      dispatch(clearRedditData());
-    };
-  }, [dispatch]);
-
-  // Clear Reddit data when gameId changes (switching to different game)
   useEffect(() => {
     dispatch(clearRedditData());
-  }, [gameId, dispatch]);
+  }, [dispatch]);
 
   const getAllEvents = useCallback((): FeedEvent[] => {
     const events: FeedEvent[] = [];
@@ -368,49 +370,45 @@ export function UnifiedGameFeed({
           timestamp: tweet.createdAt,
           content: tweet.text,
           author: author,
-          team: "other", // Twitter posts are generally neutral
+          team: "other",
         });
       });
     }
 
     if (playByPlayData?.data) {
       playByPlayData.data.forEach((play: PlayEvent) => {
-        // Convert EST timestamp to UTC for proper sorting
         const utcTimestamp = estToUTC(play.Updated);
-
-        // Use the actual PBP data fields
-        const hitterName = (play as any).HitterName || "Player";
-
-        // Check if description is scrambled and use getPlayLabel if so
+        let primaryPlayer = "Player";
         let playDescription = play.Description || "Play in progress...";
+        let team = "other";
+
         if (playDescription.toLowerCase() === "scrambled") {
-          // Cast play to the full PlayData interface for getPlayLabel
-          const playData = play as any;
-          playDescription = getPlayLabel({
-            HitterName: playData.HitterName || "Player",
-            PitcherName: playData.PitcherName || "Pitcher",
-            InningHalf: playData.InningHalf || "T",
-            InningNumber: playData.InningNumber || 1,
-            Outs: playData.Outs || 0,
-            Description: playData.Description,
-            Strikeout: playData.Strikeout || false,
-            Walk: playData.Walk || false,
-            Hit: playData.Hit || false,
-            Sacrifice: playData.Sacrifice || false,
-            Out: playData.Out || false,
-            Runner1ID: playData.Runner1ID || null,
-            Runner2ID: playData.Runner2ID || null,
-            Runner3ID: playData.Runner3ID || null,
-            RunsBattedIn: playData.RunsBattedIn || 0,
-          });
+          // const playData = play as any;
+
+          if (league === League.MLB) {
+            ({ description: playDescription, primaryPlayer } = getPlayLabelMLB(
+              play as any,
+            ));
+            team =
+              (play as MLBPlay).HitterTeamID === gameData?.HomeTeamID
+                ? "home"
+                : "away";
+          } else if (league === League.NFL) {
+            ({ description: playDescription, primaryPlayer } = getPlayLabelNFL(
+              play as any,
+            ));
+            team =
+              (play as NFLPlay).Team === gameData?.HomeTeam ? "home" : "away";
+          } else if (league === League.NBA) {
+            ({ description: playDescription, primaryPlayer } = getPlayLabelNBA(
+              play as any,
+            ));
+            team =
+              (play as NBAPlay).TeamID === gameData?.HomeTeamID
+                ? "home"
+                : "away";
+          }
         }
-
-        // Determine which team the play belongs to based on HitterTeamID
-        const hitterTeamId = play.HitterTeamID;
-
-        // Use hitter as the primary player for the play
-        const primaryPlayer = hitterName;
-        const primaryTeamId = hitterTeamId;
 
         events.push({
           id: `pbp-${play.PlayID}`,
@@ -418,16 +416,11 @@ export function UnifiedGameFeed({
           timestamp: utcTimestamp,
           content: playDescription,
           author: primaryPlayer,
-          team:
-            primaryTeamId === gameData?.AwayTeamID
-              ? "away"
-              : primaryTeamId === gameData?.HomeTeamID
-                ? "home"
-                : "other",
+          team: team as any,
         });
       });
     }
-    // Sort by timestamp (most recent first)
+
     return events.sort(
       (a, b) =>
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
@@ -443,26 +436,33 @@ export function UnifiedGameFeed({
   ]);
 
   const allEvents = getAllEvents();
-
-  // Get the latest PBP event for sticky display
   const latestPBPEvent = allEvents.find((event) => event.type === "pbp");
 
-  // Render sticky latest PBP event in old card style
   const renderStickyPBPEvent = (event: FeedEvent) => {
-    // Get team logo for the PBP event using the actual PBP data
     const getTeamLogoForEvent = () => {
       if (!teamProfiles?.data || !playByPlayData?.data) return null;
 
-      // Find the original play data to get the team ID
       const originalPlay = playByPlayData.data.find(
         (play) => `pbp-${play.PlayID}` === event.id,
       );
 
       if (!originalPlay) return null;
 
-      // Use HitterTeamID to find the team logo
+      let teamId: number | undefined;
+      if (league === League.MLB) {
+        teamId = (originalPlay as MLBPlay).HitterTeamID;
+      } else if (league === League.NFL) {
+        const teamKey = (originalPlay as NFLPlay).Team;
+        return teamProfiles.data.find((team: any) => team.Key === teamKey)
+          ?.WikipediaLogoUrl;
+      } else if (league === League.NBA) {
+        teamId = (originalPlay as NBAPlay).TeamID;
+      }
+
+      if (!teamId) return null;
+
       const teamProfile = teamProfiles.data.find(
-        (team: any) => team.TeamID === originalPlay.HitterTeamID,
+        (team: any) => team.TeamID === teamId,
       );
 
       return teamProfile?.WikipediaLogoUrl || null;
@@ -496,25 +496,12 @@ export function UnifiedGameFeed({
         >
           <Box px={"4"} pb={"2"}>
             <VStack gap="1" align="stretch">
-              {/* Header with Latest Play and timestamp */}
-              <HStack
-                justify="space-between"
-                // border="1px solid green"
-                align="flex-start"
-                p={2}
-                w="100%"
-              >
-                {/* LEFT COLUMN */}
+              <HStack justify="space-between" align="flex-start" p={2} w="100%">
                 <VStack align="stretch" flex="1">
-                  {/* Yellow Header */}
-                  <HStack
-                    gap="1.5"
-                    //border="1px solid yellow"
-                    align="center"
-                  >
+                  <HStack gap="1.5" align="center">
                     <Box
                       w="4"
-                      borderRadius="full"
+                      borderRadius="4xl"
                       bg="primary.500"
                       color="white"
                       display="flex"
@@ -530,14 +517,7 @@ export function UnifiedGameFeed({
                     </Text>
                   </HStack>
 
-                  {/* Red Box (Team Info) — width 50% of green container */}
-                  <HStack
-                    gap="2"
-                    // border="1px solid red"
-
-                    align="center"
-                    justify="flex-start"
-                  >
+                  <HStack gap="2" align="center" justify="flex-start">
                     {teamLogo && (
                       <Image
                         src={teamLogo}
@@ -560,9 +540,19 @@ export function UnifiedGameFeed({
                           );
                           if (!originalPlay) return "Team";
 
+                          let teamId: number | undefined;
+                          if (league === League.MLB) {
+                            teamId = (originalPlay as MLBPlay).HitterTeamID;
+                          } else if (league === League.NFL) {
+                            return (originalPlay as NFLPlay).Team;
+                          } else if (league === League.NBA) {
+                            teamId = (originalPlay as NBAPlay).TeamID;
+                          }
+
+                          if (teamId === undefined) return "Team";
+
                           const teamProfile = teamProfiles.data.find(
-                            (team: any) =>
-                              team.TeamID === originalPlay.HitterTeamID,
+                            (team: any) => team.TeamID === teamId,
                           );
 
                           return (
@@ -574,15 +564,13 @@ export function UnifiedGameFeed({
                   </HStack>
                 </VStack>
 
-                {/* RIGHT COLUMN */}
                 <VStack
                   gap="0"
-                  //    border="1px solid pink"
                   align="end"
                   width="130px"
                   minWidth="130px"
                   maxWidth="130px"
-                  flex="0 0 auto" // 👈 prevents flex resizing completely
+                  flex="0 0 auto"
                   flexShrink={0}
                   alignSelf="flex-start"
                   boxSizing="border-box"
@@ -604,12 +592,10 @@ export function UnifiedGameFeed({
                 </VStack>
               </HStack>
 
-              {/* Play description */}
               <HStack gap="2" align="center">
                 <Text fontSize="xs" fontWeight="medium" flex="1">
                   {event.content || "Play in progress..."}
                 </Text>
-                {/* Error badge */}
                 {event.content &&
                   event.content.toLowerCase().includes("error") && (
                     <Box
@@ -627,7 +613,6 @@ export function UnifiedGameFeed({
                   )}
               </HStack>
 
-              {/* PBP Data: Balls, Strikes, Walks, Current Pitcher */}
               {(() => {
                 const originalPlay = playByPlayData?.data?.find(
                   (play) => `pbp-${play.PlayID}` === event.id,
@@ -644,70 +629,189 @@ export function UnifiedGameFeed({
                     borderTop="1px"
                     borderColor="text.200"
                   >
-                    {/* Count Information */}
                     <HStack gap="2" align="center">
-                      {originalPlay.Balls !== undefined && (
-                        <HStack gap="1" align="center">
-                          <Text
-                            fontSize="xs"
-                            color="text.500"
-                            fontWeight="medium"
-                          >
-                            Balls:
-                          </Text>
-                          <Text
-                            fontSize="xs"
-                            color="text.400"
-                            fontWeight="bold"
-                          >
-                            {originalPlay.Balls}
-                          </Text>
-                        </HStack>
+                      {league === League.MLB && (
+                        <>
+                          {(originalPlay as MLBPlay).Balls !== undefined && (
+                            <HStack gap="1" align="center">
+                              <Text
+                                fontSize="xs"
+                                color="text.500"
+                                fontWeight="medium"
+                              >
+                                Balls:
+                              </Text>
+                              <Text
+                                fontSize="xs"
+                                color="text.400"
+                                fontWeight="bold"
+                              >
+                                {(originalPlay as MLBPlay).Balls}
+                              </Text>
+                            </HStack>
+                          )}
+                          {(originalPlay as MLBPlay).Strikes !== undefined && (
+                            <HStack gap="1" align="center">
+                              <Text
+                                fontSize="xs"
+                                color="text.500"
+                                fontWeight="medium"
+                              >
+                                Strikes:
+                              </Text>
+                              <Text
+                                fontSize="xs"
+                                color="text.400"
+                                fontWeight="bold"
+                              >
+                                {(originalPlay as MLBPlay).Strikes}
+                              </Text>
+                            </HStack>
+                          )}
+                          {(originalPlay as MLBPlay).Walk !== undefined && (
+                            <HStack gap="1" align="center">
+                              <Text
+                                fontSize="2xs"
+                                color="text.500"
+                                fontWeight="medium"
+                              >
+                                W:
+                              </Text>
+                              <Text
+                                fontSize="2xs"
+                                color="text.400"
+                                fontWeight="bold"
+                              >
+                                {(originalPlay as MLBPlay).Walk}
+                              </Text>
+                            </HStack>
+                          )}
+                        </>
                       )}
-                      {originalPlay.Strikes !== undefined && (
-                        <HStack gap="1" align="center">
-                          <Text
-                            fontSize="xs"
-                            color="text.500"
-                            fontWeight="medium"
-                          >
-                            Strikes:
-                          </Text>
-                          <Text
-                            fontSize="xs"
-                            color="text.400"
-                            fontWeight="bold"
-                          >
-                            {originalPlay.Strikes}
-                          </Text>
-                        </HStack>
+
+                      {league === League.NFL && (
+                        <>
+                          {(originalPlay as NFLPlay).Down !== undefined && (
+                            <HStack gap="1" align="center">
+                              <Text
+                                fontSize="xs"
+                                color="text.500"
+                                fontWeight="medium"
+                              >
+                                Down:
+                              </Text>
+                              <Text
+                                fontSize="xs"
+                                color="text.400"
+                                fontWeight="bold"
+                              >
+                                {(originalPlay as NFLPlay).Down}
+                              </Text>
+                            </HStack>
+                          )}
+                          {(originalPlay as NFLPlay).Distance !== undefined && (
+                            <HStack gap="1" align="center">
+                              <Text
+                                fontSize="xs"
+                                color="text.500"
+                                fontWeight="medium"
+                              >
+                                To Go:
+                              </Text>
+                              <Text
+                                fontSize="xs"
+                                color="text.400"
+                                fontWeight="bold"
+                              >
+                                {(originalPlay as NFLPlay).Distance}
+                              </Text>
+                            </HStack>
+                          )}
+                          {(originalPlay as NFLPlay).YardLine !== undefined && (
+                            <HStack gap="1" align="center">
+                              <Text
+                                fontSize="2xs"
+                                color="text.500"
+                                fontWeight="medium"
+                              >
+                                {(originalPlay as NFLPlay).YardLineTerritory}{" "}
+                                {(originalPlay as NFLPlay).YardLine}
+                              </Text>
+                            </HStack>
+                          )}
+                        </>
                       )}
-                      {originalPlay.Walks !== undefined && (
-                        <HStack gap="1" align="center">
-                          <Text
-                            fontSize="2xs"
-                            color="text.500"
-                            fontWeight="medium"
-                          >
-                            W:
-                          </Text>
-                          <Text
-                            fontSize="2xs"
-                            color="text.400"
-                            fontWeight="bold"
-                          >
-                            {originalPlay.Walks}
-                          </Text>
-                        </HStack>
+
+                      {league === League.NBA && (
+                        <>
+                          {(originalPlay as NBAPlay).TimeRemainingMinutes !==
+                            undefined &&
+                            (originalPlay as NBAPlay).TimeRemainingSeconds !==
+                              undefined && (
+                              <HStack gap="1" align="center">
+                                <Text
+                                  fontSize="xs"
+                                  color="text.500"
+                                  fontWeight="medium"
+                                >
+                                  Time:
+                                </Text>
+                                <Text
+                                  fontSize="xs"
+                                  color="text.400"
+                                  fontWeight="bold"
+                                >
+                                  {
+                                    (originalPlay as NBAPlay)
+                                      .TimeRemainingMinutes
+                                  }
+                                  :
+                                  {(
+                                    originalPlay as NBAPlay
+                                  ).TimeRemainingSeconds.toString().padStart(
+                                    2,
+                                    "0",
+                                  )}
+                                </Text>
+                              </HStack>
+                            )}
+                          {(originalPlay as NBAPlay).QuarterName && (
+                            <HStack gap="1" align="center">
+                              <Text
+                                fontSize="2xs"
+                                color="text.500"
+                                fontWeight="medium"
+                              >
+                                {(originalPlay as NBAPlay).QuarterName}
+                              </Text>
+                            </HStack>
+                          )}
+                        </>
                       )}
                     </HStack>
 
-                    {/* Current Pitcher */}
-                    {originalPlay.CurrentPitcher && (
-                      <Text fontSize="2xs" color="text.500" fontWeight="medium">
-                        P: {originalPlay.CurrentPitcher}
-                      </Text>
-                    )}
+                    {league === League.MLB &&
+                      (originalPlay as MLBPlay).PitcherName && (
+                        <Text
+                          fontSize="2xs"
+                          color="text.500"
+                          fontWeight="medium"
+                        >
+                          P: {(originalPlay as MLBPlay).PitcherName}
+                        </Text>
+                      )}
+
+                    {league === League.NFL &&
+                      (originalPlay as NFLPlay).YardsGained !== undefined && (
+                        <Text
+                          fontSize="2xs"
+                          color="text.500"
+                          fontWeight="medium"
+                        >
+                          {(originalPlay as NFLPlay).YardsGained > 0 ? "+" : ""}
+                          {(originalPlay as NFLPlay).YardsGained} yds
+                        </Text>
+                      )}
                   </HStack>
                 );
               })()}
@@ -718,7 +822,6 @@ export function UnifiedGameFeed({
     );
   };
 
-  // Render individual event
   const renderEvent = (event: FeedEvent) => {
     const isPBP = event.type === "pbp";
     const isReddit = event.type === "reddit";
@@ -736,14 +839,13 @@ export function UnifiedGameFeed({
           flexDirection={isPBP ? "row-reverse" : "row"}
           align="flex-start"
         >
-          {/* Avatar/Icon */}
           <Box
             w="8"
             h="8"
             minW="8"
             minH="8"
             flexShrink={0}
-            borderRadius="full"
+            borderRadius="sm"
             bg={isPBP ? "blue.500" : isReddit ? "orange.500" : "blue.400"}
             color="white"
             display="flex"
@@ -761,7 +863,6 @@ export function UnifiedGameFeed({
             )}
           </Box>
 
-          {/* Event Bubble */}
           <VStack gap="1" align={isPBP ? "flex-end" : "flex-start"}>
             <Box
               bg={
@@ -839,17 +940,14 @@ export function UnifiedGameFeed({
     );
   }
 
-  // Filter out the latest PBP event from the regular feed since it's shown sticky
   const filteredEvents = latestPBPEvent
     ? allEvents.filter((event) => event.id !== latestPBPEvent.id)
     : allEvents;
 
   return (
     <VStack gap="0" align="stretch">
-      {/* Sticky Latest PBP Event - Only show if we have actual PBP data */}
       {latestPBPEvent && renderStickyPBPEvent(latestPBPEvent)}
 
-      {/* Events List */}
       <Box px="7" py="1">
         <VStack gap="3" align="stretch">
           {filteredEvents.length === 0 &&
@@ -868,7 +966,6 @@ export function UnifiedGameFeed({
           ) : filteredEvents.length === 0 ? (
             <UnifiedGameFeedSkeleton />
           ) : (
-            // Show skeleton while loading
             <AnimatePresence>
               {filteredEvents.map((event) => (
                 <motion.div

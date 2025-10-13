@@ -50,14 +50,14 @@ export class NFLScoresGame extends BaseDTO {
   HomeScoreQuarter3?: number;
   HomeScoreQuarter4?: number;
   HomeScoreOvertime?: number;
-  HasStarted!: boolean;
-  IsInProgress!: boolean;
-  IsOver!: boolean;
-  Has1stQuarterStarted!: boolean;
-  Has2ndQuarterStarted!: boolean;
-  Has3rdQuarterStarted!: boolean;
-  Has4thQuarterStarted!: boolean;
-  IsOvertime!: boolean;
+  HasStarted?: boolean;
+  IsInProgress?: boolean;
+  IsOver?: boolean;
+  Has1stQuarterStarted?: boolean;
+  Has2ndQuarterStarted?: boolean;
+  Has3rdQuarterStarted?: boolean;
+  Has4thQuarterStarted?: boolean;
+  IsOvertime?: boolean;
   DownAndDistance?: string;
   QuarterDescription?: string;
   StadiumID?: number;
@@ -71,8 +71,8 @@ export class NFLScoresGame extends BaseDTO {
   ForecastWindSpeed?: number;
   AwayTeamMoneyLine?: number;
   HomeTeamMoneyLine?: number;
-  Canceled!: boolean;
-  Closed!: boolean;
+  Canceled?: boolean;
+  Closed?: boolean;
   LastPlay?: string;
   Day!: string;
   DateTime!: string;
@@ -88,7 +88,7 @@ export class NFLScoresGame extends BaseDTO {
   GameEndDateTime!: string;
   HomeRotationNumber!: number;
   AwayRotationNumber!: number;
-  NeutralVenue!: boolean;
+  NeutralVenue?: boolean;
   RefereeID!: number;
   OverPayout!: number;
   UnderPayout!: number;
@@ -96,7 +96,7 @@ export class NFLScoresGame extends BaseDTO {
   AwayTimeouts?: number;
   DateTimeUTC!: string;
   Attendance!: number;
-  IsClosed!: boolean;
+  IsClosed?: boolean;
   StadiumDetails!: NFLStadiumDetails;
 }
 

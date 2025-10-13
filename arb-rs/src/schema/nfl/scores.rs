@@ -1,21 +1,39 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json;
+
+fn deserialize_optional_bool_or_string<'de, D>(
+    deserializer: D,
+) -> Result<Option<bool>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    match value {
+        serde_json::Value::Bool(b) => Ok(Some(b)),
+        serde_json::Value::String(_) => Ok(None), // Ignore string values like team abbreviations
+        serde_json::Value::Null => Ok(None),
+        _ => Err(serde::de::Error::custom(
+            "Expected boolean, string, or null for optional boolean field",
+        )),
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NFLStadiumDetails {
     #[serde(rename = "StadiumID")]
-    pub stadium_id: i32,
+    pub stadium_id: Option<i32>,
 
     #[serde(rename = "Name")]
-    pub name: String,
+    pub name: Option<String>,
 
     #[serde(rename = "City")]
-    pub city: String,
+    pub city: Option<String>,
 
     #[serde(rename = "State")]
     pub state: Option<String>,
 
     #[serde(rename = "Country")]
-    pub country: String,
+    pub country: Option<String>,
 
     #[serde(rename = "Capacity")]
     pub capacity: Option<i32>,
@@ -24,10 +42,10 @@ pub struct NFLStadiumDetails {
     pub playing_surface: Option<String>,
 
     #[serde(rename = "GeoLat")]
-    pub geo_lat: f64,
+    pub geo_lat: Option<f64>,
 
     #[serde(rename = "GeoLong")]
-    pub geo_long: f64,
+    pub geo_long: Option<f64>,
 
     #[serde(rename = "Type")]
     pub r#type: Option<String>,
@@ -36,7 +54,7 @@ pub struct NFLStadiumDetails {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NFLScoresGame {
     #[serde(rename = "GameKey")]
-    pub game_key: String,
+    pub game_key: Option<String>,
 
     #[serde(rename = "SeasonType")]
     pub season_type: i32,
@@ -48,13 +66,13 @@ pub struct NFLScoresGame {
     pub week: i32,
 
     #[serde(rename = "Date")]
-    pub date: String,
+    pub date: Option<String>,
 
     #[serde(rename = "AwayTeam")]
-    pub away_team: String,
+    pub away_team: Option<String>,
 
     #[serde(rename = "HomeTeam")]
-    pub home_team: String,
+    pub home_team: Option<String>,
 
     #[serde(rename = "AwayScore")]
     pub away_score: Option<i32>,
@@ -92,7 +110,10 @@ pub struct NFLScoresGame {
     #[serde(rename = "YardLineTerritory")]
     pub yard_line_territory: Option<String>,
 
-    #[serde(rename = "RedZone")]
+    #[serde(
+        rename = "RedZone",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
     pub red_zone: Option<bool>,
 
     #[serde(rename = "AwayScoreQuarter1")]
@@ -125,29 +146,53 @@ pub struct NFLScoresGame {
     #[serde(rename = "HomeScoreOvertime")]
     pub home_score_overtime: Option<i32>,
 
-    #[serde(rename = "HasStarted")]
-    pub has_started: bool,
+    #[serde(
+        rename = "HasStarted",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub has_started: Option<bool>,
 
-    #[serde(rename = "IsInProgress")]
-    pub is_in_progress: bool,
+    #[serde(
+        rename = "IsInProgress",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub is_in_progress: Option<bool>,
 
-    #[serde(rename = "IsOver")]
-    pub is_over: bool,
+    #[serde(
+        rename = "IsOver",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub is_over: Option<bool>,
 
-    #[serde(rename = "Has1stQuarterStarted")]
-    pub has_1st_quarter_started: bool,
+    #[serde(
+        rename = "Has1stQuarterStarted",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub has_1st_quarter_started: Option<bool>,
 
-    #[serde(rename = "Has2ndQuarterStarted")]
-    pub has_2nd_quarter_started: bool,
+    #[serde(
+        rename = "Has2ndQuarterStarted",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub has_2nd_quarter_started: Option<bool>,
 
-    #[serde(rename = "Has3rdQuarterStarted")]
-    pub has_3rd_quarter_started: bool,
+    #[serde(
+        rename = "Has3rdQuarterStarted",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub has_3rd_quarter_started: Option<bool>,
 
-    #[serde(rename = "Has4thQuarterStarted")]
-    pub has_4th_quarter_started: bool,
+    #[serde(
+        rename = "Has4thQuarterStarted",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub has_4th_quarter_started: Option<bool>,
 
-    #[serde(rename = "IsOvertime")]
-    pub is_overtime: bool,
+    #[serde(
+        rename = "IsOvertime",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub is_overtime: Option<bool>,
 
     #[serde(rename = "DownAndDistance")]
     pub down_and_distance: Option<String>,
@@ -188,35 +233,41 @@ pub struct NFLScoresGame {
     #[serde(rename = "HomeTeamMoneyLine")]
     pub home_team_money_line: Option<i32>,
 
-    #[serde(rename = "Canceled")]
-    pub canceled: bool,
+    #[serde(
+        rename = "Canceled",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub canceled: Option<bool>,
 
-    #[serde(rename = "Closed")]
-    pub closed: bool,
+    #[serde(
+        rename = "Closed",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub closed: Option<bool>,
 
     #[serde(rename = "LastPlay")]
     pub last_play: Option<String>,
 
     #[serde(rename = "Day")]
-    pub day: String,
+    pub day: Option<String>,
 
     #[serde(rename = "DateTime")]
-    pub date_time: String,
+    pub date_time: Option<String>,
 
     #[serde(rename = "AwayTeamID")]
-    pub away_team_id: i32,
+    pub away_team_id: Option<i32>,
 
     #[serde(rename = "HomeTeamID")]
-    pub home_team_id: i32,
+    pub home_team_id: Option<i32>,
 
     #[serde(rename = "GlobalGameID")]
-    pub global_game_id: i64,
+    pub global_game_id: Option<i64>,
 
     #[serde(rename = "GlobalAwayTeamID")]
-    pub global_away_team_id: i64,
+    pub global_away_team_id: Option<i64>,
 
     #[serde(rename = "GlobalHomeTeamID")]
-    pub global_home_team_id: i64,
+    pub global_home_team_id: Option<i64>,
 
     #[serde(rename = "PointSpreadAwayTeamMoneyLine")]
     pub point_spread_away_team_money_line: Option<i32>,
@@ -225,10 +276,10 @@ pub struct NFLScoresGame {
     pub point_spread_home_team_money_line: Option<i32>,
 
     #[serde(rename = "ScoreID")]
-    pub score_id: i64,
+    pub score_id: Option<i64>,
 
     #[serde(rename = "Status")]
-    pub status: String,
+    pub status: Option<String>,
 
     #[serde(rename = "GameEndDateTime")]
     pub game_end_date_time: Option<String>,
@@ -239,8 +290,11 @@ pub struct NFLScoresGame {
     #[serde(rename = "AwayRotationNumber")]
     pub away_rotation_number: Option<i32>,
 
-    #[serde(rename = "NeutralVenue")]
-    pub neutral_venue: bool,
+    #[serde(
+        rename = "NeutralVenue",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub neutral_venue: Option<bool>,
 
     #[serde(rename = "RefereeID")]
     pub referee_id: Option<i32>,
@@ -258,13 +312,16 @@ pub struct NFLScoresGame {
     pub away_timeouts: Option<i32>,
 
     #[serde(rename = "DateTimeUTC")]
-    pub date_time_utc: String,
+    pub date_time_utc: Option<String>,
 
     #[serde(rename = "Attendance")]
     pub attendance: Option<i32>,
 
-    #[serde(rename = "IsClosed")]
-    pub is_closed: bool,
+    #[serde(
+        rename = "IsClosed",
+        deserialize_with = "deserialize_optional_bool_or_string"
+    )]
+    pub is_closed: Option<bool>,
 
     #[serde(rename = "StadiumDetails")]
     pub stadium_details: Option<NFLStadiumDetails>,

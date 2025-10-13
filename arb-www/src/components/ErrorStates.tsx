@@ -160,7 +160,7 @@ export function NotImplementedState({
               w="20"
               h="20"
               bg="accent.100"
-              borderRadius="full"
+              borderRadius="sm"
               display="flex"
               alignItems="center"
               justifyContent="center"

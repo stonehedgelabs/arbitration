@@ -209,7 +209,7 @@ impl Default for ArbConfig {
             SeasonInfo {
                 regular: "2025".to_string(),
                 postseason: "2025POST".to_string(),
-                postseason_start: "01-01-2026".to_string(),
+                postseason_start: "01-01-2027".to_string(),
             },
         );
 
@@ -235,27 +235,27 @@ impl Default for ArbConfig {
             server: ServerConfig {
                 host: "0.0.0.0".to_string(),
                 port: 3000,
-                cors_origins: "http://localhost:5173,http://localhost:3000".to_string(),
-                client_url: "http://localhost:3000".to_string(),
+                cors_origins: "http://localhost:5173,http://localhost:3000,https://444037a67f75.ngrok.app".to_string(),
+                client_url: "https://444037a67f75.ngrok.app".to_string(),
             },
             cache: CacheConfig {
                 enabled: true,
                 mode: CacheMode::TtlBased,
                 redis_url: "redis://localhost:6379".to_string(),
-                default_ttl: 3600, // 1 hour
+                default_ttl: 60, // ✅ Match TOML: 1 minute
                 ttl: CacheTtlConfig {
-                    team_profiles: 3600,         // 1 hour
-                    schedule: 1800,              // 30 minutes
-                    postseason_schedule: 1800,   // 30 minutes
-                    scores: 120,                 // 2 minutes
-                    play_by_play: 20,            // 20 seconds
-                    box_scores: 1800,            // 30 minutes
-                    stadiums: 7200,              // 2 hours
-                    twitter_search: 60,          // 1 minute
-                    reddit_thread: 600,          // 10 minutes
-                    reddit_thread_comments: 120, // 2 minutes
-                    odds: 86400,                 // 24 hours
-                    user_auth: 604800,           // 1 week (7 days)
+                    team_profiles: 3600,          // 1 hour
+                    schedule: 3600,               // 1 hour
+                    postseason_schedule: 3600,    // 1 hour
+                    scores: 60,                   // 1 minute
+                    play_by_play: 60,             // 1 minute
+                    box_scores: 60,               // 1 minute
+                    stadiums: 21600,              // 6 hours
+                    twitter_search: 60,           // 1 minute
+                    reddit_thread: 600,           // 10 minutes
+                    reddit_thread_comments: 60,   // 1 minute
+                    odds: 3600,                   // 1 hour
+                    user_auth: 604800,            // 1 week
                 },
             },
             seasons: SeasonsConfig { current_seasons },

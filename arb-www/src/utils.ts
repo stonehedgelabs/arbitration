@@ -187,7 +187,7 @@ export const toLocalTime = (estDateTime: string): string => {
   try {
     // Convert EST/EDT timestamp to UTC first
     const utcDate = fromZonedTime(estDateTime, "America/New_York");
-    
+
     // Then convert to local time
     const localDate = toZonedTime(utcDate, Intl.DateTimeFormat().resolvedOptions().timeZone);
 
@@ -399,15 +399,21 @@ interface PlayData {
   RunsBattedIn?: number;
 }
 
+interface PlayLabelResult {
+  description: string;
+  primaryPlayer: string;
+}
+
 /**
- * Generates a human-readable play-by-play label
- * @param play - The play data object
+ * Generates a human-readable MLB play-by-play label
+ * @param play - The MLB play data object
  * @returns {string} Formatted play description
  */
-export const getPlayLabel = (play: PlayData): string => {
+export const getPlayLabelMLB = (play: PlayData): PlayLabelResult => {
   const batter = play.HitterName;
   const pitcher = play.PitcherName;
   const description = play.Description || "";
+
 
   // Check if description is usable (not scrambled/empty)
   const hasRealDescription = description && description !== "Scrambled";
@@ -464,12 +470,350 @@ export const getPlayLabel = (play: PlayData): string => {
   }
 
   // Combine and return
+  let label = "";
   if (contextParts.length > 0) {
-    return `${batter} ${action}, ${contextParts.join(", ")}`;
+    label = `${batter} ${action}, ${contextParts.join(", ")}`;
   } else {
-    return `${batter} ${action}`;
+    label = `${batter} ${action}`;
+  }
+
+  return {
+    description: label,
+    primaryPlayer: batter,
   }
 };
+
+/**
+ * Generates a human-readable NFL play-by-play label
+ * @param play - The NFL play data object
+ * @returns {string} Formatted play description
+ */
+export const getPlayLabelNFL = (play: any): PlayLabelResult => {
+  /**
+   {
+     "Created": "2025-10-12T16:02:39",
+     "Description": "Scrambled",
+     "Distance": 2,
+     "Down": 0,
+     "IsScoringPlay": false,
+     "Opponent": "DAL",
+     "PlayID": 628882,
+     "PlayStats": [
+     {
+       "AssistedTackles": 0,
+       "BlockedKickReturnTouchdowns": 0,
+       "BlockedKickReturnYards": 0,
+       "BlockedKickReturns": 0,
+       "BlockedKicks": 0,
+       "Created": "2025-10-12T16:02:39",
+       "Direction": "Scrambled",
+       "ExtraPointsAttempted": 0,
+       "ExtraPointsHadBlocked": 0,
+       "ExtraPointsMade": 0,
+       "FieldGoalReturnTouchdowns": 0,
+       "FieldGoalReturnYards": 0,
+       "FieldGoalReturns": 0,
+       "FieldGoalsAttempted": 0,
+       "FieldGoalsHadBlocked": 0,
+       "FieldGoalsMade": 0,
+       "FieldGoalsYards": 0,
+       "FumbleReturnTouchdowns": 0,
+       "FumbleReturnYards": 0,
+       "Fumbles": 0,
+       "FumblesForced": 0,
+       "FumblesLost": 0,
+       "FumblesRecovered": 0,
+       "HomeOrAway": "HOME",
+       "InterceptionReturnTouchdowns": 0,
+       "InterceptionReturnYards": 0,
+       "Interceptions": 0,
+       "KickReturnTouchdowns": 0,
+       "KickReturnYards": 0,
+       "KickReturns": 0,
+       "KickoffTouchbacks": 0,
+       "KickoffYards": 0,
+       "Kickoffs": 0,
+       "Name": "Bryce Young",
+       "Opponent": "DAL",
+       "PassesDefended": 0,
+       "PassingAttempts": 0,
+       "PassingCompletions": 0,
+       "PassingInterceptions": 0,
+       "PassingSackYards": 0,
+       "PassingSacks": 0,
+       "PassingTouchdowns": 0,
+       "PassingYards": 0,
+       "Penalties": 0,
+       "PenaltyYards": 0,
+       "PlayID": 628882,
+       "PlayStatID": 1354272,
+       "PlayerID": 23132,
+       "PuntReturnTouchdowns": 0,
+       "PuntReturnYards": 0,
+       "PuntReturns": 0,
+       "PuntTouchbacks": 0,
+       "PuntYards": 0,
+       "Punts": 0,
+       "PuntsHadBlocked": 0,
+       "ReceivingTargets": 0,
+       "ReceivingTouchdowns": 0,
+       "ReceivingYards": 0,
+       "Receptions": 0,
+       "RushingAttempts": 0,
+       "RushingTouchdowns": 0,
+       "RushingYards": -1,
+       "SackYards": 0.0,
+       "Sacks": 0.0,
+       "Safeties": 0,
+       "Sequence": 0,
+       "SoloTackles": 0,
+       "TacklesForLoss": 0,
+       "Team": "CAR",
+       "TwoPointConversionAttempts": 0,
+       "TwoPointConversionPasses": 0,
+       "TwoPointConversionReceptions": 0,
+       "TwoPointConversionReturns": 0,
+       "TwoPointConversionRuns": 0,
+       "Updated": "2025-10-12T16:02:39"
+       }
+     ],
+     "PlayTime": "2025-10-12T16:02:06",
+     "QuarterID": 13816,
+     "QuarterName": "4",
+     "ScoringPlay": null,
+     "Sequence": 181,
+     "Team": "CAR",
+     "TimeRemainingMinutes": 0,
+     "TimeRemainingSeconds": 31,
+     "Type": "Rush",
+     "Updated": "2025-10-12T16:02:39",
+     "YardLine": 2,
+     "YardLineTerritory": "Scrambled",
+     "YardsGained": -1,
+     "YardsToEndZone": 2
+   }
+   */
+    const team = play.Team || "Team";
+    const opponent = play.Opponent || "Opponent";
+    const description = play.Description || "";
+    const down = play.Down;
+    const distance = play.Distance;
+    const yardLine = play.YardLine;
+    const yardLineTerritory = play.YardLineTerritory;
+    const yardsGained = play.YardsGained;
+    const type = play.Type || "";
+
+    // Extract primary player from PlayStats (similar to how MLB uses batter name)
+    const primaryPlayer = play.PlayStats?.[0];
+    const playerName = primaryPlayer?.Name || team;
+
+    // Check if description is usable (not scrambled/empty)
+    const hasRealDescription = description && description !== "Scrambled";
+
+    // Determine action
+    let action: string;
+    if (hasRealDescription) {
+        // Use the actual description as the action
+        action = description;
+    } else {
+        // Fall back to play type and yards gained
+        if (type) {
+            // Use the play type as the base action
+            const typeLower = type.toLowerCase();
+            if (yardsGained !== undefined) {
+                if (yardsGained > 0) {
+                    action = `${typeLower} for ${yardsGained} yards`;
+                } else if (yardsGained < 0) {
+                    action = `${typeLower} for ${yardsGained} yards`;
+                } else {
+                    action = `${typeLower} for no gain`;
+                }
+            } else {
+                action = typeLower;
+            }
+        } else if (yardsGained !== undefined) {
+            if (yardsGained > 0) {
+                action = `gained ${yardsGained} yards`;
+            } else if (yardsGained < 0) {
+                action = `lost ${Math.abs(yardsGained)} yards`;
+            } else {
+                action = "no gain";
+            }
+        } else {
+            action = "play";
+        }
+    }
+
+    // Build context
+    const contextParts: string[] = [];
+
+    // Add opponent (like MLB adds "vs pitcher")
+    contextParts.push(`vs ${opponent}`);
+
+    // Add down and distance (like MLB adds "inning, outs")
+    if (down !== undefined && down > 0 && distance !== undefined) {
+        const downText = down === 1 ? "1st" : down === 2 ? "2nd" : down === 3 ? "3rd" : down === 4 ? "4th" : `${down}th`;
+        contextParts.push(`${downText} & ${distance}`);
+    }
+
+    // Add yard line (field position context)
+    if (yardLine !== undefined && yardLineTerritory && yardLineTerritory !== "Scrambled") {
+        contextParts.push(`${yardLineTerritory} ${yardLine}`);
+    }
+
+    // Add scoring play indicator (like MLB adds RBI)
+    if (play.IsScoringPlay) {
+        contextParts.push("SCORE");
+    }
+
+    // Combine and return
+  let label = "";
+    if (contextParts.length > 0) {
+        label = `${playerName} ${action}, ${contextParts.join(", ")}`;
+    } else {
+        label = `${playerName} ${action}`;
+    }
+
+    return {
+      description: label,
+      primaryPlayer: playerName,
+    };
+};
+
+
+export const getPlayLabelNBA = (play: any): PlayLabelResult => {
+  /**
+   {
+     "PlayID": 7480479,
+     "QuarterID": 174486,
+     "QuarterName": "1",
+     "Sequence": 2,
+     "TimeRemainingMinutes": 12,
+     "TimeRemainingSeconds": 0,
+     "AwayTeamScore": 0,
+     "HomeTeamScore": 0,
+     "PotentialPoints": 0,
+     "Points": 0,
+     "ShotMade": false,
+     "Category": "Scrambled",
+     "Type": "Scrambled",
+     "TeamID": 26,
+     "Team": "GS",
+     "OpponentID": 27,
+     "Opponent": "LAL",
+     "ReceivingTeamID": 26,
+     "ReceivingTeam": "GS",
+     "Description": "Scrambled",
+     "PlayerID": null,
+     "AssistedByPlayerID": null,
+     "BlockedByPlayerID": null,
+     "FastBreak": null,
+     "SideOfBasket": "Scrambled",
+     "Updated": "2025-10-12T21:41:29",
+     "Created": "2025-10-12T21:41:29",
+     "SubstituteInPlayerID": null,
+     "SubstituteOutPlayerID": null,
+     "AwayPlayerID": 20003253,
+     "HomePlayerID": 20001990,
+     "ReceivingPlayerID": 20000482,
+     "BaselineOffsetPercentage": null,
+     "SidelineOffsetPercentage": null,
+     "Coordinates": "Scrambled",
+     "StolenByPlayerID": null
+   },
+   */
+   const team = play.Team || "Team";
+   const opponent = play.Opponent || "Opponent";
+   const description = play.Description || "";
+   const category = play.Category || "";
+   const type = play.Type || "";
+   const quarterName = play.QuarterName || "";
+   const timeRemainingMinutes = play.TimeRemainingMinutes;
+   const timeRemainingSeconds = play.TimeRemainingSeconds;
+   const awayScore = play.AwayTeamScore;
+   const homeScore = play.HomeTeamScore;
+   const points = play.Points;
+   const shotMade = play.ShotMade;
+ 
+   // Determine primary player - NBA has multiple player fields
+   let playerName = team;
+   
+   // Priority: PlayerID > AwayPlayerID/HomePlayerID > ReceivingPlayerID
+   if (play.PlayerID) {
+     // Would need a lookup here in real implementation
+     playerName = `Player ${play.PlayerID}`;
+   } else if (play.AwayPlayerID || play.HomePlayerID) {
+     const playerId = play.AwayPlayerID || play.HomePlayerID;
+     playerName = `Player ${playerId}`;
+   } else if (play.ReceivingPlayerID) {
+     playerName = `Player ${play.ReceivingPlayerID}`;
+   }
+ 
+   // Check if description is usable (not scrambled/empty)
+   const hasRealDescription = description && description !== "Scrambled";
+   const hasRealCategory = category && category !== "Scrambled";
+   const hasRealType = type && type !== "Scrambled";
+ 
+   // Determine action
+   let action: string;
+   if (hasRealDescription) {
+     action = description;
+   } else if (hasRealCategory) {
+     // Use category as base action
+     action = category.toLowerCase();
+     
+     // Add shot result if applicable
+     if (shotMade !== null) {
+       action = shotMade ? `made ${action}` : `missed ${action}`;
+     }
+     
+     // Add points if scored
+     if (points > 0) {
+       action = `${action} (${points} pts)`;
+     }
+   } else if (hasRealType) {
+     action = type.toLowerCase();
+   } else if (points > 0) {
+     action = `scored ${points} ${points === 1 ? 'point' : 'points'}`;
+   } else {
+     action = "play";
+   }
+ 
+   // Build context
+   const contextParts: string[] = [];
+ 
+   // Add opponent
+   contextParts.push(`vs ${opponent}`);
+ 
+   // Add quarter and time
+   if (quarterName) {
+     const timeStr = `${timeRemainingMinutes}:${String(timeRemainingSeconds).padStart(2, '0')}`;
+     contextParts.push(`Q${quarterName} ${timeStr}`);
+   }
+ 
+   // Add score
+   if (awayScore !== undefined && homeScore !== undefined) {
+     contextParts.push(`${awayScore}-${homeScore}`);
+   }
+ 
+   // Add fast break indicator
+   if (play.FastBreak) {
+     contextParts.push("FAST BREAK");
+   }
+ 
+   // Combine and return
+   let label = "";
+   if (contextParts.length > 0) {
+     label = `${playerName} ${action}, ${contextParts.join(", ")}`;
+   } else {
+     label = `${playerName} ${action}`;
+   }
+ 
+   return {
+     description: label,
+     primaryPlayer: playerName,
+   };
+}
 
 /**
  * Formats inning display with chevron icons
@@ -482,115 +826,6 @@ export const formatInningWithIcon = (inningNumber: number, inningHalf: string): 
   return `${icon} ${inningNumber}`;
 };
 
-/**
- * Generates a short title from a play description
- * @param play - The play data object
- * @returns {string} Short title for the play
- */
-export const getPlayTitle = (play: PlayData): string => {
-  const batter = play.HitterName;
-  const description = play.Description || "";
-
-  // Check if description is usable (not scrambled/empty)
-  const hasRealDescription = description && description !== "Scrambled";
-
-  // Determine action
-  let action: string;
-  if (hasRealDescription) {
-    // Extract the main action from the description
-    const desc = description.toLowerCase();
-    if (desc.includes("strike") || desc.includes("strikeout")) {
-      action = "struck out";
-    } else if (desc.includes("walk") || desc.includes("base on balls")) {
-      action = "walked";
-    } else if (desc.includes("single")) {
-      action = "singled";
-    } else if (desc.includes("double")) {
-      action = "doubled";
-    } else if (desc.includes("triple")) {
-      action = "tripled";
-    } else if (desc.includes("home run")) {
-      action = "homered";
-    } else if (desc.includes("ground out")) {
-      action = "grounded out";
-    } else if (desc.includes("fly out")) {
-      action = "flied out";
-    } else if (desc.includes("pop out")) {
-      action = "popped out";
-    } else if (desc.includes("line out")) {
-      action = "lined out";
-    } else if (desc.includes("sacrifice")) {
-      action = "sacrificed";
-    } else if (desc.includes("error")) {
-      action = "reached on error";
-    } else {
-      // Fallback: use first few words of description
-      const words = description.split(" ");
-      action = words.slice(0, 3).join(" ").toLowerCase();
-    }
-  } else {
-    // Fall back to flags
-    if (play.Strikeout) {
-      action = "struck out";
-    } else if (play.Walk) {
-      action = "walked";
-    } else if (play.Hit) {
-      action = "singled";
-    } else if (play.Sacrifice) {
-      action = "sacrificed";
-    } else if (play.Out) {
-      action = "grounded out";
-    } else {
-      action = "in play";
-    }
-  }
-
-  return `${batter} ${action}`;
-};
-
-/**
- * Gets the appropriate icon name for a play action
- * @param play - The play data object
- * @returns {string} Icon name for the action
- */
-export const getPlayIcon = (play: PlayData): string => {
-  const description = play.Description || "";
-  const hasRealDescription = description && description !== "Scrambled";
-
-  // Determine action type for icon selection
-  if (hasRealDescription) {
-    const desc = description.toLowerCase();
-    if (desc.includes("strike") || desc.includes("strikeout"))
-      return "strikeout";
-    if (desc.includes("walk") || desc.includes("base on balls")) return "walk";
-    if (
-      desc.includes("hit") ||
-      desc.includes("single") ||
-      desc.includes("double") ||
-      desc.includes("triple") ||
-      desc.includes("home run")
-    )
-      return "hit";
-    if (
-      desc.includes("out") ||
-      desc.includes("ground out") ||
-      desc.includes("fly out")
-    )
-      return "out";
-    if (desc.includes("sacrifice") || desc.includes("sac fly"))
-      return "sacrifice";
-    if (desc.includes("error")) return "error";
-    return "play";
-  } else {
-    // Use flags to determine icon
-    if (play.Strikeout) return "strikeout";
-    if (play.Walk) return "walk";
-    if (play.Hit) return "hit";
-    if (play.Sacrifice) return "sacrifice";
-    if (play.Out) return "out";
-    return "play";
-  }
-};
 
 /**
  * Applies the configured Reddit delay to a timestamp
@@ -608,7 +843,7 @@ export const delayedRedditTimestamp = (timestamp: string): string => {
  * - Single wrapped: response.data.data contains the array
  * - Double wrapped: response.data.data.data contains the array
  * - Games field: response.data.games contains the array
- * 
+ *
  * @param response - The backend response object
  * @returns {any[]} The extracted data array
  */
@@ -628,12 +863,12 @@ export const extractDataFromResponse = (response: any): any[] => {
     if (response.data.data && typeof response.data.data === 'object' && Array.isArray(response.data.data.data)) {
       return response.data.data.data;
     }
-    
+
     // Single wrapped: response.data.data
     if (Array.isArray(response.data.data)) {
       return response.data.data;
     }
-    
+
     // Games field: response.data.games
     if (Array.isArray(response.data.games)) {
       return response.data.games;
@@ -644,25 +879,3 @@ export const extractDataFromResponse = (response: any): any[] => {
   return [];
 };
 
-/**
- * Extracts metadata from the backend response structure
- * @param response - The backend response object
- * @returns {object} Object containing league, data_type, and counts
- */
-export const extractMetadataFromResponse = (response: any): {
-  league?: string;
-  data_type?: string;
-  filtered_count?: number;
-  total_count?: number;
-} => {
-  if (!response) {
-    return {};
-  }
-
-  return {
-    league: response.league,
-    data_type: response.data_type,
-    filtered_count: response.filtered_count,
-    total_count: response.total_count,
-  };
-};
