@@ -170,7 +170,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                 w="12"
                 h="12"
                 bg="text.200"
-                borderRadius="sm"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -336,12 +336,57 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
             </VStack>
           </Flex>
 
-          {/* Stadium Information */}
-          {stadium && (
-            <Text fontSize="xs" color="text.400" textAlign="center">
-              {orEmpty(stadium.Name)}
-            </Text>
-          )}
+          {/* Game Details */}
+          <Box w="full" mt="4" p="4" bg="primary.50" borderRadius="md">
+            <VStack gap="2" align="stretch">
+              {/* Stadium */}
+              {stadium && (
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="xs" color="text.500">
+                    Stadium
+                  </Text>
+                  <Text fontSize="xs" color="text.400" fontWeight="medium">
+                    {stadium.Name}, {stadium.City}, {stadium.State}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Weather */}
+              {game.ForecastDescription && (
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="xs" color="text.500">
+                    Weather
+                  </Text>
+                  <Text fontSize="xs" color="text.400" fontWeight="medium">
+                    {game.ForecastDescription}
+                    {game.ForecastTempHigh && `, ${game.ForecastTempHigh}°F`}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Channel */}
+              {game.Channel && (
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="xs" color="text.500">
+                    Channel
+                  </Text>
+                  <Text fontSize="xs" color="text.400" fontWeight="medium">
+                    {game.Channel}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Status */}
+              <HStack justify="space-between" align="center">
+                <Text fontSize="xs" color="text.500">
+                  Status
+                </Text>
+                <Text fontSize="xs" color="text.400" fontWeight="medium">
+                  {getStatusDisplayText(mapApiStatusToGameStatus(game.Status))}
+                </Text>
+              </HStack>
+            </VStack>
+          </Box>
 
           {/* Inning-by-Inning Scores Table */}
           {game.Innings && game.Innings.length > 0 && (

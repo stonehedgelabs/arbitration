@@ -13,6 +13,7 @@ import {
 import { getTeamSubredditByName } from "../teams";
 import {
   buildApiUrl,
+  GameStatus,
   League,
   PLAY_BY_PLAY_CONFIG,
   REDDIT_CONFIG,
@@ -214,7 +215,8 @@ export function UnifiedGameFeed({
   ]);
 
   const fetchPlayByPlay = useCallback(async () => {
-    if (!gameId || !league) return;
+    if (!gameId || !league || gameData.Status !== GameStatus.IN_PROGRESS)
+      return;
 
     try {
       setPbpLoading(true);

@@ -1,5 +1,6 @@
 import { Box, VStack, HStack, Skeleton, Flex } from "@chakra-ui/react";
 import { HideVerticalScroll } from "../containers";
+import { SkeletonText } from "../Skeleton.tsx";
 
 export function NBASkeleton() {
   return (
@@ -60,10 +61,10 @@ export function NBASkeleton() {
           </VStack>
 
           {/* Bottom row - Game info */}
-          <HStack gap="2" w="full" justify={"center"}>
-            <Skeleton height="12px" width="120px" bg="primary.300" />
-            <Skeleton height="12px" width="80px" bg="primary.300" />
-          </HStack>
+          <VStack gap="2" align="center" w="full">
+            <SkeletonText width="275px" height="48px" bg={"primary.300"} />{" "}
+            <SkeletonText width="275px" height="48px" bg={"primary.300"} />{" "}
+          </VStack>
         </VStack>
       </Box>
     </HideVerticalScroll>

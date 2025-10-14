@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { underscore } from "inflection";
 import { DEBUG, REDDIT_CONFIG } from "./config";
 
 /**
@@ -601,7 +602,7 @@ export const getPlayLabelNFL = (play: any): PlayLabelResult => {
     const yardLine = play.YardLine;
     const yardLineTerritory = play.YardLineTerritory;
     const yardsGained = play.YardsGained;
-    const type = play.Type || "";
+    const type = underscore(play.Type).replace("_", " ") || "";
 
     // Extract primary player from PlayStats (similar to how MLB uses batter name)
     const primaryPlayer = play.PlayStats?.[0];

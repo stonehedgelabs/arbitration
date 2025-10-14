@@ -58,6 +58,37 @@ def read_accounts() -> List[Dict[str, str]]:
         return [row for row in reader]
 
 
+def save_duck_alias_results(result: List[Dict[str, str]]) -> None:
+    filename = "accounts.csv"
+    path = pathlib.Path(basedir) / filename
+
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found")
+
+    headers = [
+        "Email",
+        "EmailCreatedAt",
+        "SDApiKey",
+        "SDApiKeyCreatedAt",
+        "SDApiKeyStatus",
+        "SDApiKeyExhaustedAt",
+    ]
+
+    with path.open("a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        for row in result:
+            new_row = {
+                "Email": row["duck_email"],
+                "EmailCreatedAt": row["email_created_at"],
+                "SDApiKey": None,
+                "SDApiKeyCreatedAt": None,
+                "SDApiKeyStatus": None,
+                "SDApiKeyExhaustedAt": None,
+            }
+
+            writer.writerow(new_row)
+
+
 def launch_chrome(debug_port: int = 9222):
     profile_dir = os.path.join(basedir, "Chrome/Default")
     chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -92,7 +123,7 @@ def launch_chrome(debug_port: int = 9222):
     )
 
 
-def generate_duck_aliases(count: int = 5):
+def generate_duck_aliases(count: int = 5) -> List[Dict[str, str]]:
     delay = 2.0
     url = "https://quack.duckduckgo.com/api/email/addresses"
     token = os.environ["DUCK_MAIL_TOKEN"]
@@ -125,35 +156,36 @@ async def create_sportsdata_account(context: BrowserContext) -> Dict[str, Any]:
     accounts = read_accounts()
     email = None
     for row in accounts:
-        if row.get("Status") == "Unused":
+        if not row.get("SDApiKeyStatus"):
             email = row.get("Email")
             break
 
     logger.info(f"Using unused email {email}")
 
     if not email:
-        raise ValueError("No unused account found in accounts.tsv")
+        raise ValueError("No unused account found in accounts.csv")
+
     page = await context.new_page()
     await page.goto("https://sportsdata.io/user/register")
     await page.fill("#Registration_FirstName", fake.first_name())
     await page.fill("#Registration_LastName", fake.last_name())
-    await page.fill("#Registration_Email", email)
+    await page.fill("#Registration_Email", fake.email())
     await page.fill("#Registration_Password", password)
     await page.fill("#Registration_ConfirmPassword", password)
     await page.check("#AgreedToTerms")
+    await asyncio.sleep(1.0)
     await page.click("#submitButton")
     await page.wait_for_load_state("networkidle")
     await page.goto("https://sportsdata.io/free-trial")
     leagues = ["NFL", "MLB", "NBA", "NHL", "Golf", "Soccer"]
+
     for league in leagues:
-        try:
-            await page.get_by_text(league, exact=True).click()
-        except Exception:
-            pass
-    try:
-        await page.get_by_role("button", name="Continue").click()
-    except Exception:
-        pass
+        league_locator = page.locator("div.league-wrap").filter(has_text=league)
+        await league_locator.first.click()
+    await asyncio.sleep(1.0)
+
+    await page.get_by_role("button", name="Continue").click()
+
     feeds = [
         "Competition Feeds",
         "Event Feeds",
@@ -161,39 +193,34 @@ async def create_sportsdata_account(context: BrowserContext) -> Dict[str, Any]:
         "Betting Feeds",
         "News & Images",
     ]
+
     for feed in feeds:
-        try:
-            await page.get_by_text(feed, exact=True).click()
-        except Exception:
-            pass
-    try:
-        await page.get_by_role("button", name="Continue").click()
-    except Exception:
-        pass
-    try:
-        await page.check("#Form_SalesAssistanceRequested[value='False']")
-        await page.check("#AgreedToTerms")
-        await page.get_by_role("button", name="Finish").click()
-    except Exception:
-        pass
-    try:
-        await page.wait_for_url(
-            "https://sportsdata.io/free-trial", timeout=10000
+        feed_box = page.locator(
+            f"span.ng-binding:has-text('{feed}') >> xpath=ancestor::div[@class='feed-type-box']"
         )
-    except Exception:
-        pass
+        await feed_box.click(force=True)
+        await page.wait_for_timeout(300)
+
+    await asyncio.sleep(1.0)
+    await page.get_by_role("button", name="Continue").click()
+
+    await page.check("#Form_SalesAssistanceRequested[value='False']")
+    await page.check("#AgreedToTerms")
+    await asyncio.sleep(1.0)
+    await page.get_by_role("button", name="Finish").click()
+
+    await page.wait_for_url("https://sportsdata.io/free-trial", timeout=10000)
+    await asyncio.sleep(1.0)
     await page.goto("https://sportsdata.io/members/subscriptions")
-    api_key = ""
-    try:
-        api_key = await page.evaluate(
-            """() => {
-                const link = document.querySelector("a[ng-click^='vm.copy_api_key']");
-                const match = link?.getAttribute("ng-click")?.match(/'([a-f0-9]{32})'/);
-                return match ? match[1] : "";
-            }"""
-        )
-    except Exception:
-        pass
+    await asyncio.sleep(1.0)
+    api_key = await page.evaluate(
+        """() => {
+            const link = document.querySelector("a[ng-click^='vm.copy_api_key']");
+            const match = link?.getAttribute("ng-click")?.match(/'([a-f0-9]{32})'/);
+            return match ? match[1] : "";
+        }"""
+    )
+    await asyncio.sleep(1.0)
     sd_account_created_at = datetime.utcnow().isoformat()
     await page.close()
     return {
@@ -222,7 +249,7 @@ async def run_step(step: str, headless: bool, count: int = 1):
         result = {}
         try:
             if step == "ddg":
-                result = generate_duck_aliases(count)
+                save_duck_alias_results(generate_duck_aliases(count))
             elif step == "sdio":
                 result = await create_sportsdata_account(context)
         finally:

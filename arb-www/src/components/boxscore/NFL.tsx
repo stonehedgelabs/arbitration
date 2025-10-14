@@ -13,7 +13,7 @@ import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - components
-import {QuarterBadge, StatusBadge} from "../badge";
+import { QuarterBadge, StatusBadge } from "../badge";
 import { NFLSkeleton } from "./NFLSkeleton";
 import { ErrorState } from "../ErrorStates";
 
@@ -27,7 +27,8 @@ import { orEmpty, extractDataFromResponse } from "../../utils.ts";
 import {
   mapApiStatusToGameStatus,
   getStatusDisplayText,
-  League, GameStatus,
+  League,
+  GameStatus,
 } from "../../config.ts";
 
 interface BoxScoreDetailNFLProps {
@@ -187,11 +188,15 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
               <Text fontSize="xs" color="text.500" fontWeight="medium">
                 VS
               </Text>
-              {game.Status === GameStatus.IN_PROGRESS ? <QuarterBadge
-                quarter={game.Quarter}
-                timeRemaining={game.TimeRemaining}
-                size="2xs"
-              /> : <StatusBadge status={game.Status} size={"2xs"} />}
+              {game.Status === GameStatus.IN_PROGRESS ? (
+                <QuarterBadge
+                  quarter={game.Quarter}
+                  timeRemaining={game.TimeRemaining}
+                  size="2xs"
+                />
+              ) : (
+                <StatusBadge status={game.Status} size={"2xs"} />
+              )}
             </VStack>
 
             {/* Home Team */}

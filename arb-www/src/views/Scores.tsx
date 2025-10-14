@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box, Card, HStack, Text, VStack } from "@chakra-ui/react";
+import { Box, Card, HStack, Text, VStack, Icon } from "@chakra-ui/react";
 import { Tv } from "lucide-react";
 
 import { Skeleton, SkeletonCircle } from "../components/Skeleton";
@@ -420,7 +420,7 @@ function ScoresV2() {
                               alignItems="center"
                               justifyContent="center"
                             >
-                              <Tv color={"gray.300"} size={32} />
+                              <Icon as={Tv} boxSize={8} color="primary.300" />
                             </Box>
                             <VStack gap="2">
                               <Text

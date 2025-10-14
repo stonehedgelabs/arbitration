@@ -1,9 +1,9 @@
 // Third-party library imports
-import {Badge} from "@chakra-ui/react";
+import { Badge } from "@chakra-ui/react";
 
 // Internal imports - config
-import {GameStatus} from "../../config";
-import {Wifi} from "lucide-react";
+import { GameStatus } from "../../config";
+import { Wifi } from "lucide-react";
 
 interface StatusBadgeProps {
   status: GameStatus;

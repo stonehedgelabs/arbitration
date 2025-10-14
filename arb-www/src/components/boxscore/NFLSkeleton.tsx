@@ -91,10 +91,8 @@ export function NFLSkeleton() {
 
         {/* Bottom Info */}
         <VStack gap="2" align="center" w="full">
-          <SkeletonText width="100px" height="12px" bg={"primary.300"} />{" "}
-          {/* "Dodger Stadium" */}
-          <SkeletonText width="160px" height="12px" bg={"primary.300"} />{" "}
-          {/* TV + odds */}
+          <SkeletonText width="275px" height="48px" bg={"primary.300"} />{" "}
+          <SkeletonText width="275px" height="48px" bg={"primary.300"} />{" "}
         </VStack>
       </VStack>
     </Box>

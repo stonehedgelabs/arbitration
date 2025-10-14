@@ -1,5 +1,13 @@
 import { useEffect } from "react";
-import { Box, VStack, Text, Image, Flex, Table } from "@chakra-ui/react";
+import {
+  Box,
+  VStack,
+  Text,
+  Image,
+  Flex,
+  Table,
+  HStack,
+} from "@chakra-ui/react";
 import useArb from "../../services/Arb.ts";
 import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
@@ -16,7 +24,12 @@ import { HideVerticalScroll } from "../containers";
 import { orEmpty, extractDataFromResponse } from "../../utils.ts";
 
 // Internal imports - config
-import { mapApiStatusToGameStatus, League, GameStatus } from "../../config.ts";
+import {
+  mapApiStatusToGameStatus,
+  League,
+  GameStatus,
+  getStatusDisplayText,
+} from "../../config.ts";
 
 interface BoxScoreDetailNBAProps {
   gameId?: string;
@@ -154,7 +167,7 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
                 w="12"
                 h="12"
                 bg="text.200"
-                borderRadius="sm"
+                borderRadius="4xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -298,15 +311,57 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
             </VStack>
           </Flex>
 
-          {/* Bottom row - Game info */}
-          <VStack gap="2" w="full" align="center">
-            {/* Stadium Information */}
-            {stadium && (
-              <Text fontSize="xs" color="text.400">
-                {orEmpty(stadium.Name)}
-              </Text>
-            )}
-          </VStack>
+          {/* Game Details */}
+          <Box w="full" mt="4" p="4" bg="primary.50" borderRadius="md">
+            <VStack gap="2" align="stretch">
+              {/* Stadium */}
+              {stadium && (
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="xs" color="text.500">
+                    Stadium
+                  </Text>
+                  <Text fontSize="xs" color="text.400" fontWeight="medium">
+                    {stadium.Name}, {stadium.City}, {stadium.State}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Weather */}
+              {game.ForecastDescription && (
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="xs" color="text.500">
+                    Weather
+                  </Text>
+                  <Text fontSize="xs" color="text.400" fontWeight="medium">
+                    {game.ForecastDescription}
+                    {game.ForecastTempHigh && `, ${game.ForecastTempHigh}°F`}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Channel */}
+              {game.Channel && (
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="xs" color="text.500">
+                    Channel
+                  </Text>
+                  <Text fontSize="xs" color="text.400" fontWeight="medium">
+                    {game.Channel}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Status */}
+              <HStack justify="space-between" align="center">
+                <Text fontSize="xs" color="text.500">
+                  Status
+                </Text>
+                <Text fontSize="xs" color="text.400" fontWeight="medium">
+                  {getStatusDisplayText(mapApiStatusToGameStatus(game.Status))}
+                </Text>
+              </HStack>
+            </VStack>
+          </Box>
 
           {/* Quarter-by-Quarter Scores Table */}
           {game.Quarters && game.Quarters.length > 0 && (
