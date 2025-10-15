@@ -7,3 +7,5 @@ ngrok.config.yaml
 venv/
 arb-py/accounts.*
 arb-py/*.log
+TODO
+*.tsbuildinfo

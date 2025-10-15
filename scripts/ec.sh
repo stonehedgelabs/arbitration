@@ -43,12 +43,12 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 sudo npm install -g yarn
 
-sudo mkdir -p /etc/apt/keyrings/
-curl -fsSL https://apt.grafana.com/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
-echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | \
-  sudo tee /etc/apt/sources.list.d/grafana.list > /dev/null
-sudo apt update -y
-sudo apt install -y grafana
+#sudo mkdir -p /etc/apt/keyrings/
+#curl -fsSL https://apt.grafana.com/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
+#echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | \
+#  sudo tee /etc/apt/sources.list.d/grafana.list > /dev/null
+#sudo apt update -y
+#sudo apt install -y grafana
 
 curl -fsSL https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.90.0
 . "$HOME/.cargo/env"

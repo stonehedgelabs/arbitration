@@ -39,7 +39,7 @@ export function MLBSkeleton() {
               w="48px"
               h="48px"
               borderRadius="md"
-              bg="text.200"
+              bg={"primary.300"}
               display="flex"
               alignItems="center"
               justifyContent="center"
