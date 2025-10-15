@@ -10,6 +10,11 @@ export const DEBUG = {
 };
 
 /**
+ * React Strict Mode configuration
+ */
+export const USE_STRICT_MODE = (import.meta as any).env?.VITE_USE_STRICT_MODE === 'true' || false;
+
+/**
  * Supported leagues enum
  */
 export enum League {
@@ -136,6 +141,7 @@ export const APP_CONFIG = {
 export const SPORTS_CONFIG = {
   supportedLeagues: Object.values(League),
   defaultLeague: League.MLB,
+  initLeague: League.MLB,
 } as const;
 
 /**

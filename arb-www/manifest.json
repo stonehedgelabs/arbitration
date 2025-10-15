@@ -1,7 +1,7 @@
 {
   "name": "Arbitration",
   "short_name": "Arbitration",
-  "description": "Your Sports Universe - Live scores, news, and betting lines",
+  "description": "Live scores, and even more live chats.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#030213",

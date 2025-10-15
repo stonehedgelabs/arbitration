@@ -17,6 +17,7 @@ import {
 import { useAppDispatch } from "../store/hooks.ts";
 import { setUserType } from "../store/slices/authSlice.ts";
 import { AppLayout } from "../components/containers";
+import { SPORTS_CONFIG } from "../config";
 
 export default function GoogleLogin() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function GoogleLogin() {
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(setUserType("google"));
-    navigate("/scores/mlb"); // Skip onboarding, go directly to Scores
+    navigate(`/scores/${SPORTS_CONFIG.initLeague}`); // Skip onboarding, go directly to Scores
   };
 
   return (

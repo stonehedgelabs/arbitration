@@ -312,7 +312,7 @@ export function BoxScoreDetailNBA({ gameId, league }: BoxScoreDetailNBAProps) {
           </Flex>
 
           {/* Game Details */}
-          <Box w="full" mt="4" p="4" bg="primary.50" borderRadius="md">
+          <Box w="full" mt="4" p="4" bg="primary.100" borderRadius="md">
             <VStack gap="2" align="stretch">
               {/* Stadium */}
               {stadium && (

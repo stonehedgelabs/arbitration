@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Box, VStack, Text } from "@chakra-ui/react";
 import { AppLayout } from "../components/containers";
+import { ChatBubbleIcon } from "../components/ChatBubbleIcon";
 
 export function Splash() {
   const navigate = useNavigate();
@@ -51,9 +52,7 @@ export function Splash() {
                 alignItems="center"
                 justifyContent="center"
               >
-                <Text color="text.400" fontSize="2xl" fontWeight="bold">
-                  A
-                </Text>
+                <ChatBubbleIcon size="lg" />
               </Box>
             </Box>
           </motion.div>
@@ -76,7 +75,7 @@ export function Splash() {
             transition={{ duration: 0.8, delay: 0.5 }}
           >
             <Text color="text.400" fontSize="lg">
-              Your Sports Universe
+              Live scores, and even more live chats.
             </Text>
           </motion.div>
 

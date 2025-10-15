@@ -17,6 +17,7 @@ import {
 import { useAppDispatch } from "../store/hooks.ts";
 import { setUserType } from "../store/slices/authSlice.ts";
 import { AppLayout } from "../components/containers";
+import { SPORTS_CONFIG } from "../config";
 
 export default function AppleLogin() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function AppleLogin() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(setUserType("apple"));
-    navigate("/scores/mlb"); // Skip onboarding, go directly to Scores
+    navigate(`/scores/${SPORTS_CONFIG.initLeague}`); // Skip onboarding, go directly to Scores
   };
 
   const handleBack = () => {

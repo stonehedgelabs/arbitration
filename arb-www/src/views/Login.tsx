@@ -4,6 +4,8 @@ import { Box, Button, Text, VStack } from "@chakra-ui/react";
 import { useAppDispatch } from "../store/hooks.ts";
 import { setUserType } from "../store/slices/authSlice.ts";
 import { AppLayout } from "../components/containers";
+import { SPORTS_CONFIG } from "../config";
+import { ChatBubbleIcon } from "../components/ChatBubbleIcon";
 
 // Simple SVG icons as components
 const AppleIcon = () => (
@@ -40,7 +42,7 @@ export function Login() {
   const handleLogin = (method: "guest" | "apple" | "google") => {
     if (method === "guest") {
       dispatch(setUserType(method));
-      navigate("/scores/mlb"); // Skip onboarding, go directly to Scores
+      navigate(`/scores/${SPORTS_CONFIG.initLeague}`); // Skip onboarding, go directly to Scores
     } else if (method === "apple") {
       navigate("/signin/apple");
     } else if (method === "google") {
@@ -78,16 +80,14 @@ export function Login() {
                 borderColor={"text.400"}
                 // borderWidth={"1px"}
               >
-                <Text color="text.400" fontSize="xl" fontWeight="bold">
-                  A
-                </Text>
+                <ChatBubbleIcon size="lg" />
               </Box>
               <Box>
                 <Text fontSize="2xl" fontWeight="bold" color="text.400" mb={2}>
-                  Welcome to Arbitration
+                  Arbitration
                 </Text>
-                <Text color="text.400">
-                  Sign in to get personalized sports content
+                <Text fontSize={"sm"} color="text.300">
+                  Join to check scores and see what fans are saying.
                 </Text>
               </Box>
             </VStack>
@@ -111,12 +111,14 @@ export function Login() {
                   fontSize="md"
                   fontWeight="medium"
                   color="text.400"
-                  bg="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
+                  bg="primary.100"
+                  backgroundImage="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
                   boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"
                   border="1px solid"
                   borderColor="rgba(255,255,255,0.2)"
                   _hover={{
-                    bg: "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
+                    backgroundImage:
+                      "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
                     transform: "translateY(-1px)",
                     boxShadow:
                       "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.3)",
@@ -140,12 +142,14 @@ export function Login() {
                   fontSize="md"
                   fontWeight="medium"
                   color="text.400"
-                  bg="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
+                  bg="primary.100"
+                  backgroundImage="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
                   boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"
                   border="1px solid"
                   borderColor="rgba(255,255,255,0.2)"
                   _hover={{
-                    bg: "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
+                    backgroundImage:
+                      "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
                     transform: "translateY(-1px)",
                     boxShadow:
                       "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.3)",
@@ -169,12 +173,14 @@ export function Login() {
                   fontSize="md"
                   fontWeight="medium"
                   color="text.400"
-                  bg="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
+                  bg="primary.100"
+                  backgroundImage="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
                   boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"
                   border="1px solid"
                   borderColor="rgba(255,255,255,0.2)"
                   _hover={{
-                    bg: "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
+                    backgroundImage:
+                      "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
                     transform: "translateY(-1px)",
                     boxShadow:
                       "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.3)",

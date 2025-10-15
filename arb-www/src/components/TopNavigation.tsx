@@ -1,6 +1,7 @@
-import { Box, HStack, Text } from "@chakra-ui/react";
+import { Box, HStack } from "@chakra-ui/react";
 import { LeagueSelector } from "./LeagueSelector";
 import { BackButton } from "./BackButton";
+import { ChatBubbleIcon } from "./ChatBubbleIcon";
 
 interface TopNavigationProps {
   showLeagueSelector?: boolean;
@@ -22,43 +23,18 @@ export function TopNavigation({
     >
       <Box px="4" py="3">
         <HStack justify="space-between" align="center">
-          {onBack ? (
-            <BackButton onClick={onBack} />
-          ) : (
-            <Box
-              w="8"
-              h="8"
-              bg="primary.200"
-              borderRadius="8px"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              shadow="sm"
-            >
-              <Box
-                w="6"
-                h="6"
-                bg="primary.25"
-                borderRadius="4px"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Text color="text.400" fontSize="xs" fontWeight="bold">
-                  A
-                </Text>
-              </Box>
-            </Box>
-          )}
-          <Text
-            fontSize={{ base: "lg" }}
-            fontWeight="bold"
-            textAlign="center"
+          {onBack ? <BackButton onClick={onBack} /> : <Box w="8" />}
+          <Box
+            w="40px"
+            h="40px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
             flex="1"
-            color="text.400"
           >
-            Arbitration
-          </Text>
+            <ChatBubbleIcon size="md" />
+          </Box>
+          <Box w="8" />
         </HStack>
       </Box>
 

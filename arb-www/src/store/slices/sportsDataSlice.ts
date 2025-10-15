@@ -292,6 +292,10 @@ interface SportsDataState {
   oddsByDate: any | null;
   oddsLoading: boolean;
   oddsError: string | null;
+  // Play-by-play state
+  playByPlayData: any | null;
+  playByPlayLoading: boolean | null;
+  playByPlayError: string | null;
 }
 
 const initialState: SportsDataState = {
@@ -329,6 +333,10 @@ const initialState: SportsDataState = {
   oddsByDate: null,
   oddsLoading: false,
   oddsError: null,
+  // Play-by-play state
+  playByPlayData: null,
+  playByPlayLoading: null,
+  playByPlayError: null,
 };
 
 const sportsDataSlice = createSlice({
@@ -377,6 +385,18 @@ const sportsDataSlice = createSlice({
     },
     setTwitterSortKind: (state, action: PayloadAction<'top' | 'latest'>) => {
       state.twitterSortKind = action.payload;
+    },
+    // Play-by-play actions
+    setPlayByPlayLoading: (state, action: PayloadAction<boolean | null>) => {
+      state.playByPlayLoading = action.payload;
+    },
+    setPlayByPlayData: (state, action: PayloadAction<any>) => {
+      state.playByPlayData = action.payload;
+      state.playByPlayError = null;
+    },
+    setPlayByPlayError: (state, action: PayloadAction<string>) => {
+      state.playByPlayError = action.payload;
+      state.playByPlayLoading = false;
     },
     // Generic league data actions
     setLeagueScores: (state, action: PayloadAction<{league: string, data: any}>) => {
@@ -1010,6 +1030,10 @@ export const {
   setLeagueCurrentGames,
   setLeagueLoading,
   setLeagueError,
-  clearLeagueData
+  clearLeagueData,
+  // Play-by-play actions
+  setPlayByPlayLoading,
+  setPlayByPlayData,
+  setPlayByPlayError
 } = sportsDataSlice.actions;
 export default sportsDataSlice.reducer;

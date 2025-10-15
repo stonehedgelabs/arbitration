@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { Box, HStack, Image, Text, VStack } from "@chakra-ui/react";
 import { AnimatePresence, motion } from "motion/react";
 import { Clock, MessageCircle, Twitter } from "lucide-react";
@@ -9,6 +9,9 @@ import {
   fetchRedditGameThreadComments,
   fetchTwitterData,
   findRedditGameThread,
+  setPlayByPlayLoading,
+  setPlayByPlayData,
+  setPlayByPlayError,
 } from "../store/slices/sportsDataSlice";
 import { getTeamSubredditByName } from "../teams";
 import {
@@ -127,10 +130,19 @@ export function UnifiedGameFeed({
     (state) => state.sportsData.redditSortKind,
   );
   const twitterData = useAppSelector((state) => state.sportsData.twitterData);
-
-  const [playByPlayData, setPlayByPlayData] =
-    useState<ActualPlayByPlayResponse | null>(null);
-  const [pbpLoading, setPbpLoading] = useState(false);
+  const twitterLoading = useAppSelector(
+    (state) => state.sportsData.twitterLoading,
+  );
+  const twitterError = useAppSelector((state) => state.sportsData.twitterError);
+  const playByPlayData = useAppSelector(
+    (state) => state.sportsData.playByPlayData,
+  );
+  const playByPlayLoading = useAppSelector(
+    (state) => state.sportsData.playByPlayLoading,
+  );
+  const playByPlayError = useAppSelector(
+    (state) => state.sportsData.playByPlayError,
+  );
 
   useEffect(() => {
     const awaySubreddit = getTeamSubredditByName(awayTeam, league);
@@ -215,11 +227,15 @@ export function UnifiedGameFeed({
   ]);
 
   const fetchPlayByPlay = useCallback(async () => {
-    if (!gameId || !league || gameData.Status !== GameStatus.IN_PROGRESS)
+    if (
+      !gameId ||
+      !league ||
+      gameData?.data?.Game.Status !== GameStatus.IN_PROGRESS
+    )
       return;
 
     try {
-      setPbpLoading(true);
+      dispatch(setPlayByPlayLoading(true));
 
       const params: Record<string, string> = {
         league: league,
@@ -241,12 +257,17 @@ export function UnifiedGameFeed({
         data: data.data.slice(-PLAY_BY_PLAY_CONFIG.maxEventsInMemory),
       };
 
-      setPlayByPlayData(limitedData);
+      dispatch(setPlayByPlayData(limitedData));
     } catch (err) {
-    } finally {
-      setPbpLoading(false);
+      dispatch(
+        setPlayByPlayError(
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch play-by-play data",
+        ),
+      );
     }
-  }, []);
+  }, [gameData, league, gameId, dispatch]);
 
   useEffect(() => {
     if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;
@@ -439,13 +460,34 @@ export function UnifiedGameFeed({
 
   const allEvents = getAllEvents();
   const latestPBPEvent = allEvents.find((event) => event.type === "pbp");
+  const filteredEvents = latestPBPEvent
+    ? allEvents.filter((event) => event.id !== latestPBPEvent.id)
+    : allEvents;
+
+  // Loading state conditions
+  const hasData = filteredEvents.length > 0;
+  // const isAnyLoading =
+  //   redditCommentsLoading ||
+  //   redditGameThreadLoading ||
+  //   playByPlayLoading === true ||
+  //   twitterLoading;
+  const hasCompletedLoading =
+    playByPlayLoading === false &&
+    !redditCommentsLoading &&
+    !redditGameThreadLoading &&
+    !twitterLoading;
+  const hasError =
+    redditCommentsError &&
+    twitterError &&
+    playByPlayError &&
+    allEvents.length === 0;
 
   const renderStickyPBPEvent = (event: FeedEvent) => {
     const getTeamLogoForEvent = () => {
       if (!teamProfiles?.data || !playByPlayData?.data) return null;
 
       const originalPlay = playByPlayData.data.find(
-        (play) => `pbp-${play.PlayID}` === event.id,
+        (play: PlayEvent) => `pbp-${play.PlayID}` === event.id,
       );
 
       if (!originalPlay) return null;
@@ -477,7 +519,7 @@ export function UnifiedGameFeed({
         position="sticky"
         top="0"
         zIndex="10"
-        bg="primary.25"
+        bg="primary.50"
         borderBottom="1px"
         borderColor="border.100"
         px="2"
@@ -538,7 +580,8 @@ export function UnifiedGameFeed({
                             return "Team";
 
                           const originalPlay = playByPlayData.data.find(
-                            (play) => `pbp-${play.PlayID}` === event.id,
+                            (play: PlayEvent) =>
+                              `pbp-${play.PlayID}` === event.id,
                           );
                           if (!originalPlay) return "Team";
 
@@ -617,7 +660,7 @@ export function UnifiedGameFeed({
 
               {(() => {
                 const originalPlay = playByPlayData?.data?.find(
-                  (play) => `pbp-${play.PlayID}` === event.id,
+                  (play: PlayEvent) => `pbp-${play.PlayID}` === event.id,
                 );
 
                 if (!originalPlay) return null;
@@ -929,33 +972,22 @@ export function UnifiedGameFeed({
     );
   };
 
-  if (redditCommentsError && allEvents.length === 0) {
-    return (
-      <VStack gap="4" py="8">
-        <Text color="red.500" fontSize="sm" textAlign="center">
-          {redditCommentsError}
-        </Text>
-        <Text color="text.400" fontSize="xs" textAlign="center">
-          Unable to load game feed
-        </Text>
-      </VStack>
-    );
-  }
-
-  const filteredEvents = latestPBPEvent
-    ? allEvents.filter((event) => event.id !== latestPBPEvent.id)
-    : allEvents;
-
   return (
     <VStack gap="0" align="stretch">
       {latestPBPEvent && renderStickyPBPEvent(latestPBPEvent)}
 
       <Box px="7" py="1">
         <VStack gap="3" align="stretch">
-          {filteredEvents.length === 0 &&
-          !redditCommentsLoading &&
-          !redditGameThreadLoading &&
-          !pbpLoading ? (
+          {hasError ? (
+            <VStack gap="4" py="8">
+              <Text color="red.500" fontSize="sm" textAlign="center">
+                {redditCommentsError}
+              </Text>
+              <Text color="text.400" fontSize="xs" textAlign="center">
+                Unable to load game feed
+              </Text>
+            </VStack>
+          ) : !hasData && hasCompletedLoading ? (
             <VStack gap="4" align="center" py="12">
               <MessageCircle size={32} color="var(--chakra-colors-text-300)" />
               <Text fontSize="lg" fontWeight="semibold" color="text.300">
@@ -965,7 +997,7 @@ export function UnifiedGameFeed({
                 Game feed will appear here once the game starts.
               </Text>
             </VStack>
-          ) : filteredEvents.length === 0 ? (
+          ) : !hasData ? (
             <UnifiedGameFeedSkeleton />
           ) : (
             <AnimatePresence>

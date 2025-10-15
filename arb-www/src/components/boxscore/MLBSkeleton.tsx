@@ -15,7 +15,7 @@ export function MLBSkeleton() {
         <Flex justify="space-between" align="center" w="full" px="2" gap="6">
           {/* Away Team */}
           <VStack gap="2" align="center" flex="1">
-            <SkeletonCircle size="48px" />
+            <SkeletonCircle size="48px" bg={"primary.300"} />
             <VStack gap="1" align="center">
               <SkeletonText width="80px" height="14px" bg={"primary.300"} />{" "}
               {/* Team name */}
