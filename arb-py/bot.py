@@ -18,7 +18,8 @@ from dotenv import load_dotenv
 from playwright.async_api import async_playwright, BrowserContext
 from faker import Faker
 
-load_dotenv()
+root_env = pathlib.Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(root_env)
 
 
 fake = Faker()
@@ -123,7 +124,7 @@ def launch_chrome(debug_port: int = 9222):
     )
 
 
-def generate_duck_aliases(count: int = 5) -> List[Dict[str, str]]:
+def generate_duck_aliases(count: int) -> List[Dict[str, str]]:
     delay = 2.0
     url = "https://quack.duckduckgo.com/api/email/addresses"
     token = os.environ["DUCK_MAIL_TOKEN"]
@@ -152,13 +153,69 @@ def generate_duck_aliases(count: int = 5) -> List[Dict[str, str]]:
     return results
 
 
-async def create_sportsdata_account(context: BrowserContext) -> Dict[str, Any]:
+def update_accounts_data(data: Dict[str, str]) -> None:
+    filename = "accounts.csv"
+    path = pathlib.Path(basedir) / filename
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found")
+
+    email = data["email"]
+    sd_account_created_at = data["sd_account_created_at"]
+    api_key = data["api_key"]
+    sd_api_key_created_at = data["sd_api_key_created_at"]
+
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(
+            [
+                email,
+                sd_account_created_at,
+                api_key,
+                sd_api_key_created_at,
+                None,
+                None,
+            ]
+        )
+
+
+def update_env_with_token(token: str) -> None:
+    filename = ".env"
+    path = pathlib.Path(basedir).parent / filename
+
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found")
+
+    # Read current .env contents
+    lines = path.read_text().splitlines()
+    new_lines = []
+    key_found = False
+
+    for line in lines:
+        if line.startswith("SPORTSDATAIO_API_KEY="):
+            new_lines.append(f"SPORTSDATAIO_API_KEY={token}")
+            key_found = True
+        else:
+            new_lines.append(line)
+
+    # If not found, append it
+    if not key_found:
+        new_lines.append(f"SPORTSDATAIO_API_KEY={token}")
+
+    # Write updated content back
+    path.write_text("\n".join(new_lines) + "\n")
+
+
+async def create_sportsdata_account(
+    context: BrowserContext, genuine_email: bool, update_env: bool
+) -> None:
     accounts = read_accounts()
-    email = None
-    for row in accounts:
-        if not row.get("SDApiKeyStatus"):
-            email = row.get("Email")
-            break
+    email = fake.email()
+
+    if genuine_email:
+        for row in accounts:
+            if not row.get("SDApiKeyStatus"):
+                email = row.get("Email")
+                break
 
     logger.info(f"Using unused email {email}")
 
@@ -223,11 +280,21 @@ async def create_sportsdata_account(context: BrowserContext) -> Dict[str, Any]:
     await asyncio.sleep(1.0)
     sd_account_created_at = datetime.utcnow().isoformat()
     await page.close()
-    return {
-        "email": email,
-        "sd_account_created_at": sd_account_created_at,
-        "api_key": api_key,
-    }
+
+    if api_key:
+        data = {
+            "email": email,
+            "sd_account_created_at": sd_account_created_at,
+            "api_key": api_key,
+            "sd_api_key_created_at": sd_account_created_at,
+        }
+        logger.info(f"Created SD Account {data}")
+
+        update_accounts_data(data)
+        if update_env:
+            update_env_with_token(api_key)
+
+    return None
 
 
 async def launch_context(playwright, headless: bool):
@@ -238,7 +305,9 @@ async def launch_context(playwright, headless: bool):
     return context
 
 
-async def run_step(step: str, headless: bool, count: int = 1):
+async def run_step(
+    step: str, headless: bool, count: int, genuine_email: bool, update_env: bool
+):
     if step == "chrome":
         proc = launch_chrome(debug_port=9222)
         print(f"[✓] Chrome started (pid={proc.pid}) and ready on port 9222")
@@ -250,8 +319,10 @@ async def run_step(step: str, headless: bool, count: int = 1):
         try:
             if step == "ddg":
                 save_duck_alias_results(generate_duck_aliases(count))
-            elif step == "sdio":
-                result = await create_sportsdata_account(context)
+            elif step == "sportdata":
+                result = await create_sportsdata_account(
+                    context, genuine_email, update_env
+                )
         finally:
             try:
                 await context.close()
@@ -264,17 +335,27 @@ async def run_step(step: str, headless: bool, count: int = 1):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--step", "-s", choices=["ddg", "sdio", "chrome"], required=True
+        "--step", "-s", choices=["ddg", "sportdata", "chrome"], required=True
     )
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--use-extension", action="store_true")
     parser.add_argument("--alias-count", type=int, default=1)
+    parser.add_argument("--genuine-email", action="store_true")
+    parser.add_argument("--update-env", action="store_true")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    asyncio.run(run_step(args.step, args.headless, args.alias_count))
+    asyncio.run(
+        run_step(
+            args.step,
+            args.headless,
+            args.alias_count,
+            args.genuine_email,
+            args.update_env,
+        )
+    )
 
 
 if __name__ == "__main__":

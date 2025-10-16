@@ -1,0 +1,12 @@
+version: "1"
+services:
+  redis:
+    command: "echo \"ping\" | redis-cli"
+  arb-rs:
+    command: "cargo build --release && ./target/release/arb-rs -c config.toml"
+    env:
+      file: "../.env"
+    backoff: "3s"
+    restart_policy: "always"
+    depends_on:
+      - "redis"

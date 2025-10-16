@@ -1,0 +1,56 @@
+name: Refresh Sportdata Token
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  # every 12 hours UTC
+  workflow_dispatch:
+
+jobs:
+  sync-env:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download .env
+        id: get_env
+        run: |
+          echo "Fetching .env from Secrets Manager..."
+          aws secretsmanager get-secret-value \
+            --region "us-east-2" \
+            --secret-id ".env" \
+            --query SecretString \
+            --output text > .env
+          echo "::add-mask::$(cat .env)"  # mask contents in logs
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-root
+
+      - name: Run bot.py
+        run: |
+          python arb-py/bot.py -s sportdata --update-env
+
+      - name: Upload updated .env
+        run: |
+          echo "Uploading updated .env to Secrets Manager..."
+          UPDATED_SECRET=$(cat .env | jq -Rs .)
+          aws secretsmanager put-secret-value \
+            --region "us-east-2" \
+            --secret-id ".env" \
+            --secret-string "$UPDATED_SECRET"
+          echo "Updated successfully."
+
+      - name: Remove temp .env
+        if: always()
+        run: |
+          shred -u .env || rm -f .env
+          echo "Securely deleted .env"

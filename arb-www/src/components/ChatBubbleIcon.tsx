@@ -16,12 +16,6 @@ export function ChatBubbleIcon({
     lg: "32px",
   };
 
-  const fontSizeMap = {
-    sm: "8px",
-    md: "12px",
-    lg: "16px",
-  };
-
   const [currentDisplay, setCurrentDisplay] = useState<"chat" | "sport">(
     "chat",
   );

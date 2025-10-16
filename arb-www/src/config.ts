@@ -114,7 +114,7 @@ export const ENV = {
  * API Configuration
  */
 export const API_CONFIG = {
-  baseUrl: 'https://f73cfbd9c891.ngrok.app',
+  baseUrl: window.location.hostname.includes('arbi.gg') ? 'https://api.arbi.gg' : 'https://f73cfbd9c891.ngrok.app',
   endpoints: {
     scores: '/api/v1/scores',
     boxScoreFinal: '/api/v1/box-score-final',
