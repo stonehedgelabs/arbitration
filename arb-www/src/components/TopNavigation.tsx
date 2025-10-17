@@ -20,30 +20,37 @@ export function TopNavigation({
       position="sticky"
       top="0"
       zIndex="40"
+      overflow="visible"
     >
       <Box px="4" py="3">
         <HStack justify="space-between" align="center">
-          {onBack ? <BackButton onClick={onBack} /> : <Box w="8" />}
+          <Box w="24" display="flex" justifyContent="flex-start">
+            {onBack ? <BackButton onClick={onBack} /> : null}
+          </Box>
           <Box
             w="40px"
             h="40px"
             display="flex"
             alignItems="center"
             justifyContent="center"
-            flex="1"
           >
             <ChatBubbleIcon size="md" />
           </Box>
-          <Box w="8" />
+          {showLeagueSelector ? (
+            <Box
+              w="24"
+              position="relative"
+              mr="2"
+              display="flex"
+              justifyContent="flex-end"
+            >
+              <LeagueSelector />
+            </Box>
+          ) : (
+            <Box w="24" />
+          )}
         </HStack>
       </Box>
-
-      {/* League Selector */}
-      {showLeagueSelector && (
-        <Box px="4" pb="3">
-          <LeagueSelector />
-        </Box>
-      )}
     </Box>
   );
 }

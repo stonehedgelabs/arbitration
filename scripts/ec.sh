@@ -63,3 +63,4 @@ pyenv global 3.12.0
 
 sudo apt autoremove -y
 sudo apt clean
+

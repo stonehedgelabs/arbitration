@@ -132,7 +132,7 @@ export const API_CONFIG = {
 export const APP_CONFIG = {
   name: 'Arbitration',
   version: '1.0.0',
-  description: 'Your Sports Universe',
+  description: 'Scores. Reactions. Real-time.',
 } as const;
 
 /**

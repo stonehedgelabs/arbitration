@@ -75,7 +75,7 @@ export function Splash() {
             transition={{ duration: 0.8, delay: 0.5 }}
           >
             <Text color="text.400" fontSize="lg">
-              Live scores, and even more live chats.
+              Scores. Reactions. Real-time.
             </Text>
           </motion.div>
 

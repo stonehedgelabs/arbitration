@@ -13,14 +13,15 @@ const useReddit = () => {
   /**
    * Find Reddit game thread for a subreddit
    */
-  const findGameThread = useCallback(async (subreddit: string, league: string): Promise<void> => {
+  const findGameThread = useCallback(async (subreddit: string, league: string, cache: boolean = true): Promise<void> => {
     setLoading(true);
     setError(null);
 
     try {
       const url = buildApiUrl('/api/v1/reddit-thread', { 
         subreddit: subreddit,
-        league: league
+        league: league,
+        cache: cache.toString()
       });
 
       const response = await fetch(url, {

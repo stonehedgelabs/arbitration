@@ -87,7 +87,7 @@ export function Login() {
                   Arbitration
                 </Text>
                 <Text fontSize={"sm"} color="text.300">
-                  Join to check scores and see what fans are saying.
+                  Scores. Reactions. Real-time.
                 </Text>
               </Box>
             </VStack>
@@ -105,6 +105,7 @@ export function Login() {
                 {/* Apple Login */}
                 <Button
                   onClick={() => handleLogin("apple")}
+                  disabled={true}
                   w="full"
                   h="56px"
                   borderRadius="xl"
@@ -138,6 +139,7 @@ export function Login() {
                   onClick={() => handleLogin("google")}
                   w="full"
                   h="56px"
+                  disabled={true}
                   borderRadius="xl"
                   fontSize="md"
                   fontWeight="medium"

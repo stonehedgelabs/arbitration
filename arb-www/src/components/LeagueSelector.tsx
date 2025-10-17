@@ -4,9 +4,10 @@ import {
   setSelectedDate,
 } from "../store/slices/sportsDataSlice.ts";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Toggle } from "./Toggle";
+import { Select, createListCollection, HStack, Icon } from "@chakra-ui/react";
 import { League as ConfigLeague } from "./../config.ts";
 import { getCurrentLocalDate } from "../utils.ts";
+import { useState } from "react";
 
 export interface League {
   id: string;
@@ -23,6 +24,7 @@ export function LeagueSelector() {
   const selectedLeague = useAppSelector(
     (state) => state.sportsData.selectedLeague,
   );
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLeagueChange = (leagueId: string) => {
     dispatch(setSelectedLeague(leagueId));
@@ -44,22 +46,83 @@ export function LeagueSelector() {
     }
   };
 
-  // Convert leagues to toggle items
-  const leagueItems = leagues.map((league) => ({
-    id: league.id,
-    label: league.name,
-    value: league.id,
-    abbreviation: league.abbreviation,
-    disabled: league.id === ConfigLeague.NHL || league.id === ConfigLeague.MLS, // Disable NHL and MLS
-  }));
+  // Create collection for the select
+  const leagueCollection = createListCollection({
+    items: leagues.map((league) => ({
+      label: league.abbreviation,
+      value: league.id,
+      disabled:
+        league.id === ConfigLeague.NHL || league.id === ConfigLeague.MLS,
+    })),
+  });
 
   return (
-    <Toggle
-      variant="league-buttons"
-      connected={true}
-      items={leagueItems}
-      selectedValue={selectedLeague}
-      onSelectionChange={handleLeagueChange}
-    />
+    <Select.Root
+      collection={leagueCollection}
+      value={[selectedLeague]}
+      onValueChange={(e) => handleLeagueChange(e.value[0])}
+      onOpenChange={(e) => setIsOpen(e.open)}
+      size="sm"
+      variant="outline"
+      bg="primary.25"
+      borderColor="text.200"
+      color="text.500"
+      w="22"
+      _focus={{
+        borderColor: "accent.400",
+        boxShadow: "0 0 0 1px var(--chakra-colors-accent-400)",
+      }}
+    >
+      <Select.Trigger>
+        <HStack justify="space-between" w="full">
+          <Select.ValueText placeholder="League" fontSize="xs" />
+          <Icon boxSize="3" color="text.400">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {isOpen ? <path d="m18 15-6-6-6 6" /> : <path d="m6 9 6 6 6-6" />}
+            </svg>
+          </Icon>
+        </HStack>
+      </Select.Trigger>
+      <Select.Content
+        bg="primary.100"
+        borderColor="text.200"
+        color="text.500"
+        boxShadow="lg"
+        zIndex="50"
+        position="absolute"
+        top="100%"
+        left="0"
+        right="0"
+        mt="1"
+      >
+        {leagues.map((league) => {
+          const isDisabled =
+            league.id === ConfigLeague.NHL || league.id === ConfigLeague.MLS;
+          return (
+            <Select.Item
+              key={league.id}
+              item={league.id}
+              opacity={isDisabled ? 0.5 : 1}
+              cursor={isDisabled ? "not-allowed" : "pointer"}
+              _selected={{
+                bg: "primary.300",
+                color: "text.500",
+              }}
+            >
+              {league.abbreviation}
+            </Select.Item>
+          );
+        })}
+      </Select.Content>
+    </Select.Root>
   );
 }

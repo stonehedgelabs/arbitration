@@ -13,12 +13,12 @@ const useTwitter = () => {
   /**
    * Search tweets using our backend API
    */
-  const searchTweets = useCallback(async (query: string): Promise<void> => {
+  const searchTweets = useCallback(async (query: string, cache: boolean = true): Promise<void> => {
     setLoading(true);
     setError(null);
 
     try {
-      const url = buildApiUrl('/api/v1/twitter-search', { query });
+      const url = buildApiUrl('/api/v1/twitter-search', { query, cache: cache.toString() });
 
       const response = await fetch(url, {
         method: 'GET',
