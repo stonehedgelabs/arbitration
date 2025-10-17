@@ -1,0 +1,30 @@
+name: Deploy API to Production
+
+on:
+  workflow_dispatch:
+
+env:
+  ARB_VM_USER: ${{ secrets.ARB_VM_USER }}
+  ARB_EC2_HOST: api.arbi.gg
+
+jobs:
+  deploy:
+    name: SSH and Kick API
+    runs-on: ubuntu-latest
+    environment: ci
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ARB_API_USE2_KEY }}" > ~/.ssh/arb_key
+          chmod 600 ~/.ssh/arb_key
+          ssh-keyscan -H ${{ env.ARB_EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: SSH into box and run script
+        run: |
+          ssh -i ~/.ssh/arb_key ${{ env.ARB_VM_USER }}@${{ env.ARB_EC2_HOST }} \
+            'cd /home/ubuntu/arbitration && sh scripts/kick-api.sh'
