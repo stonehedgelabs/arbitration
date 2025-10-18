@@ -35,7 +35,6 @@ use crate::{
         twitterapi::tweet::TwitterSearchResponse,
     },
     services::auth::{AppleOAuth, GoogleOAuth},
-    zero_copy::ZeroCopyJson,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -545,63 +544,69 @@ async fn handle_schedule_request(
         let cache_key = CacheKey::scores(&league, date);
         (api_url, cache_key)
     } else {
-        let api_url =
-            schedule_path(league.clone(), use_case_state.config.clone()).to_string();
+        let api_url = schedule_path(league.clone(), use_case_state.config.clone()).to_string();
         let cache_key = CacheKey::data_type(&DataType::Schedule, &league);
         (api_url, cache_key)
     };
 
     let use_cache = params.cache.unwrap_or(true);
-    let data = {
-        let mut cache = use_case_state.cache.lock().await;
-        if use_cache {
-            if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
-                tracing::error!("Failed to get schedule data from cache: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })? {
-                tracing::debug!("Returning cached schedule data for league: {}", league);
-                return Ok(Json(serde_json::from_str(&cached_data).map_err(|e| {
-                    tracing::error!("Failed to parse cached schedule data: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?));
-            }
-        } else {
-            tracing::info!("Cache bypass requested - fetching fresh data from API");
-        }
 
+    // Attempt to use cache if requested
+    let cached_data = if use_cache {
+        let mut cache = use_case_state.cache.lock().await;
+        match cache.get(&cache_key).await {
+            Ok(Some(data)) => {
+                tracing::debug!("Returning cached schedule data for league: {}", league);
+                Some(data)
+            }
+            Ok(None) => {
+                tracing::info!("No cached schedule data found for league {}, will fetch from origin", league);
+                None
+            }
+            Err(e) => {
+                tracing::error!("Failed to get schedule data from cache: {}", e);
+                None
+            }
+        }
+    } else {
+        tracing::info!("Cache bypass requested — fetching fresh data from API");
+        None
+    };
+
+    // Fetch from origin if no cache or cache disabled
+    let data = if let Some(data) = cached_data {
+        data
+    } else {
         tracing::info!("Fetching schedule data from API: {}", api_url);
-        let fetched_data = if date_filter.is_some() {
-            tracing::info!(
-                "Using GamesByDate endpoint for date: {}",
-                date_filter.as_ref().unwrap()
-            );
-            fetch_games_by_date_from_api(
-                &api_url,
-                &league,
-                date_filter.as_ref().unwrap(),
-                &use_case_state.config,
-            )
-            .await
+
+        let fetched_data = if let Some(ref date) = date_filter {
+            tracing::info!("Using GamesByDate endpoint for date: {}", date);
+            fetch_games_by_date_from_api(&api_url, &league, date, &use_case_state.config)
+                .await
         } else {
             tracing::info!("Using full schedule endpoint");
             fetch_schedule_from_api(&api_url, &league, &use_case_state.config).await
         }
-        .map_err(|e| {
-            tracing::error!("Failed to fetch schedule data: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-        cache
-            .setx(
-                &cache_key,
-                &fetched_data,
-                use_case_state.config.cache.ttl.schedule,
-            )
-            .await
             .map_err(|e| {
-                tracing::error!("Failed to cache schedule data: {}", e);
+                tracing::error!("Failed to fetch schedule data: {}", e);
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
+
+        // Cache fresh data
+        if use_cache {
+            let mut cache = use_case_state.cache.lock().await;
+            if let Err(e) = cache
+                .setx(
+                    &cache_key,
+                    &fetched_data,
+                    use_case_state.config.cache.ttl.schedule,
+                )
+                .await
+            {
+                tracing::error!("Failed to cache schedule data: {}", e);
+            }
+        }
+
         fetched_data
     };
 
@@ -619,36 +624,29 @@ async fn handle_schedule_request(
         let filtered_games = schedule_games
             .into_iter()
             .filter(|game| {
-                params
-                    .filters
-                    .iter()
-                    .all(|(key, value)| match key.as_str() {
-                        "status" => game
-                            .get("Status")
-                            .and_then(|v| v.as_str())
-                            .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
-                            .unwrap_or(false),
-                        "away_team" => game
-                            .get("AwayTeam")
-                            .and_then(|v| v.as_str())
-                            .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
-                            .unwrap_or(false),
-                        "home_team" => game
-                            .get("HomeTeam")
-                            .and_then(|v| v.as_str())
-                            .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
-                            .unwrap_or(false),
-                        "date" => {
-                            if let Some(day_str) =
-                                game.get("Day").and_then(|v| v.as_str())
-                            {
-                                day_str.starts_with(&format!("{}T", value))
-                            } else {
-                                false
-                            }
-                        }
-                        _ => true,
-                    })
+                params.filters.iter().all(|(key, value)| match key.as_str() {
+                    "status" => game
+                        .get("Status")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
+                        .unwrap_or(false),
+                    "away_team" => game
+                        .get("AwayTeam")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
+                        .unwrap_or(false),
+                    "home_team" => game
+                        .get("HomeTeam")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_lowercase().contains(&value.to_lowercase()))
+                        .unwrap_or(false),
+                    "date" => game
+                        .get("Day")
+                        .and_then(|v| v.as_str())
+                        .map(|day| day.starts_with(&format!("{}T", value)))
+                        .unwrap_or(false),
+                    _ => true,
+                })
             })
             .collect::<Vec<_>>();
         let filtered_count = filtered_games.len();
@@ -658,12 +656,10 @@ async fn handle_schedule_request(
     let league_response = match league {
         League::Mlb => {
             let mlb_games: Vec<MLBScheduleGame> =
-                serde_json::from_value(serde_json::Value::Array(filtered_games))
-                    .map_err(|e| {
-                        tracing::error!("Failed to parse MLB schedule data: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-
+                serde_json::from_value(serde_json::Value::Array(filtered_games)).map_err(|e| {
+                    tracing::error!("Failed to parse MLB schedule data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::Schedule,
@@ -676,12 +672,10 @@ async fn handle_schedule_request(
         }
         League::Nfl => {
             let nfl_games: Vec<crate::schema::nfl::schedule::NFLScheduleGame> =
-                serde_json::from_value(serde_json::Value::Array(filtered_games))
-                    .map_err(|e| {
-                        tracing::error!("Failed to parse NFL schedule data: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-
+                serde_json::from_value(serde_json::Value::Array(filtered_games)).map_err(|e| {
+                    tracing::error!("Failed to parse NFL schedule data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::Schedule,
@@ -694,12 +688,10 @@ async fn handle_schedule_request(
         }
         League::Nba => {
             let nba_games: Vec<crate::schema::nba::schedule::NBAScheduleGame> =
-                serde_json::from_value(serde_json::Value::Array(filtered_games))
-                    .map_err(|e| {
-                        tracing::error!("Failed to parse NBA schedule data: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-
+                serde_json::from_value(serde_json::Value::Array(filtered_games)).map_err(|e| {
+                    tracing::error!("Failed to parse NBA schedule data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::Schedule,
@@ -718,6 +710,7 @@ async fn handle_schedule_request(
 
     Ok(Json(league_response))
 }
+
 
 async fn handle_current_games_request(
     use_case_state: UseCaseState,
@@ -740,11 +733,10 @@ async fn handle_current_games_request(
             StatusCode::BAD_REQUEST
         })?;
 
-    let end_date =
-        chrono::NaiveDate::parse_from_str(&params.end, "%Y-%m-%d").map_err(|_| {
-            tracing::error!("Invalid end date format: {}", params.end);
-            StatusCode::BAD_REQUEST
-        })?;
+    let end_date = chrono::NaiveDate::parse_from_str(&params.end, "%Y-%m-%d").map_err(|_| {
+        tracing::error!("Invalid end date format: {}", params.end);
+        StatusCode::BAD_REQUEST
+    })?;
 
     if start_date > end_date {
         tracing::error!(
@@ -755,104 +747,77 @@ async fn handle_current_games_request(
         return Err(StatusCode::BAD_REQUEST.into());
     }
 
+    let use_cache = params.cache.unwrap_or(true);
     let mut all_games = Vec::new();
     let mut current_date = start_date;
 
     while current_date <= end_date {
         let date_str = current_date.format("%Y-%m-%d").to_string();
-
-        let api_url =
-            games_by_date_path(league.clone(), Some(date_str.clone())).to_string();
+        let api_url = games_by_date_path(league.clone(), Some(date_str.clone())).to_string();
         let cache_key = CacheKey::scores(&league, &date_str);
 
-        let use_cache = params.cache.unwrap_or(true);
-        let data = {
+        // Try cache first
+        let cached_data = if use_cache {
             let mut cache = use_case_state.cache.lock().await;
-            if use_cache {
-                if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
-                    tracing::error!(
-                        "Failed to get games data from cache for date {}: {}",
-                        date_str,
-                        e
-                    );
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })? {
-                    tracing::debug!("Returning cached games data for date: {}", date_str);
-                    cached_data
-                } else {
-                    tracing::info!(
-                        "Cache miss for games by date, fetching from API: {} for date: {}",
-                        api_url,
-                        date_str
-                    );
-                    let fetched_data = fetch_games_by_date_from_api(
-                        &api_url,
-                        &league,
-                        &date_str,
-                        &use_case_state.config,
-                    )
-                    .await
-                    .map_err(|e| {
-                        tracing::error!(
-                            "Failed to fetch games data for date {}: {}",
-                            date_str,
-                            e
-                        );
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-
-                    cache
-                        .setx(
-                            &cache_key,
-                            &fetched_data,
-                            use_case_state.config.cache.ttl.scores,
-                        )
-                        .await
-                        .map_err(|e| {
-                            tracing::error!(
-                                "Failed to cache games data for date {}: {}",
-                                date_str,
-                                e
-                            );
-                            StatusCode::INTERNAL_SERVER_ERROR
-                        })?;
-                    fetched_data
+            match cache.get(&cache_key).await {
+                Ok(Some(data)) => {
+                    tracing::debug!("Cache hit for {}: {}", league, date_str);
+                    Some(data)
                 }
-            } else {
-                tracing::info!("Cache bypass requested - fetching fresh data from API");
-                let fetched_data = fetch_games_by_date_from_api(
-                    &api_url,
-                    &league,
-                    &date_str,
-                    &use_case_state.config,
-                )
+                Ok(None) => {
+                    tracing::info!("Cache miss for {} on {}", league, date_str);
+                    None
+                }
+                Err(e) => {
+                    tracing::error!("Cache error for {} on {}: {}", league, date_str, e);
+                    None
+                }
+            }
+        } else {
+            tracing::info!("Cache bypass requested — fetching fresh data for {}", date_str);
+            None
+        };
+
+        // If no cache, fetch and store
+        let data = if let Some(data) = cached_data {
+            data
+        } else {
+            tracing::info!("Fetching games from API: {} for date: {}", api_url, date_str);
+            let fetched_data = fetch_games_by_date_from_api(
+                &api_url,
+                &league,
+                &date_str,
+                &use_case_state.config,
+            )
                 .await
                 .map_err(|e| {
                     tracing::error!(
-                        "Failed to fetch games data for date {}: {}",
-                        date_str,
-                        e
-                    );
+                    "Failed to fetch games data for date {}: {}",
+                    date_str,
+                    e
+                );
                     StatusCode::INTERNAL_SERVER_ERROR
                 })?;
 
-                cache
+            if use_cache {
+                let mut cache = use_case_state.cache.lock().await;
+                if let Err(e) = cache
                     .setx(
                         &cache_key,
                         &fetched_data,
                         use_case_state.config.cache.ttl.scores,
                     )
                     .await
-                    .map_err(|e| {
-                        tracing::error!(
-                            "Failed to cache games data for date {}: {}",
-                            date_str,
-                            e
-                        );
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-                fetched_data
+                {
+                    tracing::error!(
+                        "Failed to cache games data for date {}: {}",
+                        date_str,
+                        e
+                    );
+                }
             }
+
+            fetched_data
         };
 
         let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
@@ -861,27 +826,22 @@ async fn handle_current_games_request(
         })?;
 
         if let Some(games_array) = json_data.as_array() {
-            for game in games_array {
-                all_games.push(game.clone());
-            }
+            all_games.extend(games_array.iter().cloned());
         }
 
         current_date = current_date.succ_opt().unwrap_or(current_date);
     }
 
-    let schedule_games: Vec<serde_json::Value> = all_games;
-
-    let total_count = schedule_games.len();
+    let total_count = all_games.len();
 
     let league_response = match league {
         League::Mlb => {
             let mlb_games: Vec<MLBScheduleGame> =
-                serde_json::from_value(serde_json::Value::Array(schedule_games))
+                serde_json::from_value(serde_json::Value::Array(all_games))
                     .map_err(|e| {
                         tracing::error!("Failed to parse MLB current games data: {}", e);
                         StatusCode::INTERNAL_SERVER_ERROR
                     })?;
-
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::CurrentGames,
@@ -894,12 +854,11 @@ async fn handle_current_games_request(
         }
         League::Nfl => {
             let nfl_games: Vec<crate::schema::nfl::schedule::NFLScheduleGame> =
-                serde_json::from_value(serde_json::Value::Array(schedule_games))
+                serde_json::from_value(serde_json::Value::Array(all_games))
                     .map_err(|e| {
                         tracing::error!("Failed to parse NFL current games data: {}", e);
                         StatusCode::INTERNAL_SERVER_ERROR
                     })?;
-
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::CurrentGames,
@@ -912,12 +871,11 @@ async fn handle_current_games_request(
         }
         League::Nba => {
             let nba_games: Vec<crate::schema::nba::schedule::NBAScheduleGame> =
-                serde_json::from_value(serde_json::Value::Array(schedule_games))
+                serde_json::from_value(serde_json::Value::Array(all_games))
                     .map_err(|e| {
                         tracing::error!("Failed to parse NBA current games data: {}", e);
                         StatusCode::INTERNAL_SERVER_ERROR
                     })?;
-
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::CurrentGames,
@@ -936,137 +894,6 @@ async fn handle_current_games_request(
 
     Ok(Json(league_response))
 }
-
-#[allow(dead_code)]
-async fn handle_data_request(
-    use_case_state: UseCaseState,
-    params: DataQuery,
-    data_type: DataType,
-) -> Result<Json<DataResponse>> {
-    let league_str = params.league.to_lowercase();
-    let league: League = league_str.parse().map_err(|_| {
-        tracing::error!("Invalid league: {}", params.league);
-        StatusCode::BAD_REQUEST
-    })?;
-
-    let api_url = match data_type {
-        DataType::Schedule => {
-            schedule_path(league.clone(), use_case_state.config.clone()).to_string()
-        }
-        DataType::Headshots => headshots_path(league.clone()).to_string(),
-        _ => {
-            tracing::error!("Unsupported data type: {}", data_type);
-            return Err(StatusCode::BAD_REQUEST.into());
-        }
-    };
-
-    let cache_key = CacheKey::data_type(&data_type, &league);
-    let use_cache = params.cache.unwrap_or(true);
-
-    let data = {
-        let mut cache = use_case_state.cache.lock().await;
-        if use_cache {
-            if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
-                tracing::error!("Failed to get {} data from cache: {}", data_type, e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })? {
-                tracing::debug!(
-                    "Returning cached {} data for league: {}",
-                    data_type,
-                    league
-                );
-                cached_data
-            } else {
-                tracing::info!(
-                    "Cache miss for {} data, fetching from API: {}",
-                    data_type,
-                    api_url
-                );
-                let fetched_data = fetch_data_from_api(
-                    &api_url,
-                    &league,
-                    &data_type,
-                    &use_case_state.config,
-                )
-                .await
-                .map_err(|e| {
-                    tracing::error!("Failed to fetch {} data: {}", data_type, e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?;
-                let ttl = match data_type {
-                    DataType::Schedule => use_case_state.config.cache.ttl.schedule,
-                    DataType::Headshots => use_case_state.config.cache.ttl.team_profiles, // headshots are part of team data
-                    _ => use_case_state.config.cache.default_ttl,
-                };
-                cache
-                    .setx(&cache_key, &fetched_data, ttl)
-                    .await
-                    .map_err(|e| {
-                        tracing::error!("Failed to cache {} data: {}", data_type, e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-                fetched_data
-            }
-        } else {
-            tracing::info!("Cache bypass requested - fetching fresh data from API");
-            let fetched_data = fetch_data_from_api(
-                &api_url,
-                &league,
-                &data_type,
-                &use_case_state.config,
-            )
-            .await
-            .map_err(|e| {
-                tracing::error!("Failed to fetch {} data: {}", data_type, e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-            let ttl = match data_type {
-                DataType::Schedule => use_case_state.config.cache.ttl.schedule,
-                DataType::Headshots => use_case_state.config.cache.ttl.team_profiles, // headshots are part of team data
-                _ => use_case_state.config.cache.default_ttl,
-            };
-            cache
-                .setx(&cache_key, &fetched_data, ttl)
-                .await
-                .map_err(|e| {
-                    tracing::error!("Failed to cache {} data: {}", data_type, e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?;
-            fetched_data
-        }
-    };
-
-    let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
-        tracing::error!("Failed to parse JSON data: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-
-    let (filtered_data, filtered_count, total_count) = if params.filters.is_empty() {
-        (json_data.clone(), 0, 0)
-    } else {
-        filter_data_by_params(json_data.clone(), &params.filters)?
-    };
-
-    Ok(Json(DataResponse {
-        league: league.to_string(),
-        data_type: data_type.to_string(),
-        data: filtered_data,
-        filtered_count,
-        total_count,
-    }))
-}
-
-#[allow(dead_code)]
-fn filter_data_by_params(
-    data: serde_json::Value,
-    filters: &HashMap<String, String>,
-) -> Result<(serde_json::Value, usize, usize)> {
-    ZeroCopyJson::filter_data_by_params(data, filters).map_err(|e| {
-        tracing::error!("Failed to filter data: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR.into()
-    })
-}
-
 async fn handle_headshots_request(
     use_case_state: UseCaseState,
     params: DataQuery,
@@ -1077,73 +904,41 @@ async fn handle_headshots_request(
         StatusCode::BAD_REQUEST
     })?;
 
+    if league != League::Nba && league != League::Nfl {
+        tracing::error!("Headshots not yet supported for league: {}", league);
+        return Err(StatusCode::BAD_REQUEST.into());
+    }
+
     let api_url = headshots_path(league.clone()).to_string();
     let cache_key = CacheKey::data_type(&DataType::Headshots, &league);
     let use_cache = params.cache.unwrap_or(true);
 
-    let data = {
+    // Try cache first
+    let cached_data = if use_cache {
         let mut cache = use_case_state.cache.lock().await;
-        if use_cache {
-            if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
-                tracing::error!("Failed to get headshots data from cache: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })? {
-                tracing::debug!("Returning cached headshots data for league: {}", league);
-                let json_data: serde_json::Value = serde_json::from_str(&cached_data)
-                    .map_err(|e| {
-                        tracing::error!("Failed to parse cached headshots data: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-                // Parse the headshots data and return appropriate response
-                match league {
-                    League::Nba => {
-                        let headshots: Vec<
-                            crate::schema::nba::headshots::PlayerHeadshot,
-                        > = serde_json::from_value(json_data).map_err(|e| {
-                            tracing::error!("Failed to parse NBA headshots JSON: {}", e);
-                            StatusCode::INTERNAL_SERVER_ERROR
-                        })?;
-                        let headshots_count = headshots.len();
-                        return Ok(Json(LeagueResponse {
-                            league: league.to_string(),
-                            data_type: DataType::Headshots,
-                            data: LeagueData::Nba(Box::new(NBAData::Headshots(
-                                headshots,
-                            ))),
-                            filtered_count: headshots_count,
-                            total_count: headshots_count,
-                        }));
-                    }
-                    League::Nfl => {
-                        let headshots: Vec<crate::schema::nfl::headshots::NFLHeadshot> =
-                            serde_json::from_value(json_data).map_err(|e| {
-                                tracing::error!(
-                                    "Failed to parse NFL headshots JSON: {}",
-                                    e
-                                );
-                                StatusCode::INTERNAL_SERVER_ERROR
-                            })?;
-                        let headshots_count = headshots.len();
-                        return Ok(Json(LeagueResponse {
-                            league: league.to_string(),
-                            data_type: DataType::Headshots,
-                            data: LeagueData::Nfl(Box::new(NFLData::Headshots(
-                                headshots,
-                            ))),
-                            filtered_count: headshots_count,
-                            total_count: headshots_count,
-                        }));
-                    }
-                    _ => {
-                        tracing::error!("Unsupported league for headshots: {}", league);
-                        return Err(StatusCode::BAD_REQUEST.into());
-                    }
-                }
+        match cache.get(&cache_key).await {
+            Ok(Some(data)) => {
+                tracing::debug!("Cache hit for headshots data: {}", league);
+                Some(data)
             }
-        } else {
-            tracing::info!("Cache bypass requested - fetching fresh data from API");
+            Ok(None) => {
+                tracing::info!("Cache miss for headshots data: {}", league);
+                None
+            }
+            Err(e) => {
+                tracing::error!("Failed to get headshots data from cache: {}", e);
+                None
+            }
         }
+    } else {
+        tracing::info!("Cache bypass requested — fetching fresh headshots data");
+        None
+    };
 
+    // Fetch if cache disabled or empty
+    let data = if let Some(data) = cached_data {
+        data
+    } else {
         tracing::info!("Fetching headshots data from API: {}", api_url);
         let fetched_data = fetch_data_from_api(
             &api_url,
@@ -1151,24 +946,24 @@ async fn handle_headshots_request(
             &DataType::Headshots,
             &use_case_state.config,
         )
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to fetch headshots data: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-        let ttl = use_case_state.config.cache.ttl.team_profiles; // headshots are part of team data
-        cache
-            .setx(&cache_key, &fetched_data, ttl)
             .await
             .map_err(|e| {
-                tracing::error!("Failed to cache headshots data: {}", e);
+                tracing::error!("Failed to fetch headshots data: {}", e);
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
+
+        if use_cache {
+            let mut cache = use_case_state.cache.lock().await;
+            let ttl = use_case_state.config.cache.ttl.team_profiles; // same TTL used before
+            if let Err(e) = cache.setx(&cache_key, &fetched_data, ttl).await {
+                tracing::error!("Failed to cache headshots data: {}", e);
+            }
+        }
+
         fetched_data
     };
 
-    // Parse the headshots data and return appropriate response
+    // Parse the headshots data and return
     match league {
         League::Nba => {
             let headshots: Vec<crate::schema::nba::headshots::PlayerHeadshot> =
@@ -1176,7 +971,6 @@ async fn handle_headshots_request(
                     tracing::error!("Failed to parse NBA headshots JSON: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
                 })?;
-
             let headshots_count = headshots.len();
             Ok(Json(LeagueResponse {
                 league: league.to_string(),
@@ -1192,7 +986,6 @@ async fn handle_headshots_request(
                     tracing::error!("Failed to parse NFL headshots JSON: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
                 })?;
-
             let headshots_count = headshots.len();
             Ok(Json(LeagueResponse {
                 league: league.to_string(),
@@ -1203,11 +996,12 @@ async fn handle_headshots_request(
             }))
         }
         _ => {
-            tracing::error!("Headshots not yet supported for league: {}", league);
+            tracing::error!("Unsupported league for headshots: {}", league);
             Err(StatusCode::BAD_REQUEST.into())
         }
     }
 }
+
 
 async fn handle_play_by_play_request(
     use_case_state: UseCaseState,
@@ -1224,82 +1018,102 @@ async fn handle_play_by_play_request(
         return Err(StatusCode::BAD_REQUEST.into());
     }
 
-    let api_url =
-        play_by_play_path(league.clone(), Some(params.game_id.clone())).to_string();
-
+    let api_url = play_by_play_path(league.clone(), Some(params.game_id.clone())).to_string();
     tracing::info!(
         "Constructed play-by-play API URL: {} for game_id: {}",
         api_url,
         params.game_id
     );
 
-    let is_delta = params.last_timestamp.is_some() || params.delta_minutes.is_some();
-    let cache_key = if is_delta {
-        CacheKey::play_by_play_delta(
-            &league,
-            &params.game_id,
-            params.last_timestamp.as_deref().unwrap_or("initial"),
-        )
-    } else {
-        CacheKey::play_by_play(&league, &params.game_id)
-    };
-
+    let cache_key = CacheKey::play_by_play(&league, &params.game_id);
     let use_cache = params.cache.unwrap_or(true);
-    let data = {
+
+    // Try cache first
+    let cached_data = if use_cache {
         let mut cache = use_case_state.cache.lock().await;
-        if use_cache {
-            if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
-                tracing::error!("Failed to get play-by-play data from cache: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })? {
+        match cache.get(&cache_key).await {
+            Ok(Some(data)) => {
                 tracing::debug!(
-                    "Returning cached play-by-play data for game_id: {}",
+                    "Cache hit for play-by-play data (game_id: {})",
                     params.game_id
                 );
-                return Ok(Json(serde_json::from_str(&cached_data).map_err(|e| {
-                    tracing::error!("Failed to parse cached play-by-play data: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?));
+                Some(data)
             }
-        } else {
-            tracing::info!("Cache bypass requested - fetching fresh data from API");
+            Ok(None) => {
+                tracing::info!(
+                    "Cache miss for play-by-play data (game_id: {}), fetching from origin",
+                    params.game_id
+                );
+                None
+            }
+            Err(e) => {
+                tracing::error!(
+                    "Failed to get play-by-play data from cache for game_id {}: {}",
+                    params.game_id,
+                    e
+                );
+                None
+            }
         }
-
+    } else {
         tracing::info!(
-            "Fetching play-by-play data from API: {} (delta: {})",
+            "Cache bypass requested for play-by-play (game_id: {}), fetching from origin",
+            params.game_id
+        );
+        None
+    };
+
+    // Fetch if cache disabled or empty
+    let data = if let Some(data) = cached_data {
+        data
+    } else {
+        tracing::info!(
+            "Fetching play-by-play data from API: {} for game_id: {}",
             api_url,
-            is_delta
+            params.game_id
         );
         let fetched_data = fetch_play_by_play_from_api(
             &api_url,
             &league,
             &params.game_id,
-            is_delta,
+            params.last_timestamp.is_some(),
             params.delta_minutes,
             &use_case_state.config,
         )
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to fetch play-by-play data: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-        cache
-            .setx(
-                &cache_key,
-                &fetched_data,
-                use_case_state.config.cache.ttl.play_by_play,
-            )
             .await
             .map_err(|e| {
-                tracing::error!("Failed to cache play-by-play data: {}", e);
+                tracing::error!(
+                "Failed to fetch play-by-play data for game_id {}: {}",
+                params.game_id,
+                e
+            );
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
+
+        // Cache fresh data
+        if use_cache {
+            let mut cache = use_case_state.cache.lock().await;
+            if let Err(e) = cache
+                .setx(
+                    &cache_key,
+                    &fetched_data,
+                    use_case_state.config.cache.ttl.play_by_play,
+                )
+                .await
+            {
+                tracing::error!(
+                    "Failed to cache play-by-play data for game_id {}: {}",
+                    params.game_id,
+                    e
+                );
+            }
+        }
+
         fetched_data
     };
 
     let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
-        tracing::error!("Failed to parse JSON data: {}", e);
+        tracing::error!("Failed to parse play-by-play JSON for game_id {}: {}", params.game_id, e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
@@ -1317,12 +1131,11 @@ async fn handle_play_by_play_request(
             total_count: total_events_count,
         },
         League::Nfl => {
-            let nfl_play_by_play: crate::schema::nfl::play_by_play::NFLPlayByPlayResponseUnknown = serde_json::from_value(events)
-                .map_err(|e| {
+            let nfl_play_by_play: crate::schema::nfl::play_by_play::NFLPlayByPlayResponseUnknown =
+                serde_json::from_value(events).map_err(|e| {
                     tracing::error!("Failed to parse NFL play-by-play data: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
                 })?;
-
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::PlayByPlay,
@@ -1336,12 +1149,11 @@ async fn handle_play_by_play_request(
             }
         }
         League::Nba => {
-            let nba_play_by_play: crate::schema::nba::play_by_play::NBAPlayByPlayResponseUnknown = serde_json::from_value(events)
-                .map_err(|e| {
+            let nba_play_by_play: crate::schema::nba::play_by_play::NBAPlayByPlayResponseUnknown =
+                serde_json::from_value(events).map_err(|e| {
                     tracing::error!("Failed to parse NBA play-by-play data: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
                 })?;
-
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::PlayByPlay,
@@ -1360,6 +1172,7 @@ async fn handle_play_by_play_request(
 
     Ok(Json(league_response))
 }
+
 
 async fn handle_scores_request(
     use_case_state: UseCaseState,
@@ -1384,8 +1197,7 @@ async fn handle_scores_request(
             date_str,
             league_str
         );
-        postseason_schedule_path(league.clone(), use_case_state.config.clone())
-            .to_string()
+        postseason_schedule_path(league.clone(), use_case_state.config.clone()).to_string()
     } else {
         tracing::info!(
             "Date {} is regular season for league {}, using regular season endpoint",
@@ -1397,32 +1209,46 @@ async fn handle_scores_request(
 
     let cache_key = CacheKey::scores(&league, &date_str);
     let use_cache = params.cache.unwrap_or(true);
-    let data = {
+
+    // Attempt to use cache first if requested
+    let cached_data = if use_cache {
         let mut cache = use_case_state.cache.lock().await;
-        if use_cache {
-            if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
+        match cache.get(&cache_key).await {
+            Ok(Some(data)) => {
+                tracing::debug!("Returning cached scores data for date: {}", date_str);
+                Some(data)
+            }
+            Ok(None) => {
+                tracing::info!(
+                    "No cached scores found for date {}, will fetch from origin",
+                    date_str
+                );
+                None
+            }
+            Err(e) => {
                 tracing::error!(
                     "Failed to get scores data from cache for date {}: {}",
                     date_str,
                     e
                 );
-                StatusCode::INTERNAL_SERVER_ERROR
-            })? {
-                tracing::debug!("Returning cached scores data for date: {}", date_str);
-                return Ok(Json(serde_json::from_str(&cached_data).map_err(|e| {
-                    tracing::error!("Failed to parse cached scores data: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?));
+                None
             }
-        } else {
-            tracing::info!("Cache bypass requested - fetching fresh data from API");
         }
+    } else {
+        tracing::info!("Cache bypass requested — fetching fresh data from API");
+        None
+    };
 
+    // Fetch if cache disabled or empty
+    let data = if let Some(data) = cached_data {
+        data
+    } else {
         tracing::info!(
             "Fetching scores data from API: {} for date: {}",
             api_url,
             date_str
         );
+
         let fetched_data = if is_postseason {
             fetch_schedule_from_api(&api_url, &league, &use_case_state.config)
                 .await
@@ -1441,47 +1267,46 @@ async fn handle_scores_request(
                 &date_str,
                 &use_case_state.config,
             )
-            .await
-            .map_err(|e| {
-                tracing::error!(
+                .await
+                .map_err(|e| {
+                    tracing::error!(
                     "Failed to fetch scores data for date {}: {}",
                     date_str,
                     e
                 );
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?
         };
 
-        cache
-            .setx(
-                &cache_key,
-                &fetched_data,
-                use_case_state.config.cache.ttl.scores,
-            )
-            .await
-            .map_err(|e| {
+        // Cache fresh data
+        if use_cache {
+            let mut cache = use_case_state.cache.lock().await;
+            if let Err(e) = cache
+                .setx(
+                    &cache_key,
+                    &fetched_data,
+                    use_case_state.config.cache.ttl.scores,
+                )
+                .await
+            {
                 tracing::error!(
                     "Failed to cache scores data for date {}: {}",
                     date_str,
                     e
                 );
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
+            }
+        }
+
         fetched_data
     };
 
+    // Parse data and build response
     let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
         tracing::error!("Failed to parse JSON data for date {}: {}", date_str, e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    let mut all_games = Vec::new();
-    if let Some(games_array) = json_data.as_array() {
-        for game in games_array {
-            all_games.push(game.clone());
-        }
-    }
-
+    let all_games = json_data.as_array().cloned().unwrap_or_default();
     let (games_count, _live_games_count, _final_games_count) =
         process_scores_data(&serde_json::Value::Array(all_games.clone()))?;
 
@@ -1499,13 +1324,10 @@ async fn handle_scores_request(
         },
         League::Nfl => {
             let nfl_games: Vec<crate::schema::nfl::scores::NFLScoresGame> =
-                serde_json::from_value(serde_json::Value::Array(all_games)).map_err(
-                    |e| {
-                        tracing::error!("Failed to parse NFL scores data: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    },
-                )?;
-
+                serde_json::from_value(serde_json::Value::Array(all_games)).map_err(|e| {
+                    tracing::error!("Failed to parse NFL scores data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::Scores,
@@ -1518,13 +1340,10 @@ async fn handle_scores_request(
         }
         League::Nba => {
             let nba_games: Vec<crate::schema::nba::schedule::NBAScheduleGame> =
-                serde_json::from_value(serde_json::Value::Array(all_games)).map_err(
-                    |e| {
-                        tracing::error!("Failed to parse NBA scores data: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    },
-                )?;
-
+                serde_json::from_value(serde_json::Value::Array(all_games)).map_err(|e| {
+                    tracing::error!("Failed to parse NBA scores data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
             LeagueResponse {
                 league: league.to_string(),
                 data_type: DataType::Scores,
@@ -1543,6 +1362,7 @@ async fn handle_scores_request(
 
     Ok(Json(league_response))
 }
+
 
 fn extract_play_by_play_events(
     data: serde_json::Value,

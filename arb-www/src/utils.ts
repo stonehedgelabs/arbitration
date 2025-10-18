@@ -1,7 +1,30 @@
 import { formatDistanceToNow } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { underscore } from "inflection";
-import { DEBUG, REDDIT_CONFIG } from "./config";
+import { DEBUG, REDDIT_CONFIG, GameStatus } from "./config";
+
+export const getStatusDisplayText = (status: GameStatus): string => {
+  switch (status) {
+    case GameStatus.LIVE:
+      return 'Live';
+    case GameStatus.FINAL:
+      return 'Final';
+    case GameStatus.UPCOMING:
+      return 'Upcoming';
+    case GameStatus.CANCELLED:
+      return 'Cancelled';
+    case GameStatus.IN_PROGRESS:
+      return 'In Progress';
+    case GameStatus.COMPLETED:
+      return 'Completed';
+    case GameStatus.SCHEDULED:
+      return 'Scheduled';
+    case GameStatus.POSTPONED:
+      return 'Postponed';
+    default:
+      return 'Unknown';
+  }
+};
 
 /**
  * Debug utility - wraps console methods to respect debug configuration

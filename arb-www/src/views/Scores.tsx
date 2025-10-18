@@ -272,7 +272,11 @@ function ScoresV2() {
       const scheduleGames = schedule.data
         .filter((rawGame: any) => {
           // Filter out games that don't have a DateTime field
-          return rawGame.DateTime !== undefined && rawGame.DateTime !== null;
+          return (
+            rawGame.DateTime !== undefined &&
+            rawGame.DateTime !== null &&
+            rawGame.Status !== GameStatus.NOT_NECESSARY
+          );
         })
         .map((game: any) => {
           return convertScheduleGameToGame(
@@ -285,7 +289,7 @@ function ScoresV2() {
           );
         })
         .filter((game: any): game is Game => {
-          if (!game) {
+          if (!game || game.status === GameStatus.CANCELLED) {
             return false;
           }
 
@@ -302,7 +306,11 @@ function ScoresV2() {
       const scoresGames = gamesArray
         .filter((rawGame: any) => {
           // Filter out games that don't have a DateTime field
-          return rawGame.DateTime !== undefined && rawGame.DateTime !== null;
+          return (
+            rawGame.DateTime !== undefined &&
+            rawGame.DateTime !== null &&
+            rawGame.Status !== GameStatus.NOT_NECESSARY
+          );
         })
         .map((game: any) => {
           return convertGameToGame(

@@ -1,4 +1,4 @@
-const host = 'aa030e00a972.ngrok.app';
+const host = '260772dddb80.ngrok.app';
 export default {
 	async fetch(request: Request): Promise<Response> {
 		const url = new URL(request.url)

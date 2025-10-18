@@ -21,15 +21,14 @@ import { ErrorState } from "../ErrorStates";
 import { HideVerticalScroll } from "../containers";
 
 // Internal imports - utils
-import { orEmpty, extractDataFromResponse } from "../../utils.ts";
+import {
+  orEmpty,
+  extractDataFromResponse,
+  getStatusDisplayText,
+} from "../../utils.ts";
 
 // Internal imports - config
-import {
-  mapApiStatusToGameStatus,
-  getStatusDisplayText,
-  League,
-  GameStatus,
-} from "../../config.ts";
+import { mapApiStatusToGameStatus, League, GameStatus } from "../../config.ts";
 
 interface BoxScoreDetailNFLProps {
   gameId?: string;

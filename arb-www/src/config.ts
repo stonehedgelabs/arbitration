@@ -36,14 +36,16 @@ export enum Tab {
  * Game status enum
  */
 export enum GameStatus {
-  LIVE = 'live',
-  FINAL = 'final',
-  UPCOMING = 'upcoming',
-  CANCELLED = 'cancelled',
+  LIVE = 'Live',
+  FINAL = 'Final',
+  UPCOMING = 'Upcoming',
+  CANCELLED = 'Cancelled',
   IN_PROGRESS = 'InProgress',
+  NOT_NECESSARY = 'NotNecessary',
   COMPLETED = 'Completed',
   SCHEDULED = 'Scheduled',
   POSTPONED = 'Postponed',
+  OTHER = 'Other',
 }
 
 
@@ -51,7 +53,7 @@ export enum GameStatus {
  * API Configuration
  */
 export const API_CONFIG = {
-  baseUrl: window.location.hostname.includes('arbi.gg') ? 'https://api.arbi.gg' : 'https://f73cfbd9c891.ngrok.app',
+  baseUrl: window.location.hostname === 'arbi.gg' || window.location.hostname === 'www.arbi.gg' ? 'https://api.arbi.gg' : 'https://728b8ecb8758.ngrok.app',
   endpoints: {
     scores: '/api/v1/scores',
     boxScoreFinal: '/api/v1/box-score-final',
@@ -217,32 +219,7 @@ export const mapApiStatusToGameStatus = (apiStatus: string): GameStatus => {
     case 'notnecessary':
       return GameStatus.CANCELLED;
     default:
-      return GameStatus.UPCOMING; // Default to upcoming for unknown statuses
+      return GameStatus.OTHER; // Default to upcoming for unknown statuses
   }
 };
 
-/**
- * Get display-friendly status text
- */
-export const getStatusDisplayText = (status: GameStatus): string => {
-  switch (status) {
-    case GameStatus.LIVE:
-      return 'Live';
-    case GameStatus.FINAL:
-      return 'Final';
-    case GameStatus.UPCOMING:
-      return 'Upcoming';
-    case GameStatus.CANCELLED:
-      return 'Cancelled';
-    case GameStatus.IN_PROGRESS:
-      return 'In Progress';
-    case GameStatus.COMPLETED:
-      return 'Completed';
-    case GameStatus.SCHEDULED:
-      return 'Scheduled';
-    case GameStatus.POSTPONED:
-      return 'Postponed';
-    default:
-      return 'Unknown';
-  }
-};

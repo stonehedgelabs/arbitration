@@ -3,7 +3,7 @@
 [server]
 host = "0.0.0.0"
 port = 3000
-cors_origins = "=localhost:5173,localhost:3000,aa030e00a972.ngrok.app,dev.arbi.gg,arbi.gg"
+cors_origins = "=localhost:5173,localhost:3000,dev.arbi.gg,arbi.gg,260772dddb80.ngrok.app"
 client_url = "https://aa030e00a972.ngrok.app"
 
 [cache]

@@ -12,7 +12,7 @@ export default defineConfig({
     port: 3000,
     middlewareMode: false,
     host: true,
-    allowedHosts: ['aa030e00a972.ngrok.app', 'dev.arbi.gg'], // Frontend host
+    allowedHosts: ['260772dddb80.ngrok.app', 'dev.arbi.gg'],
   },
   build: {
     outDir: 'dist',

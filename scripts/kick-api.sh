@@ -6,4 +6,5 @@ cd /home/ubuntu/arbitration
 sh scripts/get-env.sh
 git sync
 cd /home/ubuntu/arbitration/arb-rs
-sysg restart --config sysg.config.yaml
+cargo build --release
+RUST_LOG=debug sysg restart --config sysg.config.yaml

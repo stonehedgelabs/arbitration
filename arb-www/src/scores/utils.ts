@@ -9,6 +9,11 @@ import {
   mapApiStatusToGameStatus,
 } from "../config";
 
+const getStatus = (apiStatus: string): GameStatus => {
+  return mapApiStatusToGameStatus(apiStatus);
+};
+
+
 // Game interfaces
 export interface Team {
   name: string;
@@ -110,11 +115,6 @@ export const convertNFLGameToGame = (
   _oddsData?: any,
   boxScoreData?: any,
 ): Game | null => {
-  // Map API status to our status format
-  const getStatus = (apiStatus: string): GameStatus => {
-    return mapApiStatusToGameStatus(apiStatus);
-  };
-
   // Helper functions to get team profiles and stadiums
   const getTeamProfile = (teamId: number) => {
     if (!teamProfiles) return null;
@@ -233,9 +233,7 @@ export const convertMLBGameToGame = (
   boxScoreData?: any,
 ): Game | null => {
   // Map API status to our status format
-  const getStatus = (apiStatus: string): GameStatus => {
-    return mapApiStatusToGameStatus(apiStatus);
-  };
+
 
   // Helper functions to get team profiles and stadiums
   const getTeamProfile = (teamId: number) => {
@@ -347,10 +345,6 @@ export const convertNBAGameToGame = (
   oddsData?: any,
   boxScoreData?: any,
 ): Game | null => {
-  // Map API status to our status format
-  const getStatus = (apiStatus: string): GameStatus => {
-    return mapApiStatusToGameStatus(apiStatus);
-  };
 
   // Helper functions to get team profiles and stadiums
   const getTeamProfile = (teamId: number) => {
@@ -486,11 +480,6 @@ export const convertNFLScheduleGameToGame = (
   _oddsData?: any,
   boxScoreData?: any,
 ): Game | null => {
-  // Map API status to our status format
-  const getStatus = (apiStatus: string): GameStatus => {
-    return mapApiStatusToGameStatus(apiStatus);
-  };
-
   // Helper functions to get team profiles and stadiums
   const getTeamProfile = (teamId: number) => {
     if (!teamProfiles) return null;
@@ -545,7 +534,7 @@ export const convertNFLScheduleGameToGame = (
       score: gameData.AwayScore || 0,
       logo: awayTeamProfile?.WikipediaLogoUrl,
     },
-    status: getStatus(gameData.Status || ""),
+    status: getStatus(gameData.Status),
     time: gameData.DateTime || "",
     date: convertedDate,
     quarter: gameData.Quarter?.toString() || undefined,
@@ -659,7 +648,7 @@ export const convertMLBScheduleGameToGame = (
       score: gameData.AwayTeamRuns || 0,
       logo: awayTeamProfile.WikipediaLogoUrl,
     },
-    status: getStatus(gameData.Status || ""),
+    status: getStatus(gameData.Status),
     time: gameData.DateTime || "",
     date: convertedDate,
     quarter: gameData.Inning?.toString() || undefined,
@@ -701,7 +690,6 @@ export const convertMLBScheduleGameToGame = (
       totalOverOdds: gameData.OverPayout,
       totalUnderOdds: gameData.UnderPayout,
     } : getGameOdds(gameId, oddsData) || undefined,
-    // League
     league: League.MLB,
   };
 
@@ -771,7 +759,7 @@ export const convertNBAScheduleGameToGame = (
       score: gameData.AwayTeamRuns || 0,
       logo: awayTeamProfile.WikipediaLogoUrl,
     },
-    status: getStatus(gameData.Status || ""),
+    status: getStatus(gameData.Status),
     time: gameData.DateTime || "",
     date: convertedDate,
     quarter: gameData.Inning?.toString() || undefined,
