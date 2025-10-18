@@ -29,22 +29,8 @@ export enum League {
  * Navigation tabs enum
  */
 export enum Tab {
-  FOR_YOU = 'for-you',
   SCORES = 'scores',
-  LIVE = 'live',
-  SOCIAL = 'social',
-  BET = 'bet',
 }
-
-/**
- * League type for type safety
- */
-export type LeagueType = `${League}`;
-
-/**
- * Cache data types for type safety
- */
-export type CacheDataType = keyof typeof CACHE_CONFIG.ttlValues;
 
 /**
  * Game status enum
@@ -60,55 +46,6 @@ export enum GameStatus {
   POSTPONED = 'Postponed',
 }
 
-/**
- * Game status type for type safety
- */
-export type GameStatusType = `${GameStatus}`;
-
-/**
- * Quarter/Period types for different sports
- */
-export enum QuarterType {
-  Q1 = 'Q1',
-  Q2 = 'Q2',
-  Q3 = 'Q3',
-  Q4 = 'Q4',
-  OT = 'OT',
-  TOP = 'Top',
-  BOT = 'Bot',
-  INNING = 'Inning',
-}
-
-/**
- * Quarter type for type safety
- */
-export type QuarterTypeType = `${QuarterType}`;
-
-/**
- * View types enum
- */
-export enum ViewType {
-  MAIN = 'main',
-  BOXSCORE = 'boxscore',
-  PLAYBYPLAY = 'playbyplay',
-  SCORESV2 = 'scoresv2',
-  GAMEDETAILV2 = 'gamedetailv2',
-  BoxScore = 'BoxScore',
-}
-
-/**
- * View type for type safety
- */
-export type ViewTypeType = `${ViewType}`;
-
-/**
- * Environment Variables
- */
-export const ENV = {
-  TWITTERAPIIO_API_KEY: (import.meta as any).env?.VITE_TWITTERAPIIO_API_KEY,
-  REDDIT_CLIENT_ID: (import.meta as any).env?.VITE_REDDIT_CLIENT_ID,
-  REDDIT_CLIENT_SECRET: (import.meta as any).env?.VITE_REDDIT_CLIENT_SECRET,
-} as const;
 
 /**
  * API Configuration
@@ -124,15 +61,6 @@ export const API_CONFIG = {
     teamProfile: '/api/team-profile',
     health: '/health',
   },
-} as const;
-
-/**
- * Application Configuration
- */
-export const APP_CONFIG = {
-  name: 'Arbitration',
-  version: '1.0.0',
-  description: 'Scores. Reactions. Real-time.',
 } as const;
 
 /**
@@ -170,37 +98,13 @@ export const POSTSEASON_CONFIG = {
   },
 } as const;
 
-/**
- * Cache Configuration
- */
-export const CACHE_CONFIG = {
-  // Default TTL in milliseconds
-  ttl: 5 * 60 * 1000, // 5 minutes in milliseconds
-  maxRetries: 3,
-  
-  // Specific TTL values matching backend config (in milliseconds)
-  ttlValues: {
-    team_profiles: 60 * 60 * 1000,      // 1 hour
-    schedule: 60 * 60 * 1000,           // 1 hour
-    postseason_schedule: 60 * 60 * 1000, // 1 hour
-    scores: 60 * 1 * 1000   ,            // 1 minute
-    play_by_play: 60 * 1 * 1000,         // 1 minute
-    box_scores: 60 * 1 * 1000,           // 1 minute
-    stadiums: 60 * 60 * 6 * 1000,          // 6 hours
-    twitter_search: 60 * 1 * 1000,       // 1 minute
-    reddit_thread: 60 * 10 * 1000,       // 10 minutes
-    reddit_thread_comments: 60 * 1 * 1000, // 1 minute
-    odds: 60 * 60 * 1000,               // 1 hour
-    user_auth: 60 * 60 * 24 * 7 * 1000,        // 1 week (7 days)
-  },
-} as const;
 
 /**
  * Play-by-Play Configuration
  */
 export const PLAY_BY_PLAY_CONFIG = {
   // Refresh interval in milliseconds
-  refreshInterval: 60000, // 1 minute
+  refreshInterval: 30 * 1000, // 30 seconds
   
   // API interval for fetching data
   apiInterval: "1min",
@@ -223,30 +127,13 @@ export const PLAY_BY_PLAY_CONFIG = {
  */
 export const UNIFIED_FEED_CONFIG = {
   // Auto-refresh interval in milliseconds
-  autoRefreshInterval: 10000, // 10 seconds
+  autoRefreshInterval: 10 * 1000, // 10 seconds
   
   // Reddit thread refresh interval in milliseconds
-  redditThreadRefreshInterval: 10000, // 10 seconds
+  redditThreadRefreshInterval: 10 * 1000, // 10 seconds
   
   // Whether to enable auto-refresh
   enableAutoRefresh: true,
-} as const;
-
-/**
- * Twitter Configuration
- */
-export const TWITTER_CONFIG = {
-  // Default number of tweets to fetch
-  defaultTweetLimit: 20,
-  
-  // Maximum number of tweets to fetch in a single request
-  maxTweetLimit: 20,
-  
-  // Default search filter
-  defaultFilter: 'latest' as const,
-  
-  // Supported search filters
-  supportedFilters: ['latest', 'top'] as const,
 } as const;
 
 /**
@@ -292,13 +179,6 @@ export const buildApiUrl = (endpoint: string, params?: Record<string, string>): 
 };
 
 /**
- * Get the full URL for a specific endpoint
- */
-export const getApiUrl = (endpoint: keyof typeof API_CONFIG.endpoints): string => {
-  return `${API_CONFIG.baseUrl}${API_CONFIG.endpoints[endpoint]}`;
-};
-
-/**
  * Check if a date is in postseason for a given league
  */
 export const isPostseasonDate = (league: League, dateString: string): boolean => {
@@ -317,28 +197,6 @@ export const isPostseasonDate = (league: League, dateString: string): boolean =>
   }
 };
 
-/**
- * Get postseason season identifier for a league and date
- */
-export const getPostseasonSeasonIdentifier = (league: League, dateString: string): string | null => {
-  if (isPostseasonDate(league, dateString)) {
-    return POSTSEASON_CONFIG[league].seasonIdentifier;
-  }
-  return null;
-};
-
-/**
- * Get the appropriate season identifier for a league and date
- * Returns regular season identifier if not postseason, postseason identifier if postseason
- */
-export const getSeasonIdentifier = (league: League, dateString: string): string => {
-  if (isPostseasonDate(league, dateString)) {
-    return POSTSEASON_CONFIG[league].seasonIdentifier;
-  }
-  // For regular season, we can derive the year from the date
-  const year = new Date(dateString).getFullYear();
-  return year.toString();
-};
 
 /**
  * Map API status strings to our standardized GameStatus enum
@@ -387,18 +245,4 @@ export const getStatusDisplayText = (status: GameStatus): string => {
     default:
       return 'Unknown';
   }
-};
-
-/**
- * Get cache TTL for a specific data type
- */
-export const getCacheTTL = (dataType: CacheDataType): number => {
-  return CACHE_CONFIG.ttlValues[dataType];
-};
-
-/**
- * Get cache TTL in seconds (for API calls)
- */
-export const getCacheTTLSeconds = (dataType: CacheDataType): number => {
-  return CACHE_CONFIG.ttlValues[dataType] / 1000;
 };

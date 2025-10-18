@@ -3,11 +3,7 @@
 set -ex
 
 cd /home/ubuntu/arbitration
-
-aws secretsmanager get-secret-value --secret-id ".env" --region us-east-2 --query SecretString --output text > .env
-
+sh scripts/get-env.sh
 git sync
-
 cd /home/ubuntu/arbitration/arb-rs
-
 sysg restart --config sysg.config.yaml

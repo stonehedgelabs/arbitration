@@ -6,6 +6,8 @@ import { UnifiedGameFeedSkeleton } from "./UnifiedGameFeedSkeleton";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   clearRedditData,
+  clearPbpData,
+  clearTwitterData,
   fetchRedditGameThreadComments,
   fetchTwitterData,
   findRedditGameThread,
@@ -19,7 +21,6 @@ import {
   GameStatus,
   League,
   PLAY_BY_PLAY_CONFIG,
-  REDDIT_CONFIG,
   UNIFIED_FEED_CONFIG,
 } from "../config";
 import {
@@ -203,7 +204,7 @@ export function UnifiedGameFeed({
           subreddit: awaySubreddit.replace("r/", ""),
           gameId,
           kind: redditSortKind,
-          bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
+          cache: true,
         }),
       );
     }
@@ -213,7 +214,7 @@ export function UnifiedGameFeed({
           subreddit: homeSubreddit.replace("r/", ""),
           gameId,
           kind: redditSortKind,
-          bypassCache: REDDIT_CONFIG.bypassCacheOnRefresh,
+          cache: true,
         }),
       );
     }
@@ -277,8 +278,8 @@ export function UnifiedGameFeed({
         const query = deriveTwitterTerms(
           awayTeam,
           homeTeam,
-          awayTeamKey as string,
-          homeTeamKey as string,
+          awayTeamKey,
+          homeTeamKey,
         );
         dispatch(fetchTwitterData({ query, queryType: "Latest" }));
       }
@@ -316,7 +317,7 @@ export function UnifiedGameFeed({
           fetchRedditGameThreadComments({
             subreddit: subreddit,
             gameId,
-            bypassCache: true,
+            cache: true,
           }),
         );
       }
@@ -343,6 +344,8 @@ export function UnifiedGameFeed({
 
   useEffect(() => {
     dispatch(clearRedditData());
+    dispatch(clearTwitterData());
+    dispatch(clearPbpData());
   }, [dispatch]);
 
   const getAllEvents = useCallback((): FeedEvent[] => {

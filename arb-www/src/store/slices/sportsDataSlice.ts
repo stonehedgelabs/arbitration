@@ -77,7 +77,7 @@ export const findRedditGameThread = createAsyncThunk(
 // Async thunk for fetching Reddit game thread comments
 export const fetchRedditGameThreadComments = createAsyncThunk(
   'sportsData/fetchRedditGameThreadComments',
-  async ({ subreddit, gameId, kind, bypassCache }: { subreddit: string; gameId: string; kind?: string; bypassCache?: boolean }, { rejectWithValue, getState }) => {
+  async ({ subreddit, gameId, kind, cache = true }: { subreddit: string; gameId: string; kind?: string; cache: boolean }, { rejectWithValue, getState }) => {
     try {
       const state = getState() as { sportsData: SportsDataState };
       const sortKind = kind || state.sportsData.redditSortKind;
@@ -86,7 +86,7 @@ export const fetchRedditGameThreadComments = createAsyncThunk(
         subreddit, 
         game_id: gameId,
         kind: sortKind,
-        cache: bypassCache ? 'false' : 'true'
+        cache: String(cache),
       });
       
       
@@ -359,10 +359,6 @@ const sportsDataSlice = createSlice({
     setTwitterHasSearched: (state, action: PayloadAction<boolean>) => {
       state.twitterHasSearched = action.payload;
     },
-    clearTwitterData: (state) => {
-      state.twitterData = null;
-      state.twitterError = null;
-    },
     // Reddit actions
     setRedditHasSearched: (state, action: PayloadAction<boolean>) => {
       state.redditHasSearched = action.payload;
@@ -372,6 +368,16 @@ const sportsDataSlice = createSlice({
       state.redditCommentsError = null;
       state.redditGameThreadFound = false;
       state.redditGameThreadError = null;
+    },
+    clearTwitterData: (state) => {
+      state.twitterData = null;
+      state.twitterError = null;
+      state.twitterLoading = false;
+    },
+    clearPbpData: (state) => {
+        state.playByPlayData = null;
+        state.playByPlayError = null;
+        state.playByPlayLoading = false;
     },
     // Boxscore view actions
     setBoxscoreView: (state, action: PayloadAction<'stats' | 'social'>) => {
@@ -1017,6 +1023,7 @@ export const {
   clearTwitterData,
   setRedditHasSearched,
   clearRedditData,
+  clearPbpData,
   setBoxscoreView,
   setSocialPlatform,
   setRedditSortKind,
