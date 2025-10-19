@@ -201,7 +201,7 @@ export function NFLScoreCard({
       dispatch(
         findRedditGameThread({
           subreddit: awaySubreddit.replace("r/", ""),
-          league: "nfl",
+          league: League.NFL,
         }),
       );
     }
@@ -209,7 +209,7 @@ export function NFLScoreCard({
       dispatch(
         findRedditGameThread({
           subreddit: homeSubreddit.replace("r/", ""),
-          league: "nfl",
+          league: League.NFL,
         }),
       );
     }

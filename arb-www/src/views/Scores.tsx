@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Card, HStack, Text, VStack, Icon } from "@chakra-ui/react";
 import { Tv } from "lucide-react";
@@ -260,7 +260,9 @@ function ScoresV2() {
   }, [league, selectedDate]);
 
   // Get all games based on the selected date and league
-  const getAllGames = (): Game[] => {
+  // IMPORTANT: Use useMemo with teamProfiles in dependencies to re-compute when team profiles load
+  // This ensures logos are populated once team profiles arrive from the API
+  const allGames = useMemo((): Game[] => {
     // Use selectedDate if available, otherwise use today's date (same logic as data fetching)
     const dateToUse = selectedDate || getCurrentLocalDate();
     const today = getCurrentLocalDate();
@@ -336,9 +338,16 @@ function ScoresV2() {
     }
 
     return [];
-  };
-
-  const allGames = getAllGames();
+  }, [
+    selectedDate,
+    scores,
+    schedule,
+    teamProfiles,
+    stadiums,
+    selectedLeague,
+    odds,
+    boxScoreData,
+  ]);
 
   const sortedGames = [...allGames].sort((a, b) => {
     const label = (g: any) =>

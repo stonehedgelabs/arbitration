@@ -496,8 +496,9 @@ export const convertNFLScheduleGameToGame = (
   };
 
   // Get team profiles
-  const homeTeamProfile = getTeamProfile(scheduleGame.HomeTeamID);
-  const awayTeamProfile = getTeamProfile(scheduleGame.AwayTeamID);
+  // NFL schedule uses GlobalHomeTeamID and GlobalAwayTeamID instead of HomeTeamID/AwayTeamID
+  const homeTeamProfile = getTeamProfile(scheduleGame.GlobalHomeTeamID);
+  const awayTeamProfile = getTeamProfile(scheduleGame.GlobalAwayTeamID);
 
   // Get stadium
   const stadium = getStadium(scheduleGame.StadiumID);
