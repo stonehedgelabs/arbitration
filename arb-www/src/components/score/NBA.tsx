@@ -369,6 +369,7 @@ export function NBAScoreCard({
                   bg="primary.200"
                   borderRadius="sm"
                   borderColor="primary.300"
+                  borderWidth="1px"
                   w="24"
                   flexShrink="0"
                 >

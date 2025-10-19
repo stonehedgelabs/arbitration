@@ -3,7 +3,8 @@ import { Badge } from "@chakra-ui/react";
 
 // Internal imports - config
 import { GameStatus } from "../../config";
-import { Wifi } from "lucide-react";
+import { Check, Clock, Wifi } from "lucide-react";
+import { getStatusDisplayText } from "../../utils.ts";
 
 interface StatusBadgeProps {
   status: GameStatus;
@@ -11,22 +12,7 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, size }: StatusBadgeProps) {
-  const getStatusText = () => {
-    switch (status) {
-      case GameStatus.LIVE:
-      case GameStatus.IN_PROGRESS:
-        return "Live";
-      case GameStatus.FINAL:
-        return "Final";
-      case GameStatus.UPCOMING:
-      case GameStatus.SCHEDULED:
-        return "Upcoming";
-      default:
-        return "";
-    }
-  };
-
-  const statusText = getStatusText();
+  const statusText = getStatusDisplayText(status);
 
   if (!statusText) return null;
 
@@ -39,13 +25,27 @@ export function StatusBadge({ status, size }: StatusBadgeProps) {
         return { bg: "green.500", color: "white" }; // Green background, white text for final
       case GameStatus.UPCOMING:
       case GameStatus.SCHEDULED:
-        return { bg: "text.350", color: "text.600" }; // Grey for upcoming
+        return { bg: "blue.500", color: "text.100" }; // Grey for upcoming
       default:
         return { bg: "text.200", color: "text.600" }; // Default grey
     }
   };
 
   const colors = getBadgeColors();
+  let icon;
+
+  if (status === GameStatus.LIVE) {
+    icon = <Wifi size={12} />;
+  } else if (status === GameStatus.FINAL) {
+    icon = <Check size={12} />;
+  } else if (
+    status === GameStatus.UPCOMING ||
+    status === GameStatus.SCHEDULED
+  ) {
+    icon = <Clock size={12} />;
+  } else {
+    icon = null;
+  }
 
   return (
     <Badge
@@ -58,7 +58,7 @@ export function StatusBadge({ status, size }: StatusBadgeProps) {
       borderRadius="sm"
     >
       {statusText}
-      {status === GameStatus.LIVE && <Wifi size={12} />}
+      {icon}
     </Badge>
   );
 }
