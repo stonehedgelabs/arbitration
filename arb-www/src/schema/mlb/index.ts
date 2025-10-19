@@ -1,6 +1,7 @@
 // Explicit re-exports to avoid naming conflicts and improve clarity
 export * from './teams';
 export * from './stadiums';
+export * from './standings';
 export * from './schedule';
 
 // BoxScore module exports

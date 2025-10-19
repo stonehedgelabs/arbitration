@@ -33,9 +33,14 @@ import { mapApiStatusToGameStatus, League, GameStatus } from "../../config.ts";
 interface BoxScoreDetailNFLProps {
   gameId?: string;
   league?: string;
+  standings?: any;
 }
 
-export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
+export function BoxScoreDetailNFL({
+  gameId,
+  league,
+  standings,
+}: BoxScoreDetailNFLProps) {
   const { teamProfiles, stadiums, fetchTeamProfiles, fetchStadiums } = useArb();
 
   // Get box score data from Redux state (persists across navigation)
@@ -106,6 +111,15 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
     (s: any) => s.StadiumID === game.StadiumID,
   );
 
+  // Get standings for each team
+  const standingsArray = extractDataFromResponse(standings);
+  const awayTeamStanding = standingsArray.find(
+    (team: any) => team.TeamID === awayTeamProfile?.GlobalTeamID,
+  );
+  const homeTeamStanding = standingsArray.find(
+    (team: any) => team.TeamID === homeTeamProfile?.GlobalTeamID,
+  );
+
   if (!awayTeamProfile || !homeTeamProfile) {
     return (
       <ErrorState
@@ -139,7 +153,14 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
         {/* Scoreboard */}
         <VStack gap="2" mb="0">
           {/* Top row - Team info and scores */}
-          <Flex justify="space-between" align="center" w="full">
+          <Flex
+            justify="space-between"
+            align="center"
+            w="full"
+            bg={"primary.100"}
+            p={4}
+            borderRadius={"sm"}
+          >
             {/* Away Team */}
             <VStack gap="2" align="center" flex="1">
               <Box
@@ -164,6 +185,12 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
                   <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
+              {awayTeamStanding && (
+                <Text fontSize="xs" color="text.500">
+                  {awayTeamStanding.Wins} - {awayTeamStanding.Losses} (
+                  {awayTeamStanding.Conference})
+                </Text>
+              )}
               <VStack gap="0" align="center">
                 <Text fontSize="sm" fontWeight="semibold" color="text.400">
                   {orEmpty(awayTeamProfile.Name)}
@@ -222,6 +249,12 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
                   <Box w="full" h="full" bg="text.200" borderRadius="100" />
                 )}
               </Box>
+              {homeTeamStanding && (
+                <Text fontSize="xs" color="text.500">
+                  {homeTeamStanding.Wins} - {homeTeamStanding.Losses} (
+                  {homeTeamStanding.Conference})
+                </Text>
+              )}
               <VStack gap="0" align="center">
                 <Text fontSize="sm" fontWeight="semibold" color="text.400">
                   {orEmpty(homeTeamProfile.Name)}
@@ -245,8 +278,8 @@ export function BoxScoreDetailNFL({ gameId, league }: BoxScoreDetailNFLProps) {
           {quarters.length > 0 && (
             <VStack gap="2" w="full" mt="4">
               <Box w="full" overflowX="auto">
-                <Table.Root size="sm" variant="outline">
-                  <Table.Header>
+                <Table.Root size="sm" variant="outline" bg={"primary.100"}>
+                  <Table.Header bg="primary.200">
                     <Table.Row>
                       <Table.ColumnHeader
                         fontSize="2xs"

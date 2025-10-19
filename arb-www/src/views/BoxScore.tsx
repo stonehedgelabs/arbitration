@@ -89,7 +89,20 @@ export function BoxScore({ onBack }: BoxScoreProps) {
   const DetailComponent = leagueComponentMap[normalizedLeague];
 
   // Optional friendly labels from team profiles if we already have them (no fetch)
-  const { teamProfiles } = useArb();
+  const { teamProfiles, standings, fetchStandings } = useArb();
+
+  // Fetch standings for NFL, NBA, and MLB
+  useEffect(() => {
+    if (
+      (normalizedLeague === League.NFL ||
+        normalizedLeague === League.NBA ||
+        normalizedLeague === League.MLB) &&
+      !standings
+    ) {
+      const currentYear = new Date().getFullYear();
+      fetchStandings(normalizedLeague, currentYear);
+    }
+  }, [normalizedLeague, standings, fetchStandings]);
 
   // Extract the game object based on the league
   const game = extractGameFromGameData(gameData, normalizedLeague);
@@ -129,6 +142,7 @@ export function BoxScore({ onBack }: BoxScoreProps) {
                 {DetailComponent ? (
                   <DetailComponent
                     key={gameId}
+                    standings={standings}
                     gameId={gameId}
                     league={normalizedLeague}
                     gameData={gameData}

@@ -61,6 +61,7 @@ export const API_CONFIG = {
     headshots: '/api/v1/headshots',
     playByPlay: '/api/v1/play-by-play',
     teamProfile: '/api/team-profile',
+    standings: '/api/v1/standings',
     health: '/health',
   },
 } as const;

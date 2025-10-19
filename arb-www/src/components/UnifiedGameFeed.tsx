@@ -124,6 +124,9 @@ export function UnifiedGameFeed({
   const redditGameThreadFound = useAppSelector(
     (state) => state.sportsData.redditGameThreadFound,
   );
+  const redditGameThreadsFoundBySubreddit = useAppSelector(
+    (state) => state.sportsData.redditGameThreadsFoundBySubreddit,
+  );
   const redditGameThreadLoading = useAppSelector(
     (state) => state.sportsData.redditGameThreadLoading,
   );
@@ -191,49 +194,84 @@ export function UnifiedGameFeed({
   ]);
 
   useEffect(() => {
-    if (!redditGameThreadFound || redditGameThreadLoading) {
+    if (redditGameThreadLoading) {
       return;
     }
 
     const awaySubreddit = getTeamSubredditByName(awayTeam, league);
     const homeSubreddit = getTeamSubredditByName(homeTeam, league);
 
+    // Only fetch comments for teams whose game threads have been found
     if (awaySubreddit) {
-      dispatch(
-        fetchRedditGameThreadComments({
-          subreddit: awaySubreddit.replace("r/", ""),
-          gameId,
-          kind: redditSortKind,
-          cache: true,
-        }),
-      );
+      const awaySubredditKey = awaySubreddit.replace("r/", "");
+      if (redditGameThreadsFoundBySubreddit[awaySubredditKey] === true) {
+        dispatch(
+          fetchRedditGameThreadComments({
+            subreddit: awaySubredditKey,
+            gameId,
+            kind: redditSortKind,
+            cache: true,
+          }),
+        );
+      }
     }
     if (homeSubreddit) {
-      dispatch(
-        fetchRedditGameThreadComments({
-          subreddit: homeSubreddit.replace("r/", ""),
-          gameId,
-          kind: redditSortKind,
-          cache: true,
-        }),
-      );
+      const homeSubredditKey = homeSubreddit.replace("r/", "");
+      if (redditGameThreadsFoundBySubreddit[homeSubredditKey] === true) {
+        dispatch(
+          fetchRedditGameThreadComments({
+            subreddit: homeSubredditKey,
+            gameId,
+            kind: redditSortKind,
+            cache: true,
+          }),
+        );
+      }
     }
   }, [
-    redditGameThreadFound,
+    redditGameThreadsFoundBySubreddit,
     awayTeam,
     homeTeam,
     gameId,
+    league,
     redditGameThreadLoading,
+    redditSortKind,
     dispatch,
   ]);
 
   const fetchPlayByPlay = useCallback(async () => {
+    if (!gameId || !league) return;
+
+    // Extract game data based on league structure
+    let game;
+    if (gameData) {
+      switch (league.toLowerCase()) {
+        case League.MLB:
+          game = gameData?.data?.Game;
+          break;
+        case League.NFL:
+          game =
+            gameData?.data?.Score ||
+            gameData?.data?.score ||
+            gameData?.data?.Game ||
+            gameData?.data;
+          break;
+        case League.NBA:
+          game = gameData?.data?.Game || gameData?.data;
+          break;
+        default:
+          game = gameData?.data?.Game || gameData?.data;
+      }
+    }
+
+    // Only fetch play-by-play if game is in progress or live
     if (
-      !gameId ||
-      !league ||
-      gameData?.data?.Game.Status !== GameStatus.IN_PROGRESS
-    )
+      !game ||
+      (game.Status !== GameStatus.IN_PROGRESS &&
+        game.Status !== GameStatus.LIVE)
+    ) {
       return;
+    }
 
     try {
       dispatch(setPlayByPlayLoading(true));
@@ -270,23 +308,33 @@ export function UnifiedGameFeed({
     }
   }, [gameData, league, gameId, dispatch]);
 
+  // Initial fetch of play-by-play data
+  // useEffect(() => {
+  //   if (gameId && league && gameData) {
+  //     fetchPlayByPlay();
+  //   }
+  // }, [gameId, league, gameData, fetchPlayByPlay]);
+
   useEffect(() => {
     if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;
 
     const refreshData = () => {
-      if (awayTeamKey && homeTeamKey && awayTeam && homeTeam) {
-        const query = deriveTwitterTerms(
-          awayTeam,
-          homeTeam,
-          awayTeamKey,
-          homeTeamKey,
-        );
-        dispatch(fetchTwitterData({ query, queryType: "Latest" }));
-      }
+      // Use requestIdleCallback or setTimeout with 0 to avoid blocking
+      requestIdleCallback(() => {
+        if (awayTeamKey && homeTeamKey && awayTeam && homeTeam) {
+          const query = deriveTwitterTerms(
+            awayTeam,
+            homeTeam,
+            awayTeamKey,
+            homeTeamKey,
+          );
+          dispatch(fetchTwitterData({ query, queryType: "Latest" }));
+        }
 
-      if (gameId && league) {
-        fetchPlayByPlay();
-      }
+        if (gameId && league) {
+          fetchPlayByPlay();
+        }
+      });
     };
 
     const interval = setInterval(

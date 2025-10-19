@@ -13,6 +13,8 @@ pub enum DataType {
     Headshots,
     #[serde(rename = "stadiums")]
     Stadiums,
+    #[serde(rename = "standings")]
+    Standings,
     #[serde(rename = "box_score")]
     BoxScore,
     #[serde(rename = "play_by_play")]
@@ -34,6 +36,7 @@ impl DataType {
             DataType::TeamProfiles => "team_profiles",
             DataType::Headshots => "headshots",
             DataType::Stadiums => "stadiums",
+            DataType::Standings => "standings",
             DataType::BoxScore => "box_score",
             DataType::PlayByPlay => "play_by_play",
             DataType::Odds => "odds",
@@ -57,6 +60,7 @@ impl From<&str> for DataType {
             "team_profiles" => DataType::TeamProfiles,
             "headshots" => DataType::Headshots,
             "stadiums" => DataType::Stadiums,
+            "standings" => DataType::Standings,
             "box_score" => DataType::BoxScore,
             "play_by_play" => DataType::PlayByPlay,
             "odds" => DataType::Odds,

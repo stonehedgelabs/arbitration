@@ -104,6 +104,12 @@ pub struct StadiumsPath {
 }
 
 #[derive(Debug, Clone)]
+pub struct StandingsPath {
+    league: League,
+    season: i32,
+}
+
+#[derive(Debug, Clone)]
 pub struct OddsByDatePath {
     league: League,
     date: Option<String>,
@@ -513,6 +519,18 @@ impl std::fmt::Display for StadiumsPath {
     }
 }
 
+impl std::fmt::Display for StandingsPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}/{}/scores/json/Standings/{}",
+            BASE_URL,
+            self.league.to_string().to_lowercase(),
+            self.season
+        )
+    }
+}
+
 impl std::fmt::Display for OddsByDatePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.date {
@@ -620,6 +638,10 @@ pub fn play_by_play_delta_path(
 
 pub fn stadiums_path(league: League) -> StadiumsPath {
     StadiumsPath { league }
+}
+
+pub fn standings_path(league: League, season: i32) -> StandingsPath {
+    StandingsPath { league, season }
 }
 
 pub fn odds_by_date_path(league: League, date: Option<String>) -> OddsByDatePath {

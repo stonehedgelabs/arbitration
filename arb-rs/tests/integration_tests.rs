@@ -25,6 +25,7 @@ async fn setup_test_server() -> TestServer {
             play_by_play: 60,            // 1 minute
             box_scores: 3600,            // 1 hour
             stadiums: 86400,             // 24 hours
+            standings: 21600,            // 6 hours
             twitter_search: 60,          // 1 minute
             reddit_thread: 600,          // 10 minutes
             reddit_thread_comments: 120, // 2 minutes

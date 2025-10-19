@@ -625,7 +625,7 @@ export const getPlayLabelNFL = (play: any): PlayLabelResult => {
     const yardLine = play.YardLine;
     const yardLineTerritory = play.YardLineTerritory;
     const yardsGained = play.YardsGained;
-    const type = underscore(play.Type).replace("_", " ") || "";
+    const type = play.Type ? underscore(play.Type).replace("_", " ") : "";
 
     // Extract primary player from PlayStats (similar to how MLB uses batter name)
     const primaryPlayer = play.PlayStats?.[0];

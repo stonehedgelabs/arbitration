@@ -5,6 +5,11 @@ export {
 } from './stadiums';
 
 export { 
+  NBAStanding,
+  NBAStandingsResponse 
+} from './standings';
+
+export { 
   NBATeamProfile, 
   NBATeamProfilesResponse 
 } from './teams';

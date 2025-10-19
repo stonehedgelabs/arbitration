@@ -3,7 +3,7 @@ import { buildApiUrl } from '../config';
 import { BoxScoreResponse } from '../schema';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import {
-  setLeagueScores, setLeagueTeamProfiles, setLeagueStadiums, setLeagueSchedule,
+  setLeagueScores, setLeagueTeamProfiles, setLeagueStadiums, setLeagueStandings, setLeagueSchedule,
   setLeagueOdds, setLeagueCurrentGames, setLeagueLoading, setLeagueError
 } from '../store/slices/sportsDataSlice';
 
@@ -25,6 +25,7 @@ const useArb = () => {
   const scores = current.scores ?? null;
   const teamProfiles = current.teamProfiles ?? null;
   const stadiums = current.stadiums ?? null;
+  const standings = current.standings ?? null;
   const schedule = current.schedule ?? null;
   const odds = current.odds ?? null;
   const currentGames = current.currentGames ?? null;
@@ -32,6 +33,7 @@ const useArb = () => {
   const scoresLoading = current.scoresLoading ?? false;
   const teamProfilesLoading = current.teamProfilesLoading ?? false;
   const stadiumsLoading = current.stadiumsLoading ?? false;
+  const standingsLoading = current.standingsLoading ?? false;
   const scheduleLoading = current.scheduleLoading ?? false;
   const oddsLoading = current.oddsLoading ?? false;
   const currentGamesLoading = current.currentGamesLoading ?? false;
@@ -39,6 +41,7 @@ const useArb = () => {
   const scoresError = current.scoresError ?? null;
   const teamProfilesError = current.teamProfilesError ?? null;
   const stadiumsError = current.stadiumsError ?? null;
+  const standingsError = current.standingsError ?? null;
   const scheduleError = current.scheduleError ?? null;
   const oddsError = current.oddsError ?? null;
   const currentGamesError = current.currentGamesError ?? null;
@@ -111,6 +114,24 @@ const useArb = () => {
     }
   }, [dispatch, leagueData]);
 
+  const fetchStandings = useCallback(async (leagueArg: string, season: number, cache: boolean = true) => {
+    if (!leagueArg) return;
+    const L = norm(leagueArg);
+    const ld = leagueData[L] ?? {};
+    if (ld.standingsLoading) return;
+    try {
+      dispatch(setLeagueLoading({ league: L, dataType: 'standings', loading: true }));
+      const res = await fetch(buildApiUrl('/api/v1/standings', { league: L, season: season.toString(), cache: cache.toString() }));
+      if (!res.ok) throw new Error(`Failed to fetch standings: ${res.status}`);
+      const data = await res.json();
+      dispatch(setLeagueStandings({ league: L, data }));
+    } catch (err) {
+      dispatch(setLeagueError({ league: L, dataType: 'standings', error: getUserFriendlyError('standings', L, err) }));
+    } finally {
+      dispatch(setLeagueLoading({ league: L, dataType: 'standings', loading: false }));
+    }
+  }, [dispatch, leagueData]);
+
   const fetchSchedule = useCallback(async (leagueArg: string, date?: string, cache: boolean = true) => {
     const L = norm(leagueArg);
     const ld = leagueData[L] ?? {};
@@ -163,10 +184,10 @@ const useArb = () => {
   }, [dispatch]);
 
   return {
-    scores, teamProfiles, stadiums, schedule, odds, currentGames, mlbBoxScore,
-    scoresLoading, teamProfilesLoading, stadiumsLoading, scheduleLoading, oddsLoading, currentGamesLoading,
-    scoresError, teamProfilesError, stadiumsError, scheduleError, oddsError, currentGamesError,
-    fetchScores, fetchTeamProfiles, fetchBoxScore, fetchStadiums, fetchSchedule, fetchCurrentGames, fetchOddsByDate: fetchOdds,
+    scores, teamProfiles, stadiums, standings, schedule, odds, currentGames, mlbBoxScore,
+    scoresLoading, teamProfilesLoading, stadiumsLoading, standingsLoading, scheduleLoading, oddsLoading, currentGamesLoading,
+    scoresError, teamProfilesError, stadiumsError, standingsError, scheduleError, oddsError, currentGamesError,
+    fetchScores, fetchTeamProfiles, fetchBoxScore, fetchStadiums, fetchStandings, fetchSchedule, fetchCurrentGames, fetchOddsByDate: fetchOdds,
   };
 };
 

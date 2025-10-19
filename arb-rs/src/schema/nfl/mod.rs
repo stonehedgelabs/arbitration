@@ -5,4 +5,5 @@ pub mod play_by_play;
 pub mod schedule;
 pub mod scores;
 pub mod stadiums;
+pub mod standings;
 pub mod teams;

@@ -4,12 +4,13 @@ use crate::schema::{
     data_type::DataType,
     mlb::{
         box_score::BoxScore, game_by_date::GameByDateResponse, odds::OddsByDateResponse,
-        schedule::MLBScheduleGame, stadiums::Stadium, teams::TeamProfiles,
+        schedule::MLBScheduleGame, stadiums::Stadium, standings::MLBStandings,
+        teams::TeamProfiles,
     },
     nba::{
         box_score::NBABoxScoreResponse, headshots::PlayerHeadshots,
         play_by_play::NBAPlayByPlayResponseUnknown, schedule::NBAScheduleGame,
-        stadiums::NBAStadium, teams::NBATeamProfile,
+        stadiums::NBAStadium, standings::NBAStandings, teams::NBATeamProfile,
     },
     nfl::{
         box_score::{NFLBoxScoreByScoreIDV3Response, NFLBoxScoreGame},
@@ -19,6 +20,7 @@ use crate::schema::{
         schedule::NFLScheduleGame,
         scores::NFLScoresGame,
         stadiums::NFLStadium,
+        standings::NFLStandings,
         teams::NFLTeamProfile,
     },
 };
@@ -51,6 +53,7 @@ pub enum MLBData {
     TeamProfiles(TeamProfiles),
     Headshots(serde_json::Value), // MLB headshots uses generic JSON
     Stadiums(Vec<Stadium>),
+    Standings(MLBStandings),
     BoxScore(BoxScore),
     PlayByPlay(serde_json::Value),
     Odds(OddsByDateResponse),
@@ -65,6 +68,7 @@ pub enum NBAData {
     Schedule(Vec<NBAScheduleGame>),
     CurrentGames(Vec<NBAScheduleGame>),
     Stadiums(Vec<NBAStadium>),
+    Standings(NBAStandings),
     TeamProfiles(Vec<NBATeamProfile>),
     Headshots(PlayerHeadshots),
     PlayByPlay(NBAPlayByPlayResponseUnknown),
@@ -84,6 +88,7 @@ pub enum NFLData {
     PlayByPlay(Box<NFLPlayByPlayResponseUnknown>),
     Scores(Vec<NFLScoresGame>),
     Stadiums(Vec<NFLStadium>),
+    Standings(NFLStandings),
     BoxScore(Vec<NFLBoxScoreGame>),
     BoxScoreByScoreIDV3(Box<NFLBoxScoreByScoreIDV3Response>),
 }

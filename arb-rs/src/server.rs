@@ -18,7 +18,7 @@ use crate::{
         handle_apple_auth_redirect, handle_google_auth_callback,
         handle_google_auth_redirect, headshots, health_check, odds_by_date,
         play_by_play_handler, reddit_search, reddit_thread, schedule, scores, stadiums,
-        team_profile, twitter_search, UseCaseState,
+        standings, team_profile, twitter_search, UseCaseState,
     },
 };
 
@@ -46,6 +46,7 @@ impl Server {
             .route("/api/v1/box-score", get(box_score))
             .route("/api/v1/scores-by-date", get(game_by_date))
             .route("/api/v1/stadiums", get(stadiums))
+            .route("/api/v1/standings", get(standings))
             .route("/api/v1/odds-by-date", get(odds_by_date))
             .route("/api/v1/twitter-search", get(twitter_search))
             .route("/api/v1/reddit-thread", get(reddit_thread))

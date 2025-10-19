@@ -111,8 +111,10 @@ export function LeagueSelector() {
             <Select.Item
               key={league.id}
               item={league.id}
+              fontSize="xs"
               opacity={isDisabled ? 0.5 : 1}
               cursor={isDisabled ? "not-allowed" : "pointer"}
+              p="3"
               _selected={{
                 bg: "primary.300",
                 color: "text.500",

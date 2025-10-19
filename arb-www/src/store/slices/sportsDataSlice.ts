@@ -55,7 +55,7 @@ export const fetchTwitterData = createAsyncThunk(
 // Async thunk for finding Reddit game thread
 export const findRedditGameThread = createAsyncThunk(
   'sportsData/findRedditGameThread',
-  async ({ subreddit, league }: { subreddit: string; league: string }, { rejectWithValue }) => {
+  async ({ subreddit, league }: { subreddit: string; league: string }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const url = buildApiUrl('/api/v1/reddit-thread', { subreddit, league });
       const response = await fetch(url);
@@ -67,9 +67,10 @@ export const findRedditGameThread = createAsyncThunk(
         throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
       }
       
-      return { success: true, subreddit };
+      const data = await response.json();
+      return fulfillWithValue({ subreddit, data });
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+      return rejectWithValue({ subreddit, error: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 );
@@ -245,6 +246,9 @@ interface LeagueData {
   stadiums: any | null;
   stadiumsLoading: boolean;
   stadiumsError: string | null;
+  standings: any | null;
+  standingsLoading: boolean;
+  standingsError: string | null;
   schedule: any | null;
   scheduleLoading: boolean;
   scheduleError: string | null;
@@ -283,6 +287,7 @@ interface SportsDataState {
   redditGameThreadLoading: boolean;
   redditGameThreadError: string | null;
   redditGameThreadFound: boolean;
+  redditGameThreadsFoundBySubreddit: Record<string, boolean>; // Track which subreddits have found threads
   redditHasSearched: boolean;
   redditSortKind: 'top' | 'new';
   // Boxscore view state
@@ -323,6 +328,7 @@ const initialState: SportsDataState = {
   redditGameThreadLoading: false,
   redditGameThreadError: null,
   redditGameThreadFound: false,
+  redditGameThreadsFoundBySubreddit: {},
   redditHasSearched: false,
   redditSortKind: 'new' as const,
   twitterSortKind: 'latest' as const,
@@ -367,6 +373,7 @@ const sportsDataSlice = createSlice({
       state.redditCommentsData = null;
       state.redditCommentsError = null;
       state.redditGameThreadFound = false;
+      state.redditGameThreadsFoundBySubreddit = {};
       state.redditGameThreadError = null;
     },
     clearTwitterData: (state) => {
@@ -418,6 +425,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -446,6 +456,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -461,6 +474,37 @@ const sportsDataSlice = createSlice({
       state.leagueData[league].teamProfiles = data;
       state.leagueData[league].teamProfilesError = null;
     },
+    setLeagueStandings: (state, action: PayloadAction<{league: string, data: any}>) => {
+      const { league, data } = action.payload;
+      if (!state.leagueData[league]) {
+        state.leagueData[league] = {
+          scores: null,
+          scoresLoading: false,
+          scoresError: null,
+          teamProfiles: null,
+          teamProfilesLoading: false,
+          teamProfilesError: null,
+          stadiums: null,
+          stadiumsLoading: false,
+          stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
+          schedule: null,
+          scheduleLoading: false,
+          scheduleError: null,
+          odds: null,
+          oddsLoading: false,
+          oddsError: null,
+          currentGames: null,
+          currentGamesLoading: false,
+          currentGamesError: null,
+          error: null,
+        };
+      }
+      state.leagueData[league].standings = data;
+      state.leagueData[league].standingsError = null;
+    },
     setLeagueStadiums: (state, action: PayloadAction<{league: string, data: any}>) => {
       const { league, data } = action.payload;
       if (!state.leagueData[league]) {
@@ -474,6 +518,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -502,6 +549,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -530,6 +580,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -558,6 +611,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -586,6 +642,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -613,6 +672,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -640,6 +702,9 @@ const sportsDataSlice = createSlice({
           stadiums: null,
           stadiumsLoading: false,
           stadiumsError: null,
+          standings: null,
+          standingsLoading: false,
+          standingsError: null,
           schedule: null,
           scheduleLoading: false,
           scheduleError: null,
@@ -728,15 +793,23 @@ const sportsDataSlice = createSlice({
         state.redditGameThreadError = null;
         state.redditGameThreadFound = false;
       })
-      .addCase(findRedditGameThread.fulfilled, (state) => {
+      .addCase(findRedditGameThread.fulfilled, (state, action) => {
         state.redditGameThreadLoading = false;
         state.redditGameThreadFound = true;
         state.redditGameThreadError = null;
+        // Track which subreddit found a thread
+        const subreddit = action.payload.subreddit;
+        state.redditGameThreadsFoundBySubreddit[subreddit] = true;
       })
       .addCase(findRedditGameThread.rejected, (state, action) => {
         state.redditGameThreadLoading = false;
-        state.redditGameThreadFound = false;
+        // Don't set global found to false if other threads were found
         state.redditGameThreadError = action.error.message || 'Failed to find Reddit game thread';
+        // Track which subreddit failed
+        const subreddit = (action.payload as any)?.subreddit;
+        if (subreddit) {
+          state.redditGameThreadsFoundBySubreddit[subreddit] = false;
+        }
       })
       // Reddit comments reducers
       .addCase(fetchRedditGameThreadComments.pending, (state) => {
@@ -825,6 +898,9 @@ const sportsDataSlice = createSlice({
             stadiums: null,
             stadiumsLoading: false,
             stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
             schedule: null,
             scheduleLoading: false,
             scheduleError: null,
@@ -865,6 +941,9 @@ const sportsDataSlice = createSlice({
             stadiums: null,
             stadiumsLoading: false,
             stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
             schedule: null,
             scheduleLoading: false,
             scheduleError: null,
@@ -905,6 +984,9 @@ const sportsDataSlice = createSlice({
             stadiums: null,
             stadiumsLoading: false,
             stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
             schedule: null,
             scheduleLoading: false,
             scheduleError: null,
@@ -945,6 +1027,9 @@ const sportsDataSlice = createSlice({
             stadiums: null,
             stadiumsLoading: false,
             stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
             schedule: null,
             scheduleLoading: false,
             scheduleError: null,
@@ -985,6 +1070,9 @@ const sportsDataSlice = createSlice({
             stadiums: null,
             stadiumsLoading: false,
             stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
             schedule: null,
             scheduleLoading: false,
             scheduleError: null,
@@ -1032,6 +1120,7 @@ export const {
   setLeagueScores,
   setLeagueTeamProfiles,
   setLeagueStadiums,
+  setLeagueStandings,
   setLeagueSchedule,
   setLeagueOdds,
   setLeagueCurrentGames,

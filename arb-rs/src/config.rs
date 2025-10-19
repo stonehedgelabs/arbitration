@@ -70,6 +70,8 @@ pub struct CacheTtlConfig {
     pub box_scores: u64,
     /// TTL for stadiums data (in seconds)
     pub stadiums: u64,
+    /// TTL for standings data (in seconds)
+    pub standings: u64,
     /// TTL for Twitter search results (in seconds)
     pub twitter_search: u64,
     /// TTL for Reddit game thread IDs (in seconds)
@@ -251,6 +253,7 @@ impl Default for ArbConfig {
                     play_by_play: 60,             // 1 minute
                     box_scores: 60,               // 1 minute
                     stadiums: 21600,              // 6 hours
+                    standings: 21600,             // 6 hours
                     twitter_search: 60,           // 1 minute
                     reddit_thread: 600,           // 10 minutes
                     reddit_thread_comments: 60,   // 1 minute

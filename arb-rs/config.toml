@@ -20,6 +20,7 @@ scores = 60               # 1 minute
 play_by_play = 60         # 1 minute
 box_scores = 60           # 1 minute
 stadiums = 21600          # 6 hours
+standings = 21600         # 6 hours
 twitter_search = 60       # 1 minute
 reddit_thread = 600       # 10 minutes
 reddit_thread_comments = 60 # 1 minute

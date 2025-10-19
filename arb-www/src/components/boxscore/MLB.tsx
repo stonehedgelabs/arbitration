@@ -34,9 +34,14 @@ import { mapApiStatusToGameStatus, League, GameStatus } from "../../config.ts";
 interface BoxScoreDetailMLBProps {
   gameId?: string;
   league?: string;
+  standings?: any;
 }
 
-export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
+export function BoxScoreDetailMLB({
+  gameId,
+  league,
+  standings,
+}: BoxScoreDetailMLBProps) {
   const {
     mlbBoxScore,
     teamProfiles,
@@ -119,6 +124,15 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
     (s: any) => s.StadiumID === game.StadiumID,
   );
 
+  // Get standings for each team
+  const standingsArray = extractDataFromResponse(standings);
+  const awayTeamStanding = standingsArray.find(
+    (team: any) => team.GlobalTeamID === awayTeamProfile?.GlobalTeamID,
+  );
+  const homeTeamStanding = standingsArray.find(
+    (team: any) => team.GlobalTeamID === homeTeamProfile?.GlobalTeamID,
+  );
+
   // If no team profiles, return null - parent component handles loading/error states
   if (!awayTeamProfile || !homeTeamProfile) {
     return null;
@@ -162,7 +176,14 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
         {/* Scoreboard */}
         <VStack gap="2" mb="0">
           {/* Top row - Team info and scores */}
-          <Flex justify="space-between" align="center" w="full">
+          <Flex
+            justify="space-between"
+            align="center"
+            w="full"
+            bg={"primary.100"}
+            p={4}
+            borderRadius={"sm"}
+          >
             {/* Away Team */}
             <VStack gap="2" align="center" flex="1">
               <Box
@@ -187,6 +208,12 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                   <Box w="full" h="full" bg="text.200" borderRadius="sm" />
                 )}
               </Box>
+              {awayTeamStanding && (
+                <Text fontSize="xs" color="text.500">
+                  {awayTeamStanding.Wins} - {awayTeamStanding.Losses} (
+                  {awayTeamStanding.League})
+                </Text>
+              )}
               <VStack gap="0" align="center">
                 <Text fontSize="sm" fontWeight="semibold" color="text.400">
                   {orEmpty(awayTeamProfile.Name)}
@@ -299,6 +326,12 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
                   <Box w="full" h="full" bg="text.200" borderRadius="4xl" />
                 )}
               </Box>
+              {homeTeamStanding && (
+                <Text fontSize="xs" color="text.500">
+                  {homeTeamStanding.Wins} - {homeTeamStanding.Losses} (
+                  {homeTeamStanding.League})
+                </Text>
+              )}
               <VStack gap="0" align="center">
                 <Text fontSize="sm" fontWeight="semibold" color="text.400">
                   {orEmpty(homeTeamProfile.Name)}
@@ -391,7 +424,7 @@ export function BoxScoreDetailMLB({ gameId, league }: BoxScoreDetailMLBProps) {
           {game.Innings && game.Innings.length > 0 && (
             <VStack gap="2" w="full" mt="4">
               <Box w="full" overflowX="auto">
-                <Table.Root size="sm" variant="outline">
+                <Table.Root size="sm" variant="outline" bg={"primary.100"}>
                   <Table.Header bg="primary.200">
                     <Table.Row>
                       <Table.ColumnHeader
