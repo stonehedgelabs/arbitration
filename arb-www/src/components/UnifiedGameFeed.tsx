@@ -309,11 +309,11 @@ export function UnifiedGameFeed({
   }, [gameData, league, gameId, dispatch]);
 
   // Initial fetch of play-by-play data
-  // useEffect(() => {
-  //   if (gameId && league && gameData) {
-  //     fetchPlayByPlay();
-  //   }
-  // }, [gameId, league, gameData, fetchPlayByPlay]);
+  useEffect(() => {
+    if (gameId && league && gameData) {
+      fetchPlayByPlay();
+    }
+  }, [gameId, league, gameData]);
 
   useEffect(() => {
     if (!UNIFIED_FEED_CONFIG.enableAutoRefresh) return;

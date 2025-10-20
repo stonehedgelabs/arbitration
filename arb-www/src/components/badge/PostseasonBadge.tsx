@@ -1,5 +1,5 @@
-// Third-party library imports
 import { Badge } from "@chakra-ui/react";
+import { Trophy } from "lucide-react";
 
 interface PostseasonBadgeProps {
   size: "2xs" | "xs" | "sm" | "md";
@@ -17,6 +17,7 @@ export function PostseasonBadge({ size }: PostseasonBadgeProps) {
       borderRadius="sm"
     >
       Playoffs
+      <Trophy size={12} />
     </Badge>
   );
 }
