@@ -264,6 +264,43 @@ export const toLocalTime = (estDateTime: string): string => {
 };
 
 /**
+ * Converts an EST/EDT datetime string to a Date object in the user's local timezone.
+ * Falls back to native parsing when a timezone is already present.
+ */
+export const toLocalDateTime = (
+  dateTime: string | Date | undefined,
+): Date | null => {
+  if (!dateTime) {
+    return null;
+  }
+
+  if (dateTime instanceof Date) {
+    return Number.isNaN(dateTime.getTime()) ? null : dateTime;
+  }
+
+  const hasTimezone = /[zZ]|([+-]\d{2}:?\d{2})$/.test(dateTime);
+
+  if (hasTimezone) {
+    const parsed = new Date(dateTime);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  try {
+    const utcDate = fromZonedTime(dateTime, "America/New_York");
+    const localDate = toZonedTime(
+      utcDate,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
+    return localDate;
+  } catch (error) {
+    const fallback = new Date(dateTime);
+    return Number.isNaN(fallback.getTime()) ? null : fallback;
+  }
+};
+
+/**
  * Safely parses a YYYY-MM-DD date string to a Date object in local time
  * @param dateString - Date string in YYYY-MM-DD format
  * @returns {Date} Date object in local time
@@ -902,4 +939,3 @@ export const extractDataFromResponse = (response: any): any[] => {
   // If we can't find an array, return empty array
   return [];
 };
-

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Box,
   VStack,
@@ -41,18 +41,52 @@ export function BoxScoreDetailNBA({
   league,
   standings,
 }: BoxScoreDetailNBAProps) {
-  const { teamProfiles, stadiums, fetchTeamProfiles, fetchStadiums } = useArb();
+  const {
+    teamProfiles,
+    stadiums,
+    scores,
+    scoresLoading,
+    scoresError,
+    fetchTeamProfiles,
+    fetchStadiums,
+  } = useArb();
 
   // Get box score data from Redux state (persists across navigation)
   const dispatch = useAppDispatch();
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
-  const boxScoreError = useAppSelector(
-    (state) => state.sportsData.boxScoreError,
-  );
   const boxScoreRequests = useAppSelector(
     (state) => state.sportsData.boxScoreRequests,
   );
   const reduxBoxScore = boxScoreData[gameId as keyof typeof boxScoreData];
+
+  const scoresArray = useMemo(() => extractDataFromResponse(scores), [scores]);
+
+  const game = useMemo(() => {
+    if (!gameId) {
+      return undefined;
+    }
+
+    return scoresArray.find((scoreGame: any) => {
+      if (!scoreGame) {
+        return false;
+      }
+
+      const gameID = scoreGame.GameID;
+      const globalGameID = scoreGame.GlobalGameID;
+
+      if (gameID !== undefined && gameID !== null) {
+        if (gameID.toString() === gameId) {
+          return true;
+        }
+      }
+
+      if (globalGameID !== undefined && globalGameID !== null) {
+        return globalGameID.toString() === gameId;
+      }
+
+      return false;
+    });
+  }, [scoresArray, gameId]);
 
   // Check if we're currently loading this specific game
   const isLoadingThisGame = boxScoreRequests.includes(gameId || "");
@@ -71,21 +105,18 @@ export function BoxScoreDetailNBA({
   }, []);
 
   // Show loading state if we're loading or if no game data yet and no error
-  if (
-    isLoadingThisGame ||
-    (!reduxBoxScore?.data?.Game && !reduxBoxScore?.data && !boxScoreError)
-  ) {
+  if (isLoadingThisGame || scoresLoading || (!game && !scoresError)) {
     return <NBASkeleton />;
   }
 
   // Show error state if there's an error and no data
-  if (boxScoreError && !reduxBoxScore?.data?.Game && !reduxBoxScore?.data) {
+  if (scoresError && !game) {
     return (
       <HideVerticalScroll bg="primary.25">
         <Box px="6" py="2">
           <ErrorState
             title="Error Loading Game"
-            message={boxScoreError}
+            message={scoresError}
             showBack={false}
             showRetry={false}
             variant="error"
@@ -94,10 +125,6 @@ export function BoxScoreDetailNBA({
       </HideVerticalScroll>
     );
   }
-
-  // Get game data - prioritize Redux data if available
-  // For NBA, the data structure matches the new format directly
-  const game = reduxBoxScore?.data?.Game || reduxBoxScore?.data;
 
   if (!game) {
     return null;

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Box,
   VStack,
@@ -41,18 +41,112 @@ export function BoxScoreDetailNFL({
   league,
   standings,
 }: BoxScoreDetailNFLProps) {
-  const { teamProfiles, stadiums, fetchTeamProfiles, fetchStadiums } = useArb();
+  const {
+    teamProfiles,
+    stadiums,
+    scores,
+    scoresLoading,
+    scoresError,
+    fetchTeamProfiles,
+    fetchStadiums,
+  } = useArb();
 
   // Get box score data from Redux state (persists across navigation)
   const dispatch = useAppDispatch();
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
-  const boxScoreError = useAppSelector(
-    (state) => state.sportsData.boxScoreError,
-  );
   const boxScoreRequests = useAppSelector(
     (state) => state.sportsData.boxScoreRequests,
   );
   const reduxBoxScore = boxScoreData[gameId as keyof typeof boxScoreData];
+
+  const scoresArray = useMemo(() => extractDataFromResponse(scores), [scores]);
+
+  const game = useMemo(() => {
+    if (!gameId) {
+      return undefined;
+    }
+
+    return scoresArray.find((scoreGame: any) => {
+      if (!scoreGame) {
+        return false;
+      }
+
+      const scoreId = scoreGame.ScoreID;
+      const gameKey = scoreGame.GameKey;
+
+      if (scoreId !== undefined && scoreId !== null) {
+        if (scoreId.toString() === gameId) {
+          return true;
+        }
+      }
+
+      if (gameKey !== undefined && gameKey !== null) {
+        return gameKey.toString() === gameId;
+      }
+
+      return false;
+    });
+  }, [scoresArray, gameId]);
+
+  const quarters = useMemo(() => {
+    if (!game) {
+      return [];
+    }
+
+    const quarterData: Array<{
+      Number: number | string;
+      AwayTeamScore?: number;
+      HomeTeamScore?: number;
+    }> = [];
+
+    const quarterMappings = [
+      {
+        label: 1,
+        away: game.AwayScoreQuarter1,
+        home: game.HomeScoreQuarter1,
+      },
+      {
+        label: 2,
+        away: game.AwayScoreQuarter2,
+        home: game.HomeScoreQuarter2,
+      },
+      {
+        label: 3,
+        away: game.AwayScoreQuarter3,
+        home: game.HomeScoreQuarter3,
+      },
+      {
+        label: 4,
+        away: game.AwayScoreQuarter4,
+        home: game.HomeScoreQuarter4,
+      },
+    ];
+
+    quarterMappings.forEach(({ label, away, home }) => {
+      if (away !== undefined || home !== undefined) {
+        quarterData.push({
+          Number: label,
+          AwayTeamScore: away ?? 0,
+          HomeTeamScore: home ?? 0,
+        });
+      }
+    });
+
+    const overtimeScoreExists =
+      (game.AwayScoreOvertime ?? 0) > 0 || (game.HomeScoreOvertime ?? 0) > 0;
+    const hasOvertimeFlag = Boolean(game.IsOvertime || game.HasOvertime);
+    const shouldShowOvertime = hasOvertimeFlag || overtimeScoreExists;
+
+    if (shouldShowOvertime) {
+      quarterData.push({
+        Number: "OT",
+        AwayTeamScore: game.AwayScoreOvertime ?? 0,
+        HomeTeamScore: game.HomeScoreOvertime ?? 0,
+      });
+    }
+
+    return quarterData;
+  }, [game]);
 
   // Check if we're currently loading this specific game
   const isLoadingThisGame = boxScoreRequests.includes(gameId || "");
@@ -72,23 +166,17 @@ export function BoxScoreDetailNFL({
 
   // For NFL, the data structure has a 'Score' field (capital S) instead of 'Game'
   // Also handle case where data is returned directly without wrapper
-  const game =
-    reduxBoxScore?.data?.Score ||
-    reduxBoxScore?.data?.score ||
-    reduxBoxScore?.data?.Game ||
-    reduxBoxScore?.data;
-
   // Show loading state if we're loading or if no game data yet and no error
-  if (isLoadingThisGame || (!game && !boxScoreError)) {
+  if (isLoadingThisGame || scoresLoading || (!game && !scoresError)) {
     return <NFLSkeleton />;
   }
 
   // Show error state if there's an error and no data
-  if (boxScoreError && !game) {
+  if (scoresError && !game) {
     return (
       <ErrorState
         title="Error Loading Game"
-        message={boxScoreError}
+        message={scoresError}
         showBack={false}
         showRetry={false}
         variant="error"
@@ -99,16 +187,16 @@ export function BoxScoreDetailNFL({
   // Get team profiles
   const teamProfilesArray = extractDataFromResponse(teamProfiles);
   const awayTeamProfile = teamProfilesArray.find(
-    (team: any) => team.TeamID === game.AwayTeamID,
+    (team: any) => team.TeamID === game?.AwayTeamID,
   );
   const homeTeamProfile = teamProfilesArray.find(
-    (team: any) => team.TeamID === game.HomeTeamID,
+    (team: any) => team.TeamID === game?.HomeTeamID,
   );
 
   // Get stadium
   const stadiumsArray = extractDataFromResponse(stadiums);
   const stadium = stadiumsArray.find(
-    (s: any) => s.StadiumID === game.StadiumID,
+    (s: any) => s.StadiumID === game?.StadiumID,
   );
 
   // Get standings for each team
@@ -119,6 +207,10 @@ export function BoxScoreDetailNFL({
   const homeTeamStanding = standingsArray.find(
     (team: any) => team.TeamID === homeTeamProfile?.GlobalTeamID,
   );
+
+  if (!game) {
+    return null;
+  }
 
   if (!awayTeamProfile || !homeTeamProfile) {
     return (
@@ -132,8 +224,8 @@ export function BoxScoreDetailNFL({
     );
   }
 
-  // Get quarter data for NFL
-  const quarters = reduxBoxScore?.data?.Quarters || [];
+  const getQuarterLabel = (value: number | string) =>
+    typeof value === "number" ? `Q${value}` : value;
 
   return (
     <HideVerticalScroll bg="primary.25">
@@ -299,7 +391,7 @@ export function BoxScoreDetailNFL({
                           px="1"
                           py="1"
                         >
-                          Q{quarter.Number}
+                          {getQuarterLabel(quarter.Number)}
                         </Table.ColumnHeader>
                       ))}
                       <Table.ColumnHeader

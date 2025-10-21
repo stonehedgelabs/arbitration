@@ -348,7 +348,10 @@ export function UnifiedGameFeed({
     awayTeam,
     homeTeamKey,
     fetchTwitterData,
+    fetchPlayByPlay,
     awayTeamKey,
+    gameId,
+    league,
     dispatch,
   ]);
 

@@ -2,7 +2,12 @@ import { useCallback } from "react";
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
 import { Skeleton } from "../Skeleton";
-import { PostseasonBadge, StatusBadge, QuarterBadge } from "../badge";
+import {
+  CountdownBadge,
+  PostseasonBadge,
+  StatusBadge,
+  QuarterBadge,
+} from "../badge";
 
 import { GameStatus, League } from "../../config";
 
@@ -151,6 +156,7 @@ const getStatusBadge = (
   timeRemaining?: string,
   timeRemainingMinutes?: number,
   timeRemainingSeconds?: number,
+  startTime?: string,
 ) => {
   // For NFL games with quarter information, use QuarterBadge
   if (quarter && status === GameStatus.LIVE) {
@@ -164,8 +170,17 @@ const getStatusBadge = (
       />
     );
   }
-  // For other cases, use StatusBadge
-  return <StatusBadge status={status} size="2xs" />;
+  const isUpcoming =
+    status === GameStatus.UPCOMING || status === GameStatus.SCHEDULED;
+
+  return (
+    <>
+      <StatusBadge status={status} size="2xs" />
+      {isUpcoming && startTime && (
+        <CountdownBadge targetTime={startTime} size="2xs" />
+      )}
+    </>
+  );
 };
 
 // Helper function to format time
@@ -243,7 +258,14 @@ export function NFLScoreCard({
               {formatTime(game.time)}
             </Text>
             <HStack gap="2" align="center">
-              {getStatusBadge(game.status, game.quarter, game.timeRemaining)}
+              {getStatusBadge(
+                game.status,
+                game.quarter,
+                game.timeRemaining,
+                undefined,
+                undefined,
+                game.time,
+              )}
               {game.isPostseason && <PostseasonBadge size={"2xs"} />}
               {/*{game.status === GameStatus.LIVE && <LiveBadge />}*/}
             </HStack>
