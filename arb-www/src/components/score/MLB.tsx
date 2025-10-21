@@ -2,7 +2,12 @@ import { useCallback } from "react";
 import { Box, Card, HStack, Image, Text, VStack } from "@chakra-ui/react";
 
 import { Skeleton } from "../Skeleton";
-import { InningBadge, PostseasonBadge, StatusBadge } from "../badge";
+import {
+  CountdownBadge,
+  InningBadge,
+  PostseasonBadge,
+  StatusBadge,
+} from "../badge";
 
 import { GameStatus, League } from "../../config";
 
@@ -230,7 +235,11 @@ export function MLBScoreCard({
                   size="sm"
                 />
               )}
-              {<StatusBadge status={game.status} size={"2xs"} />}
+              <StatusBadge status={game.status} size={"2xs"} />
+              {(game.status === GameStatus.UPCOMING ||
+                game.status === GameStatus.SCHEDULED) && (
+                <CountdownBadge targetTime={game.time} size="2xs" />
+              )}
               {game.isPostseason && <PostseasonBadge size={"2xs"} />}
             </HStack>
           </HStack>

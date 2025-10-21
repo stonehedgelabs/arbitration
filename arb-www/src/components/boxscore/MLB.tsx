@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Box,
   VStack,
@@ -43,9 +43,11 @@ export function BoxScoreDetailMLB({
   standings,
 }: BoxScoreDetailMLBProps) {
   const {
-    mlbBoxScore,
     teamProfiles,
     stadiums,
+    scores,
+    scoresLoading,
+    scoresError,
     fetchTeamProfiles,
     fetchStadiums,
   } = useArb();
@@ -53,13 +55,39 @@ export function BoxScoreDetailMLB({
   // Get box score data from Redux state (persists across navigation)
   const dispatch = useAppDispatch();
   const boxScoreData = useAppSelector((state) => state.sportsData.boxScoreData);
-  const boxScoreError = useAppSelector(
-    (state) => state.sportsData.boxScoreError,
-  );
   const boxScoreRequests = useAppSelector(
     (state) => state.sportsData.boxScoreRequests,
   );
   const reduxBoxScore = boxScoreData[gameId as keyof typeof boxScoreData];
+
+  const scoresArray = useMemo(() => extractDataFromResponse(scores), [scores]);
+
+  const game = useMemo(() => {
+    if (!gameId) {
+      return undefined;
+    }
+
+    return scoresArray.find((scoreGame: any) => {
+      if (!scoreGame) {
+        return false;
+      }
+
+      const gameID = scoreGame.GameID;
+      const globalGameID = scoreGame.GlobalGameID;
+
+      if (gameID !== undefined && gameID !== null) {
+        if (gameID.toString() === gameId) {
+          return true;
+        }
+      }
+
+      if (globalGameID !== undefined && globalGameID !== null) {
+        return globalGameID.toString() === gameId;
+      }
+
+      return false;
+    });
+  }, [scoresArray, gameId]);
 
   // Check if we're currently loading this specific game
   const isLoadingThisGame = boxScoreRequests.includes(gameId || "");
@@ -78,21 +106,18 @@ export function BoxScoreDetailMLB({
   }, []);
 
   // Show loading state if we're loading or if no game data yet and no error
-  if (
-    isLoadingThisGame ||
-    (!reduxBoxScore?.data?.Game && !mlbBoxScore?.data?.Game && !boxScoreError)
-  ) {
+  if (isLoadingThisGame || scoresLoading || (!game && !scoresError)) {
     return <MLBSkeleton />;
   }
 
   // Show error state if there's an error and no data
-  if (boxScoreError && !reduxBoxScore?.data?.Game && !mlbBoxScore?.data?.Game) {
+  if (scoresError && !game) {
     return (
       <HideVerticalScroll bg="primary.25">
         <Box px="6" py="2">
           <ErrorState
             title="Error Loading Game"
-            message={boxScoreError}
+            message={scoresError}
             showBack={false}
             showRetry={false}
             variant="error"
@@ -102,12 +127,16 @@ export function BoxScoreDetailMLB({
     );
   }
 
-  // Get game data - prioritize Redux data if available
-  const game = reduxBoxScore?.data?.Game || mlbBoxScore?.data?.Game;
-
   if (!game) {
     return null;
   }
+
+  const formattedGameTime = game.DateTime
+    ? new Date(game.DateTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : undefined;
 
   // Get team profiles
   const teamProfilesArray = extractDataFromResponse(teamProfiles);
@@ -167,9 +196,11 @@ export function BoxScoreDetailMLB({
               })()}
             </Text>
             {/* Game Time */}
-            <Text textAlign="center" fontSize="xs" color="text.400">
-              {game.time}
-            </Text>
+            {formattedGameTime && (
+              <Text textAlign="center" fontSize="xs" color="text.400">
+                {formattedGameTime}
+              </Text>
+            )}
           </VStack>
         )}
 

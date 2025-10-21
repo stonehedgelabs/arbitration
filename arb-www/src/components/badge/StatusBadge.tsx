@@ -3,7 +3,7 @@ import { Badge } from "@chakra-ui/react";
 
 // Internal imports - config
 import { GameStatus } from "../../config";
-import { Check, Clock, Wifi } from "lucide-react";
+import { Check, Calendar, Wifi } from "lucide-react";
 import { getStatusDisplayText } from "../../utils.ts";
 
 interface StatusBadgeProps {
@@ -25,7 +25,7 @@ export function StatusBadge({ status, size }: StatusBadgeProps) {
         return { bg: "green.500", color: "white" }; // Green background, white text for final
       case GameStatus.UPCOMING:
       case GameStatus.SCHEDULED:
-        return { bg: "blue.500", color: "text.100" }; // Grey for upcoming
+        return { bg: "blue.500", color: "text.100" }; // Blue for upcoming
       default:
         return { bg: "text.200", color: "text.600" }; // Default grey
     }
@@ -42,7 +42,7 @@ export function StatusBadge({ status, size }: StatusBadgeProps) {
     status === GameStatus.UPCOMING ||
     status === GameStatus.SCHEDULED
   ) {
-    icon = <Clock size={12} />;
+    icon = <Calendar size={12} />;
   } else {
     icon = null;
   }
@@ -56,6 +56,9 @@ export function StatusBadge({ status, size }: StatusBadgeProps) {
       px="2"
       py="1"
       borderRadius="sm"
+      display="inline-flex"
+      alignItems="center"
+      gap="1"
     >
       {statusText}
       {icon}
