@@ -13,7 +13,7 @@ import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - components
-import { QuarterBadge, StatusBadge } from "../badge";
+import { CountdownBadge, QuarterBadge, StatusBadge } from "../badge";
 import { NFLSkeleton } from "./NFLSkeleton";
 import { ErrorState } from "../ErrorStates";
 
@@ -150,6 +150,15 @@ export function BoxScoreDetailNFL({
 
   // Check if we're currently loading this specific game
   const isLoadingThisGame = boxScoreRequests.includes(gameId || "");
+
+  const normalizedGameStatus = mapApiStatusToGameStatus(game?.Status ?? "");
+  const showCountdownBadge = Boolean(
+    game?.DateTime &&
+      (game?.Status === GameStatus.SCHEDULED ||
+        game?.Status === GameStatus.UPCOMING ||
+        normalizedGameStatus === GameStatus.UPCOMING ||
+        normalizedGameStatus === GameStatus.SCHEDULED),
+  );
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -313,7 +322,12 @@ export function BoxScoreDetailNFL({
                   size="2xs"
                 />
               ) : (
-                <StatusBadge status={game.Status} size={"2xs"} />
+                <VStack gap="1" align="center">
+                  <StatusBadge status={game.Status} size={"2xs"} />
+                  {showCountdownBadge && (
+                    <CountdownBadge targetTime={game.DateTime} size="2xs" />
+                  )}
+                </VStack>
               )}
             </VStack>
 

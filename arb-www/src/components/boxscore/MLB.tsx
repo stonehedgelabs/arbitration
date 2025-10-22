@@ -14,7 +14,7 @@ import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - components
 import { Bases } from "../Bases.tsx";
-import { InningBadge } from "../badge";
+import { CountdownBadge, InningBadge, StatusBadge } from "../badge";
 import { MLBSkeleton } from "./MLBSkeleton";
 import { ErrorState } from "../ErrorStates";
 
@@ -130,6 +130,15 @@ export function BoxScoreDetailMLB({
   if (!game) {
     return null;
   }
+
+  const normalizedGameStatus = mapApiStatusToGameStatus(game.Status);
+  const showCountdownBadge = Boolean(
+    game.DateTime &&
+      (game.Status === GameStatus.SCHEDULED ||
+        game.Status === GameStatus.UPCOMING ||
+        normalizedGameStatus === GameStatus.UPCOMING ||
+        normalizedGameStatus === GameStatus.SCHEDULED),
+  );
 
   const formattedGameTime = game.DateTime
     ? new Date(game.DateTime).toLocaleTimeString([], {
@@ -283,8 +292,7 @@ export function BoxScoreDetailMLB({
             {/* Center - Game State */}
             <VStack gap="4" align="center" flex="1">
               {/* Show Inning badge for live games, status text for others */}
-              {mapApiStatusToGameStatus(game.Status) === GameStatus.LIVE &&
-              game.Inning ? (
+              {normalizedGameStatus === GameStatus.LIVE && game.Inning ? (
                 <InningBadge
                   inningNumber={parseInt(game.Inning) || 1}
                   inningHalf={game.InningHalf}
@@ -292,9 +300,12 @@ export function BoxScoreDetailMLB({
                   size="md"
                 />
               ) : (
-                <Text fontSize="sm" fontWeight="semibold" color="text.400">
-                  {getStatusDisplayText(mapApiStatusToGameStatus(game.Status))}
-                </Text>
+                <VStack gap="1" align="center">
+                  <StatusBadge status={normalizedGameStatus} size={"2xs"} />
+                  {showCountdownBadge && (
+                    <CountdownBadge targetTime={game.DateTime} size="2xs" />
+                  )}
+                </VStack>
               )}
               {/* Baseball Diamond */}
               <Box
@@ -445,7 +456,7 @@ export function BoxScoreDetailMLB({
                   Status
                 </Text>
                 <Text fontSize="xs" color="text.400" fontWeight="medium">
-                  {getStatusDisplayText(mapApiStatusToGameStatus(game.Status))}
+                  {getStatusDisplayText(normalizedGameStatus)}
                 </Text>
               </HStack>
             </VStack>

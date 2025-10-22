@@ -13,7 +13,7 @@ import { useAppSelector, useAppDispatch } from "../../store/hooks.ts";
 import { fetchBoxScore } from "../../store/slices/sportsDataSlice.ts";
 
 // Internal imports - components
-import { QuarterBadge, StatusBadge } from "../badge";
+import { CountdownBadge, QuarterBadge, StatusBadge } from "../badge";
 import { NBASkeleton } from "./NBASkeleton.tsx";
 import { ErrorState } from "../ErrorStates";
 
@@ -90,6 +90,15 @@ export function BoxScoreDetailNBA({
 
   // Check if we're currently loading this specific game
   const isLoadingThisGame = boxScoreRequests.includes(gameId || "");
+
+  const normalizedGameStatus = mapApiStatusToGameStatus(game?.Status ?? "");
+  const showCountdownBadge = Boolean(
+    game?.DateTime &&
+      (game?.Status === GameStatus.SCHEDULED ||
+        game?.Status === GameStatus.UPCOMING ||
+        normalizedGameStatus === GameStatus.UPCOMING ||
+        normalizedGameStatus === GameStatus.SCHEDULED),
+  );
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -283,8 +292,7 @@ export function BoxScoreDetailNBA({
             {/* Center - Game State */}
             <VStack gap="4" align="center" flex="1">
               {/* Show Quarter badge for live games, status text for others */}
-              {mapApiStatusToGameStatus(game.Status) === GameStatus.LIVE &&
-              game.Quarter ? (
+              {normalizedGameStatus === GameStatus.LIVE && game.Quarter ? (
                 <QuarterBadge
                   quarter={game.Quarter}
                   timeRemaining={game.TimeRemaining}
@@ -293,7 +301,12 @@ export function BoxScoreDetailNBA({
                   size="2xs"
                 />
               ) : (
-                <StatusBadge status={game.Status} size={"2xs"} />
+                <VStack gap="1" align="center">
+                  <StatusBadge status={game.Status} size={"2xs"} />
+                  {showCountdownBadge && (
+                    <CountdownBadge targetTime={game.DateTime} size="2xs" />
+                  )}
+                </VStack>
               )}
             </VStack>
 
@@ -416,7 +429,7 @@ export function BoxScoreDetailNBA({
                   Status
                 </Text>
                 <Text fontSize="xs" color="text.400" fontWeight="medium">
-                  {getStatusDisplayText(mapApiStatusToGameStatus(game.Status))}
+                  {getStatusDisplayText(normalizedGameStatus)}
                 </Text>
               </HStack>
             </VStack>

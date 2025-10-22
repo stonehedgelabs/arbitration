@@ -28,7 +28,7 @@ export function InvalidDevice() {
             style={{
               width: "6rem",
               height: "6rem",
-              backgroundColor: "var(--chakra-colors-accent-100)",
+              backgroundColor: "var(--chakra-colors-primary-300)",
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
@@ -45,42 +45,42 @@ export function InvalidDevice() {
             <Text fontSize="3xl" fontWeight="bold" color="text.400">
               Mobile Only
             </Text>
-            <Text fontSize="lg" color="text.300" lineHeight="1.6">
+            <Text fontSize="md" color="text.300" lineHeight="1.6">
               Arbitration is designed exclusively for mobile devices to provide
               the best experience.
             </Text>
-            <Text fontSize="md" color="text.100">
+            <Text fontSize="xs" color="text.300">
               Please access this app from your smartphone or tablet.
             </Text>
           </VStack>
 
           {/* Features */}
-          <VStack gap="3" align="start" w="full">
+          <VStack gap="3" align="start" w="90%">
             <Text fontSize="md" fontWeight="semibold" color="text.300">
               Why mobile-only?
             </Text>
             <VStack gap="2" align="start" w="full">
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="accent.100" borderRadius="sm" />
-                <Text fontSize="sm" color="text.200">
+                <Box w="2" h="2" bg="primary.500" borderRadius="sm" />
+                <Text fontSize="sm" color="text.300">
                   Optimized for touch interactions
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="accent.100" borderRadius="sm" />
-                <Text fontSize="sm" color="text.200">
+                <Box w="2" h="2" bg="primary.500" borderRadius="sm" />
+                <Text fontSize="sm" color="text.300">
                   Real-time sports updates on the go
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="accent.100" borderRadius="sm" />
-                <Text fontSize="sm" color="text.200">
+                <Box w="2" h="2" bg="primary.500" borderRadius="sm" />
+                <Text fontSize="sm" color="text.300">
                   Location-based features
                 </Text>
               </HStack>
               <HStack gap="3" align="center">
-                <Box w="2" h="2" bg="accent.100" borderRadius="sm" />
-                <Text fontSize="sm" color="text.200">
+                <Box w="2" h="2" bg="primary.500" borderRadius="sm" />
+                <Text fontSize="sm" color="text.300">
                   Push notifications for live events
                 </Text>
               </HStack>
