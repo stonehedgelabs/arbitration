@@ -39,21 +39,21 @@ export const BackButton = ({
       variant="ghost"
       size={size}
       onClick={onClick}
-      color="text.500"
-      bg="primary.100"
-      backgroundImage="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
-      boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"
-      _hover={{
-        backgroundImage:
-          "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
-        transform: "translateY(-1px)",
-        boxShadow:
-          "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.3)",
-      }}
-      _active={{
-        transform: "translateY(0)",
-        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)",
-      }}
+      color="text.400"
+      bg="primary.300"
+      // backgroundImage="linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.05) 100%)"
+      // boxShadow="inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.25)"
+      // _hover={{
+      //   backgroundImage:
+      //     "linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)",
+      //   transform: "translateY(-1px)",
+      //   boxShadow:
+      //     "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.3)",
+      // }}
+      // _active={{
+      //   transform: "translateY(0)",
+      //   boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)",
+      // }}
       transition="all 0.2s ease"
     >
       <ArrowLeft size={20} />
