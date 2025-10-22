@@ -211,6 +211,7 @@ export const mapApiStatusToGameStatus = (apiStatus: string): GameStatus => {
       return GameStatus.LIVE;
     case 'completed':
     case 'final':
+    case 'f/ot':
       return GameStatus.FINAL;
     case 'scheduled':
     case 'upcoming':
