@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   Box,
   VStack,
@@ -25,6 +25,7 @@ import {
   orEmpty,
   extractDataFromResponse,
   getStatusDisplayText,
+  getCurrentLocalDate,
 } from "../../utils.ts";
 
 // Internal imports - config
@@ -49,6 +50,7 @@ export function BoxScoreDetailNBA({
     scoresError,
     fetchTeamProfiles,
     fetchStadiums,
+    fetchScores,
   } = useArb();
 
   // Get box score data from Redux state (persists across navigation)
@@ -57,6 +59,7 @@ export function BoxScoreDetailNBA({
   const boxScoreRequests = useAppSelector(
     (state) => state.sportsData.boxScoreRequests,
   );
+  const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
   const reduxBoxScore = boxScoreData[gameId as keyof typeof boxScoreData];
 
   const scoresArray = useMemo(() => extractDataFromResponse(scores), [scores]);
@@ -88,6 +91,12 @@ export function BoxScoreDetailNBA({
     });
   }, [scoresArray, gameId]);
 
+  const hasRequestedScores = useRef(false);
+
+  useEffect(() => {
+    hasRequestedScores.current = false;
+  }, [selectedDate]);
+
   // Check if we're currently loading this specific game
   const isLoadingThisGame = boxScoreRequests.includes(gameId || "");
 
@@ -112,6 +121,26 @@ export function BoxScoreDetailNBA({
       dispatch(fetchBoxScore({ league: League.NBA, gameId }));
     }
   }, []);
+
+  // Ensure scores are available when the page is refreshed or navigated to directly
+  useEffect(() => {
+    if (!gameId) {
+      return;
+    }
+
+    if (game) {
+      hasRequestedScores.current = false;
+      return;
+    }
+
+    if (scoresLoading || hasRequestedScores.current) {
+      return;
+    }
+
+    hasRequestedScores.current = true;
+    const dateToUse = selectedDate || getCurrentLocalDate();
+    fetchScores(League.NBA, dateToUse, false);
+  }, [game, gameId, fetchScores, scoresLoading, selectedDate]);
 
   // Show loading state if we're loading or if no game data yet and no error
   if (isLoadingThisGame || scoresLoading || (!game && !scoresError)) {

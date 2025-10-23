@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   Box,
   VStack,
@@ -25,6 +25,7 @@ import {
   orEmpty,
   extractDataFromResponse,
   getStatusDisplayText,
+  getCurrentLocalDate,
 } from "../../utils.ts";
 
 // Internal imports - config
@@ -49,6 +50,7 @@ export function BoxScoreDetailNFL({
     scoresError,
     fetchTeamProfiles,
     fetchStadiums,
+    fetchScores,
   } = useArb();
 
   // Get box score data from Redux state (persists across navigation)
@@ -57,6 +59,7 @@ export function BoxScoreDetailNFL({
   const boxScoreRequests = useAppSelector(
     (state) => state.sportsData.boxScoreRequests,
   );
+  const selectedDate = useAppSelector((state) => state.sportsData.selectedDate);
   const reduxBoxScore = boxScoreData[gameId as keyof typeof boxScoreData];
 
   const scoresArray = useMemo(() => extractDataFromResponse(scores), [scores]);
@@ -148,6 +151,12 @@ export function BoxScoreDetailNFL({
     return quarterData;
   }, [game]);
 
+  const hasRequestedScores = useRef(false);
+
+  useEffect(() => {
+    hasRequestedScores.current = false;
+  }, [selectedDate]);
+
   // Check if we're currently loading this specific game
   const isLoadingThisGame = boxScoreRequests.includes(gameId || "");
 
@@ -172,6 +181,26 @@ export function BoxScoreDetailNFL({
       dispatch(fetchBoxScore({ league: League.NFL, gameId }));
     }
   }, [dispatch]);
+
+  // Ensure scores are available when the page is refreshed or navigated to directly
+  useEffect(() => {
+    if (!gameId) {
+      return;
+    }
+
+    if (game) {
+      hasRequestedScores.current = false;
+      return;
+    }
+
+    if (scoresLoading || hasRequestedScores.current) {
+      return;
+    }
+
+    hasRequestedScores.current = true;
+    const dateToUse = selectedDate || getCurrentLocalDate();
+    fetchScores(League.NFL, dateToUse, false);
+  }, [game, gameId, fetchScores, scoresLoading, selectedDate]);
 
   // For NFL, the data structure has a 'Score' field (capital S) instead of 'Game'
   // Also handle case where data is returned directly without wrapper
