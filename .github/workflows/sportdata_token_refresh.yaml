@@ -1,13 +1,18 @@
 name: Refresh Sportdata Token
 
 on:
-  schedule:
-    - cron: '0 */12 * * *'  # every 12 hours UTC
+#  schedule:
+#    - cron: '0 */12 * * *'  # every 12 hours UTC
   workflow_dispatch:
 
 jobs:
-  sync-env:
+  refresh_dotenv:
     runs-on: ubuntu-latest
+
+    environment: ci
+
+    env:
+      AWS_DEFAULT_REGION: us-east-2
 
     steps:
       - name: Checkout repository
@@ -18,7 +23,7 @@ jobs:
         run: |
           echo "Fetching .env from Secrets Manager..."
           aws secretsmanager get-secret-value \
-            --region "us-east-2" \
+            --region "$AWS_DEFAULT_REGION" \
             --secret-id ".env" \
             --query SecretString \
             --output text > .env
@@ -44,7 +49,7 @@ jobs:
           echo "Uploading updated .env to Secrets Manager..."
           UPDATED_SECRET=$(cat .env | jq -Rs .)
           aws secretsmanager put-secret-value \
-            --region "us-east-2" \
+            --region "$AWS_DEFAULT_REGION" \
             --secret-id ".env" \
             --secret-string "$UPDATED_SECRET"
           echo "Updated successfully."
