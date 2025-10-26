@@ -9,6 +9,7 @@ export interface Team {
   city?: string;
   subreddit?: string;
   abbreviation?: string;
+  sportRadarIOTeamId?: number;
 }
 
 // Helper function to generate team ID in format: league--city-team
@@ -29,6 +30,7 @@ export const allTeams: Team[] = [
     city: "Arizona",
     subreddit: "r/AZCardinals",
     abbreviation: "ARI",
+    sportRadarIOTeamId: 1,
   },
   {
     id: generateTeamId("NFL", "Atlanta", "falcons"),
@@ -38,6 +40,7 @@ export const allTeams: Team[] = [
     city: "Atlanta",
     subreddit: "r/falcons",
     abbreviation: "ATL",
+    sportRadarIOTeamId: 2,
   },
   {
     id: generateTeamId("NFL", "Baltimore", "ravens"),
@@ -47,6 +50,7 @@ export const allTeams: Team[] = [
     city: "Baltimore",
     subreddit: "r/ravens",
     abbreviation: "BAL",
+    sportRadarIOTeamId: 3,
   },
   {
     id: generateTeamId("NFL", "Cincinnati", "bengals"),
@@ -56,6 +60,7 @@ export const allTeams: Team[] = [
     city: "Cincinnati",
     subreddit: "r/bengals",
     abbreviation: "CIN",
+    sportRadarIOTeamId: 7,
   },
   {
     id: generateTeamId("NFL", "Buffalo", "bills"),
@@ -65,6 +70,7 @@ export const allTeams: Team[] = [
     city: "Buffalo",
     subreddit: "r/buffalobills",
     abbreviation: "BUF",
+    sportRadarIOTeamId: 4,
   },
   {
     id: generateTeamId("NFL", "Carolina", "panthers"),
@@ -74,6 +80,7 @@ export const allTeams: Team[] = [
     city: "Carolina",
     subreddit: "r/panthers",
     abbreviation: "CAR",
+    sportRadarIOTeamId: 5,
   },
   {
     id: generateTeamId("NFL", "Chicago", "bears"),
@@ -83,6 +90,7 @@ export const allTeams: Team[] = [
     city: "Chicago",
     subreddit: "r/chibears",
     abbreviation: "CHI",
+    sportRadarIOTeamId: 6,
   },
   {
     id: generateTeamId("NFL", "Cincinnati", "bengals"),
@@ -92,6 +100,7 @@ export const allTeams: Team[] = [
     city: "Cincinnati",
     subreddit: "r/bengals",
     abbreviation: "CIN",
+    sportRadarIOTeamId: 7,
   },
   {
     id: generateTeamId("NFL", "Cleveland", "browns"),
@@ -101,6 +110,7 @@ export const allTeams: Team[] = [
     city: "Cleveland",
     subreddit: "r/browns",
     abbreviation: "CLE",
+    sportRadarIOTeamId: 8,
   },
   {
     id: generateTeamId("NFL", "Dallas", "cowboys"),
@@ -110,6 +120,7 @@ export const allTeams: Team[] = [
     city: "Dallas",
     subreddit: "r/cowboys",
     abbreviation: "DAL",
+    sportRadarIOTeamId: 9,
   },
   {
     id: generateTeamId("NFL", "Denver", "broncos"),
@@ -119,6 +130,7 @@ export const allTeams: Team[] = [
     city: "Denver",
     subreddit: "r/denverbroncos",
     abbreviation: "DEN",
+    sportRadarIOTeamId: 10,
   },
   {
     id: generateTeamId("NFL", "Detroit", "lions"),
@@ -128,6 +140,7 @@ export const allTeams: Team[] = [
     city: "Detroit",
     subreddit: "r/detroitlions",
     abbreviation: "DET",
+    sportRadarIOTeamId: 11,
   },
   {
     id: generateTeamId("NFL", "Green Bay", "packers"),
@@ -137,6 +150,7 @@ export const allTeams: Team[] = [
     city: "Green Bay",
     subreddit: "r/GreenBayPackers",
     abbreviation: "GB",
+    sportRadarIOTeamId: 12,
   },
   {
     id: generateTeamId("NFL", "Houston", "texans"),
@@ -146,6 +160,7 @@ export const allTeams: Team[] = [
     city: "Houston",
     subreddit: "r/texans",
     abbreviation: "HOU",
+    sportRadarIOTeamId: 13,
   },
   {
     id: generateTeamId("NFL", "Indianapolis", "colts"),
@@ -155,6 +170,7 @@ export const allTeams: Team[] = [
     city: "Indianapolis",
     subreddit: "r/colts",
     abbreviation: "IND",
+    sportRadarIOTeamId: 14,
   },
   {
     id: generateTeamId("NFL", "Jacksonville", "jaguars"),
@@ -164,6 +180,7 @@ export const allTeams: Team[] = [
     city: "Jacksonville",
     subreddit: "r/jaguars",
     abbreviation: "JAX",
+    sportRadarIOTeamId: 15,
   },
   {
     id: generateTeamId("NFL", "Kansas City", "chiefs"),
@@ -173,6 +190,7 @@ export const allTeams: Team[] = [
     city: "Kansas City",
     subreddit: "r/kansascitychiefs",
     abbreviation: "KC",
+    sportRadarIOTeamId: 16,
   },
   {
     id: generateTeamId("NFL", "Las Vegas", "raiders"),
@@ -182,6 +200,7 @@ export const allTeams: Team[] = [
     city: "Las Vegas",
     subreddit: "r/raiders",
     abbreviation: "LV",
+    sportRadarIOTeamId: 25,
   },
   {
     id: generateTeamId("NFL", "Los Angeles", "chargers"),
@@ -191,6 +210,7 @@ export const allTeams: Team[] = [
     city: "Los Angeles",
     subreddit: "r/chargers",
     abbreviation: "LAC",
+    sportRadarIOTeamId: 29,
   },
   {
     id: generateTeamId("NFL", "Los Angeles", "rams"),
@@ -200,6 +220,7 @@ export const allTeams: Team[] = [
     city: "Los Angeles",
     subreddit: "r/LosAngelesRams",
     abbreviation: "LAR",
+    sportRadarIOTeamId: 32,
   },
   {
     id: generateTeamId("NFL", "Miami", "dolphins"),
@@ -209,6 +230,7 @@ export const allTeams: Team[] = [
     city: "Miami",
     subreddit: "r/miamidolphins",
     abbreviation: "MIA",
+    sportRadarIOTeamId: 19,
   },
   {
     id: generateTeamId("NFL", "Minneapolis", "vikings"),
@@ -218,6 +240,7 @@ export const allTeams: Team[] = [
     city: "Minneapolis",
     subreddit: "r/minnesotavikings",
     abbreviation: "MIN",
+    sportRadarIOTeamId: 20,
   },
   {
     id: generateTeamId("NFL", "New England", "patriots"),
@@ -227,6 +250,7 @@ export const allTeams: Team[] = [
     city: "New England",
     subreddit: "r/patriots",
     abbreviation: "NE",
+    sportRadarIOTeamId: 21,
   },
   {
     id: generateTeamId("NFL", "New Orleans", "saints"),
@@ -236,6 +260,7 @@ export const allTeams: Team[] = [
     city: "New Orleans",
     subreddit: "r/saints",
     abbreviation: "NO",
+    sportRadarIOTeamId: 22,
   },
   {
     id: generateTeamId("NFL", "New York", "giants"),
@@ -245,6 +270,7 @@ export const allTeams: Team[] = [
     city: "New York",
     subreddit: "r/nygiants",
     abbreviation: "NYG",
+    sportRadarIOTeamId: 23,
   },
   {
     id: generateTeamId("NFL", "New York", "jets"),
@@ -254,6 +280,7 @@ export const allTeams: Team[] = [
     city: "New York",
     subreddit: "r/nyjets",
     abbreviation: "NYJ",
+    sportRadarIOTeamId: 24,
   },
   {
     id: generateTeamId("NFL", "Philadelphia", "eagles"),
@@ -263,6 +290,7 @@ export const allTeams: Team[] = [
     city: "Philadelphia",
     subreddit: "r/eagles",
     abbreviation: "PHI",
+    sportRadarIOTeamId: 26,
   },
   {
     id: generateTeamId("NFL", "Pittsburgh", "steelers"),
@@ -272,6 +300,7 @@ export const allTeams: Team[] = [
     city: "Pittsburgh",
     subreddit: "r/steelers",
     abbreviation: "PIT",
+    sportRadarIOTeamId: 28,
   },
   {
     id: generateTeamId("NFL", "San Francisco", "49ers"),
@@ -281,6 +310,7 @@ export const allTeams: Team[] = [
     city: "San Francisco",
     subreddit: "r/49ers",
     abbreviation: "SF",
+    sportRadarIOTeamId: 31,
   },
   {
     id: generateTeamId("NFL", "Seattle", "seahawks"),
@@ -290,6 +320,7 @@ export const allTeams: Team[] = [
     city: "Seattle",
     subreddit: "r/seahawks",
     abbreviation: "SEA",
+    sportRadarIOTeamId: 30,
   },
   {
     id: generateTeamId("NFL", "Tampa Bay", "buccaneers"),
@@ -299,6 +330,7 @@ export const allTeams: Team[] = [
     city: "Tampa Bay",
     subreddit: "r/buccaneers",
     abbreviation: "TB",
+    sportRadarIOTeamId: 33,
   },
   {
     id: generateTeamId("NFL", "Nashville", "titans"),
@@ -308,6 +340,7 @@ export const allTeams: Team[] = [
     city: "Nashville",
     subreddit: "r/tennesseetitans",
     abbreviation: "TEN",
+    sportRadarIOTeamId: 34,
   },
   {
     id: generateTeamId("NFL", "Washington", "commanders"),
@@ -317,6 +350,7 @@ export const allTeams: Team[] = [
     city: "Washington",
     subreddit: "r/commanders",
     abbreviation: "WAS",
+    sportRadarIOTeamId: 35,
   },
 
   // NBA Teams (30 teams)

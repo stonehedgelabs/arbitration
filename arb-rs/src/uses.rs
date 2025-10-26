@@ -25,7 +25,9 @@ use crate::{
     },
     schema::{
         data_type::DataType,
-        league_response::{LeagueData, LeagueResponse, MLBData, NBAData, NFLData},
+        league_response::{
+            LeagueData, LeagueResponse, MLBData, NBAData, NFLData, NHLData,
+        },
         mlb::{
             game_by_date::{GameByDate, GameByDateResponse},
             odds::{GameOdds, OddsByDateResponse},
@@ -284,11 +286,10 @@ pub async fn health_check(
 }
 
 pub async fn team_profile(
-    State(use_case_state): State<UseCaseState>,
     Query(params): Query<TeamProfileQuery>,
-) -> Result<Json<TeamProfileResponse>> {
-    let league_str = params.league.to_lowercase();
-    let league: League = league_str.parse().map_err(|_| {
+    State(use_case_state): State<UseCaseState>,
+) -> Result<Json<LeagueResponse>> {
+    let league = params.league.parse::<League>().map_err(|_| {
         tracing::error!("Invalid league: {}", params.league);
         StatusCode::BAD_REQUEST
     })?;
@@ -299,66 +300,115 @@ pub async fn team_profile(
     let cache_key = CacheKey::team_profile(&league);
     let use_cache = params.cache.unwrap_or(true);
 
-    let data = {
+    if use_cache {
         let mut cache = use_case_state.cache.lock().await;
-        if use_cache {
-            if let Some(cached_data) = cache.get(&cache_key).await.map_err(|e| {
-                tracing::error!("Failed to get team profile data from cache: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })? {
-                tracing::debug!(
-                    "Returning cached team profile data for league: {}",
-                    league
-                );
-                let json_data: serde_json::Value = serde_json::from_str(&cached_data)
-                    .map_err(|e| {
-                        tracing::error!(
-                            "Failed to parse cached team profile data: {}",
-                            e
-                        );
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-                return Ok(Json(TeamProfileResponse {
-                    league: league.to_string(),
-                    data: json_data,
-                }));
-            }
-        } else {
-            tracing::info!("Cache bypass requested - fetching fresh data from API");
+        if let Some(cached_data) = cache.get(&cache_key).await? {
+            tracing::debug!("Returning cached team profiles data for league: {}", league);
+            let response: LeagueResponse =
+                serde_json::from_str(&cached_data).map_err(|e| {
+                    tracing::error!("Failed to deserialize cached data: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            return Ok(Json(response));
         }
+    } else {
+        tracing::info!("Cache bypass requested - fetching fresh data from API");
+    }
 
-        tracing::info!("Fetching team profile data from API: {}", api_url);
-        let fetched_data =
-            fetch_team_data_from_api(&api_url, &league, &use_case_state.config)
-                .await
-                .map_err(|e| {
-                    tracing::error!("Failed to fetch team profile data: {}", e);
+    let raw_data =
+        fetch_team_data_from_api(&api_url, &league, &use_case_state.config).await?;
+
+    let response = match league {
+        League::Mlb => {
+            let teams: crate::schema::mlb::teams::TeamProfiles =
+                serde_json::from_str(&raw_data).map_err(|e| {
+                    tracing::error!("Failed to parse MLB team profiles JSON: {}", e);
                     StatusCode::INTERNAL_SERVER_ERROR
                 })?;
 
+            let teams_count = teams.len();
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::TeamProfiles,
+                data: LeagueData::Mlb(Box::new(MLBData::TeamProfiles(teams))),
+                filtered_count: teams_count,
+                total_count: teams_count,
+            }
+        }
+        League::Nba => {
+            let teams: Vec<crate::schema::nba::teams::NBATeamProfile> =
+                serde_json::from_str(&raw_data).map_err(|e| {
+                    tracing::error!("Failed to parse NBA team profiles JSON: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            let teams_count = teams.len();
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::TeamProfiles,
+                data: LeagueData::Nba(Box::new(NBAData::TeamProfiles(teams))),
+                filtered_count: teams_count,
+                total_count: teams_count,
+            }
+        }
+        League::Nfl => {
+            let teams: Vec<crate::schema::nfl::teams::NFLTeamProfile> =
+                serde_json::from_str(&raw_data).map_err(|e| {
+                    tracing::error!("Failed to parse NFL team profiles JSON: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            let teams_count = teams.len();
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::TeamProfiles,
+                data: LeagueData::Nfl(Box::new(NFLData::TeamProfiles(teams))),
+                filtered_count: teams_count,
+                total_count: teams_count,
+            }
+        }
+        League::Nhl => {
+            let teams: Vec<crate::schema::nhl::teams::NHLTeamProfile> =
+                serde_json::from_str(&raw_data).map_err(|e| {
+                    tracing::error!("Failed to parse NHL team profiles JSON: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            let teams_count = teams.len();
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::TeamProfiles,
+                data: LeagueData::Nhl(Box::new(NHLData::TeamProfiles(teams))),
+                filtered_count: teams_count,
+                total_count: teams_count,
+            }
+        }
+        _ => {
+            tracing::error!("Unsupported league for team profiles: {}", league);
+            return Err(StatusCode::BAD_REQUEST.into());
+        }
+    };
+
+    {
+        let mut cache = use_case_state.cache.lock().await;
+        let serialized = serde_json::to_string(&response).map_err(|e| {
+            tracing::error!("Failed to serialize response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
         cache
             .setx(
                 &cache_key,
-                &fetched_data,
+                &serialized,
                 use_case_state.config.cache.ttl.team_profiles,
             )
-            .await
-            .map_err(|e| {
-                tracing::error!("Failed to cache team profile data: {}", e);
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-        fetched_data
-    };
+            .await?;
+    }
 
-    let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
-        tracing::error!("Failed to parse JSON data: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-
-    Ok(Json(TeamProfileResponse {
-        league: league.to_string(),
-        data: json_data,
-    }))
+    tracing::info!(
+        "Successfully fetched and cached team profiles for league: {}",
+        league
+    );
+    Ok(Json(response))
 }
 
 async fn fetch_team_data_from_api(
@@ -544,7 +594,11 @@ async fn handle_schedule_request(
         StatusCode::BAD_REQUEST
     })?;
 
-    if league != League::Mlb && league != League::Nfl && league != League::Nba {
+    if league != League::Mlb
+        && league != League::Nfl
+        && league != League::Nba
+        && league != League::Nhl
+    {
         tracing::error!("Schedule not yet supported for league: {}", league);
         return Err(StatusCode::BAD_REQUEST.into());
     }
@@ -719,6 +773,23 @@ async fn handle_schedule_request(
                 data_type: DataType::Schedule,
                 data: crate::schema::league_response::LeagueData::Nba(Box::new(
                     crate::schema::league_response::NBAData::Schedule(nba_games),
+                )),
+                filtered_count,
+                total_count,
+            }
+        }
+        League::Nhl => {
+            let nhl_games: Vec<crate::schema::nhl::game_by_date::NHLGameByDate> =
+                serde_json::from_value(serde_json::Value::Array(filtered_games))
+                    .map_err(|e| {
+                        tracing::error!("Failed to parse NHL schedule data: {}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::GameByDate,
+                data: crate::schema::league_response::LeagueData::Nhl(Box::new(
+                    crate::schema::league_response::NHLData::GameByDate(nhl_games),
                 )),
                 filtered_count,
                 total_count,
@@ -2289,6 +2360,30 @@ pub async fn handle_game_by_date_request(
                 total_count: 1,
             }
         }
+        League::Nhl => {
+            let nhl_data = if let Some(Some(ref data)) = game_data {
+                match serde_json::from_value::<
+                    crate::schema::nhl::game_by_date::NHLGameByDate,
+                >(data.clone())
+                {
+                    Ok(game) => vec![game],
+                    Err(e) => {
+                        tracing::error!("Failed to parse NHL game data: {}", e);
+                        vec![]
+                    }
+                }
+            } else {
+                vec![]
+            };
+
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::GameByDate,
+                data: LeagueData::Nhl(Box::new(NHLData::GameByDate(nhl_data))),
+                filtered_count: if game_data.is_some() { 1 } else { 0 },
+                total_count: 1,
+            }
+        }
         _ => {
             tracing::error!("Unsupported league for game by date: {}", league);
             return Err(StatusCode::BAD_REQUEST.into());
@@ -2580,6 +2675,22 @@ pub async fn handle_stadiums_request(
                 league: league.to_string(),
                 data_type: DataType::Stadiums,
                 data: LeagueData::Nfl(Box::new(NFLData::Stadiums(stadiums))),
+                filtered_count: stadiums_count,
+                total_count: stadiums_count,
+            }
+        }
+        League::Nhl => {
+            let stadiums: Vec<crate::schema::nhl::stadiums::NHLStadium> =
+                serde_json::from_str(&raw_data).map_err(|e| {
+                    tracing::error!("Failed to parse NHL stadiums JSON: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+
+            let stadiums_count = stadiums.len();
+            LeagueResponse {
+                league: league.to_string(),
+                data_type: DataType::Stadiums,
+                data: LeagueData::Nhl(Box::new(NHLData::Stadiums(stadiums))),
                 filtered_count: stadiums_count,
                 total_count: stadiums_count,
             }

@@ -23,6 +23,9 @@ use crate::schema::{
         standings::NFLStandings,
         teams::NFLTeamProfile,
     },
+    nhl::game_by_date::NHLGameByDate,
+    nhl::stadiums::NHLStadium,
+    nhl::teams::NHLTeamProfile,
 };
 
 /// Generic response wrapper for different leagues
@@ -42,6 +45,7 @@ pub enum LeagueData {
     Mlb(Box<MLBData>),
     Nba(Box<NBAData>),
     Nfl(Box<NFLData>),
+    Nhl(Box<NHLData>),
 }
 
 /// MLB-specific data types
@@ -91,4 +95,13 @@ pub enum NFLData {
     Standings(NFLStandings),
     BoxScore(Vec<NFLBoxScoreGame>),
     BoxScoreByScoreIDV3(Box<NFLBoxScoreByScoreIDV3Response>),
+}
+
+/// NHL-specific data types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum NHLData {
+    Stadiums(Vec<NHLStadium>),
+    TeamProfiles(Vec<NHLTeamProfile>),
+    GameByDate(Vec<NHLGameByDate>),
 }

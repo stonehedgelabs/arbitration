@@ -774,7 +774,7 @@ export function UnifiedGameFeed({
                                 color="text.500"
                                 fontWeight="medium"
                               >
-                                W:
+                                Walk:
                               </Text>
                               <Text
                                 fontSize="2xs"

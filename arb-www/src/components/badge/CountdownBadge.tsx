@@ -73,6 +73,10 @@ export function CountdownBadge({
     return null;
   }
 
+  if (formatted === "00:00:00") {
+    return null;
+  }
+
   return (
     <Badge
       variant="solid"
