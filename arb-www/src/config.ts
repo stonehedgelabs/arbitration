@@ -60,7 +60,7 @@ export const API_CONFIG = {
     schedule: '/api/v1/schedule',
     headshots: '/api/v1/headshots',
     playByPlay: '/api/v1/play-by-play',
-    teamProfile: '/api/team-profile',
+    teamProfile: '/api/v1/team-profile',
     standings: '/api/v1/standings',
     health: '/health',
   },

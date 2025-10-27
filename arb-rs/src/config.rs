@@ -110,6 +110,11 @@ pub struct ApiConfig {
     /// SportsData.io API key (loaded from environment)
     #[serde(default)]
     pub sportsdata_api_key: String,
+    /// Rolling Insights API base URL
+    pub rolling_insights_base_url: String,
+    /// Rolling Insights API token (loaded from environment)
+    #[serde(default)]
+    pub rsc_token: String,
     /// Twitter API base URL
     pub twitter_base_url: String,
     /// Request timeout in seconds
@@ -265,6 +270,8 @@ impl Default for ArbConfig {
             api: ApiConfig {
                 sportsdata_base_url: "https://api.sportsdata.io/v3".to_string(),
                 sportsdata_api_key: "".to_string(),
+                rolling_insights_base_url: "http://rest.datafeeds.rolling-insights.com/api/v1/".to_string(),
+                rsc_token: "".to_string(),
                 twitter_base_url: "https://api.twitterapi.io".to_string(),
                 request_timeout: 30,
                 jwt_secret: "".to_string(),
@@ -428,6 +435,10 @@ impl ArbConfig {
             config.api.sportsdata_api_key = api_key;
         }
 
+        if let Ok(rsc_token) = std::env::var("RSC_TOKEN") {
+            config.api.rsc_token = rsc_token;
+        }
+
         if let Ok(client_id) = std::env::var("REDDIT_CLIENT_ID") {
             config.api.reddit_oauth.client_id = client_id;
         }
@@ -537,9 +548,11 @@ impl fmt::Display for SeasonsConfig {
 
 impl fmt::Display for ApiConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ApiConfig {{ sportsdata_base_url: \"{}\", sportsdata_api_key: \"{}\", twitter_base_url: \"{}\", request_timeout: {}, jwt_secret: \"{}\", google_oauth: {}, apple_oauth: {}, reddit_oauth: {} }}", 
+        write!(f, "ApiConfig {{ sportsdata_base_url: \"{}\", sportsdata_api_key: \"{}\", rolling_insights_base_url: \"{}\", rsc_token: \"{}\", twitter_base_url: \"{}\", request_timeout: {}, jwt_secret: \"{}\", google_oauth: {}, apple_oauth: {}, reddit_oauth: {} }}", 
                self.sportsdata_base_url,
                mask_secret(&self.sportsdata_api_key),
+               self.rolling_insights_base_url,
+               mask_secret(&self.rsc_token),
                self.twitter_base_url,
                self.request_timeout,
                mask_secret(&self.jwt_secret),

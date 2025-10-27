@@ -51,7 +51,7 @@ async fn setup_test_server() -> TestServer {
                     }),
                 )
                 .route(
-                    "/api/team-profile",
+                    "/api/v1/team-profile",
                     get(|Query(params): Query<HashMap<String, String>>| async move {
                         if let Some(league) = params.get("league") {
                             if league == "invalid" {
@@ -172,7 +172,7 @@ async fn test_team_profile_mlb() {
     let server = setup_test_server().await;
 
     let response = server
-        .get("/api/team-profile")
+        .get("/api/v1/team-profile")
         .add_query_param("league", "mlb")
         .await;
 
@@ -209,7 +209,7 @@ async fn test_team_profile_invalid_league() {
     let server = setup_test_server().await;
 
     let response = server
-        .get("/api/team-profile")
+        .get("/api/v1/team-profile")
         .add_query_param("league", "invalid")
         .await;
 

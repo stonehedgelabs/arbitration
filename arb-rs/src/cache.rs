@@ -1,8 +1,29 @@
 use redis::{aio::MultiplexedConnection, Client};
+use std::fmt;
 
 use crate::config::CacheConfig;
 use crate::error::Result;
-pub use crate::uses::CacheKey;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Provider {
+    Sportradar,
+    RollingInsights,
+}
+
+impl Provider {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Provider::Sportradar => "sportradar",
+            Provider::RollingInsights => "rolling_insights",
+        }
+    }
+}
+
+impl fmt::Display for Provider {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
 
 #[derive(Clone)]
 pub struct Cache {
@@ -151,5 +172,140 @@ impl Cache {
             .query_async(&mut self.connection)
             .await?;
         Ok(size)
+    }
+}
+
+/// Trait for types that can be used as cache keys
+pub trait CacheKeyType: fmt::Display + Copy {
+    fn as_str(&self) -> &'static str;
+}
+
+/// A generic cache key that works with any DataType and League
+#[derive(Debug, Clone)]
+pub struct CacheKey(pub String);
+
+impl From<String> for CacheKey {
+    fn from(value: String) -> Self {
+        CacheKey(value)
+    }
+}
+
+impl From<&str> for CacheKey {
+    fn from(value: &str) -> Self {
+        CacheKey(value.to_string())
+    }
+}
+
+impl From<CacheKey> for String {
+    fn from(val: CacheKey) -> Self {
+        val.0
+    }
+}
+
+impl AsRef<str> for CacheKey {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl CacheKey {
+    /// Create a new cache key from a string
+    pub fn new(value: impl Into<String>) -> Self {
+        CacheKey(value.into())
+    }
+
+    /// Create a provider-prefixed cache key
+    pub fn with_provider(provider: Provider, key: impl AsRef<str>) -> Self {
+        CacheKey::new(format!("{}:{}", provider.as_str(), key.as_ref()))
+    }
+
+    /// Generate a cache key for team profile data
+    pub fn team_profile(provider: Provider, league: impl fmt::Display) -> Self {
+        CacheKey::with_provider(provider, format!("team_profile:{}", league))
+    }
+
+    /// Generate a cache key for any data type
+    pub fn data_type<D: CacheKeyType>(
+        provider: Provider,
+        data_type: &D,
+        league: impl fmt::Display,
+    ) -> Self {
+        CacheKey::with_provider(provider, format!("{}:{}", data_type.as_str(), league))
+    }
+
+    /// Generate a cache key for play-by-play data
+    pub fn play_by_play(
+        provider: Provider,
+        league: impl fmt::Display,
+        game_id: &str,
+    ) -> Self {
+        CacheKey::with_provider(provider, format!("play_by_play:{}:{}", league, game_id))
+    }
+
+    /// Generate a cache key for play-by-play with delta tracking
+    pub fn play_by_play_delta(
+        provider: Provider,
+        league: impl fmt::Display,
+        game_id: &str,
+        last_timestamp: &str,
+    ) -> Self {
+        CacheKey::with_provider(
+            provider,
+            format!(
+                "play_by_play__delta:{}:{}:{}",
+                league, game_id, last_timestamp
+            ),
+        )
+    }
+
+    /// Generate a cache key for box score data
+    pub fn box_score(
+        provider: Provider,
+        league: impl fmt::Display,
+        game_id: &str,
+    ) -> Self {
+        CacheKey::with_provider(provider, format!("box_score:{}:{}", league, game_id))
+    }
+
+    /// Generate a cache key for standings data
+    pub fn standings(provider: Provider, league: impl fmt::Display, season: i32) -> Self {
+        CacheKey::with_provider(provider, format!("standings:{}:{}", league, season))
+    }
+
+    /// Generate a cache key for stadiums data
+    pub fn stadiums(provider: Provider, league: impl fmt::Display) -> Self {
+        CacheKey::with_provider(provider, format!("stadiums:{}", league))
+    }
+
+    /// Generate a cache key for scores data
+    pub fn scores(provider: Provider, league: impl fmt::Display, date: &str) -> Self {
+        CacheKey::with_provider(provider, format!("scores:{}:{}", league, date))
+    }
+
+    /// Generate a cache key for odds by date data
+    pub fn odds_by_date(
+        provider: Provider,
+        league: impl fmt::Display,
+        date: &str,
+    ) -> Self {
+        CacheKey::with_provider(provider, format!("odds_by_date:{}:{}", league, date))
+    }
+
+    /// Generate a cache key for user data
+    pub fn user(provider: Provider, email: &str) -> Self {
+        CacheKey::with_provider(provider, format!("user:{}", email))
+    }
+
+    /// Generate a cache key for game by date data
+    pub fn game_by_date(
+        provider: Provider,
+        league: impl fmt::Display,
+        date: &str,
+        game_id: &str,
+    ) -> Self {
+        CacheKey::with_provider(
+            provider,
+            format!("game_by_date:{}:{}:{}", league, date, game_id),
+        )
     }
 }

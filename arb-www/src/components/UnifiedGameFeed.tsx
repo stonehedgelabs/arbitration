@@ -34,8 +34,8 @@ import {
 import useArb from "../services/Arb";
 import { InningBadge } from "./badge";
 import { NFLPlay } from "../schema";
-import { NBAPlay } from "../schema/nba";
-import { MLBPlay } from "../schema/mlb/playByPlay.ts";
+import { NBAPlay } from "../schema/sportradar/nba/playByPlay";
+import { MLBPlay } from "../schema/sportradar/mlb/playByPlay";
 
 const RedditIcon = ({ size = 12 }: { size?: number }) => (
   <svg

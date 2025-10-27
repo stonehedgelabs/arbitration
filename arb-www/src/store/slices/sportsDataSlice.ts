@@ -235,6 +235,83 @@ export const fetchCurrentGames = createAsyncThunk(
   }
 );
 
+// V2 async thunks for Rolling Insights endpoints
+export const fetchScheduleV2 = createAsyncThunk(
+  'sportsData/fetchScheduleV2',
+  async ({ league, date }: { league: string; date: string }) => {
+    const params: Record<string, string> = { league, date };
+    const apiUrl = buildApiUrl('/api/v2/schedule', params);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${league} schedule v2`);
+    }
+    const data = await response.json();
+    return { league, data };
+  }
+);
+
+export const fetchCurrentGamesV2 = createAsyncThunk(
+  'sportsData/fetchCurrentGamesV2',
+  async ({ league, start, end }: { league: string; start: string; end: string }) => {
+    const params: Record<string, string> = { league, start, end };
+    const apiUrl = buildApiUrl('/api/v2/current-games', params);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${league} current games v2`);
+    }
+    const data = await response.json();
+    return { league, data };
+  }
+);
+
+export const fetchBoxScoreV2 = createAsyncThunk(
+  'sportsData/fetchBoxScoreV2',
+  async ({ league, date, game_id }: { league: string; date: string; game_id: string }) => {
+    const params: Record<string, string> = { league, date, game_id };
+    const apiUrl = buildApiUrl('/api/v2/box-score', params);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${league} box score v2`);
+    }
+    const data = await response.json();
+    return { league, data };
+  }
+);
+
+export const fetchTeamProfilesV2 = createAsyncThunk(
+  'sportsData/fetchTeamProfilesV2',
+  async ({ league, team_id }: { league: string; team_id?: number }) => {
+    const params: Record<string, string> = { league };
+    if (team_id !== undefined) {
+      params.team_id = team_id.toString();
+    }
+    const apiUrl = buildApiUrl('/api/v2/team-profiles', params);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${league} team profiles v2`);
+    }
+    const data = await response.json();
+    return { league, data };
+  }
+);
+
+export const fetchPlayerProfilesV2 = createAsyncThunk(
+  'sportsData/fetchPlayerProfilesV2',
+  async ({ league, team_id }: { league: string; team_id?: number }) => {
+    const params: Record<string, string> = { league };
+    if (team_id !== undefined) {
+      params.team_id = team_id.toString();
+    }
+    const apiUrl = buildApiUrl('/api/v2/player-profiles', params);
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${league} player profiles v2`);
+    }
+    const data = await response.json();
+    return { league, data };
+  }
+);
+
 // Generic league data structure
 interface LeagueData {
   scores: any | null;
@@ -1098,6 +1175,177 @@ const sportsDataSlice = createSlice({
         const { league } = action.meta.arg;
         state.leagueData[league].currentGamesLoading = false;
         state.leagueData[league].currentGamesError = action.error.message || 'Failed to fetch current games';
+      })
+      // V2 reducers - use same state slots as v1
+      .addCase(fetchScheduleV2.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        state.leagueData[league].scheduleLoading = true;
+        state.leagueData[league].scheduleError = null;
+      })
+      .addCase(fetchScheduleV2.fulfilled, (state, action) => {
+        const { league, data } = action.payload;
+        state.leagueData[league].scheduleLoading = false;
+        state.leagueData[league].schedule = data;
+        state.leagueData[league].scheduleError = null;
+      })
+      .addCase(fetchScheduleV2.rejected, (state, action) => {
+        const { league } = action.meta.arg;
+        state.leagueData[league].scheduleLoading = false;
+        state.leagueData[league].scheduleError = action.error.message || 'Failed to fetch schedule v2';
+      })
+      .addCase(fetchCurrentGamesV2.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        state.leagueData[league].currentGamesLoading = true;
+        state.leagueData[league].currentGamesError = null;
+      })
+      .addCase(fetchCurrentGamesV2.fulfilled, (state, action) => {
+        const { league, data } = action.payload;
+        state.leagueData[league].currentGamesLoading = false;
+        state.leagueData[league].currentGames = data;
+        state.leagueData[league].currentGamesError = null;
+      })
+      .addCase(fetchCurrentGamesV2.rejected, (state, action) => {
+        const { league } = action.meta.arg;
+        state.leagueData[league].currentGamesLoading = false;
+        state.leagueData[league].currentGamesError = action.error.message || 'Failed to fetch current games v2';
+      })
+      .addCase(fetchTeamProfilesV2.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        state.leagueData[league].teamProfilesLoading = true;
+        state.leagueData[league].teamProfilesError = null;
+      })
+      .addCase(fetchTeamProfilesV2.fulfilled, (state, action) => {
+        const { league, data } = action.payload;
+        state.leagueData[league].teamProfilesLoading = false;
+        state.leagueData[league].teamProfiles = data;
+        state.leagueData[league].teamProfilesError = null;
+      })
+      .addCase(fetchTeamProfilesV2.rejected, (state, action) => {
+        const { league } = action.meta.arg;
+        state.leagueData[league].teamProfilesLoading = false;
+        state.leagueData[league].teamProfilesError = action.error.message || 'Failed to fetch team profiles v2';
+      })
+      .addCase(fetchPlayerProfilesV2.pending, (state, action) => {
+        const { league } = action.meta.arg;
+        if (!state.leagueData[league]) {
+          state.leagueData[league] = {
+            scores: null,
+            scoresLoading: false,
+            scoresError: null,
+            teamProfiles: null,
+            teamProfilesLoading: false,
+            teamProfilesError: null,
+            stadiums: null,
+            stadiumsLoading: false,
+            stadiumsError: null,
+            standings: null,
+            standingsLoading: false,
+            standingsError: null,
+            schedule: null,
+            scheduleLoading: false,
+            scheduleError: null,
+            odds: null,
+            oddsLoading: false,
+            oddsError: null,
+            currentGames: null,
+            currentGamesLoading: false,
+            currentGamesError: null,
+            error: null,
+          };
+        }
+        // Note: We're using a generic field for player profiles since it didn't exist in v1
+        // You may want to add a specific field for this
+        state.leagueData[league].teamProfilesLoading = true;
+        state.leagueData[league].teamProfilesError = null;
+      })
+      .addCase(fetchPlayerProfilesV2.fulfilled, (state, action) => {
+        const { league, data } = action.payload;
+        state.leagueData[league].teamProfilesLoading = false;
+        state.leagueData[league].teamProfiles = data;
+        state.leagueData[league].teamProfilesError = null;
+      })
+      .addCase(fetchPlayerProfilesV2.rejected, (state, action) => {
+        const { league } = action.meta.arg;
+        state.leagueData[league].teamProfilesLoading = false;
+        state.leagueData[league].teamProfilesError = action.error.message || 'Failed to fetch player profiles v2';
       });
   },
 });

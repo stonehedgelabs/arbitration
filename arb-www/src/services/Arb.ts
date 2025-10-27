@@ -4,7 +4,8 @@ import { BoxScoreResponse } from '../schema';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import {
   setLeagueScores, setLeagueTeamProfiles, setLeagueStadiums, setLeagueStandings, setLeagueSchedule,
-  setLeagueOdds, setLeagueCurrentGames, setLeagueLoading, setLeagueError
+  setLeagueOdds, setLeagueCurrentGames, setLeagueLoading, setLeagueError,
+  fetchScheduleV2, fetchCurrentGamesV2, fetchBoxScoreV2, fetchTeamProfilesV2, fetchPlayerProfilesV2
 } from '../store/slices/sportsDataSlice';
 
 const getUserFriendlyError = (dataType: string, league: string, error: any): string => {
@@ -74,7 +75,7 @@ const useArb = () => {
     if (ld.teamProfilesLoading) return;
     try {
       dispatch(setLeagueLoading({ league: L, dataType: 'teamProfiles', loading: true }));
-      const res = await fetch(buildApiUrl('/api/team-profile', { league: L, cache: cache.toString() }));
+      const res = await fetch(buildApiUrl('/api/v1/team-profile', { league: L, cache: cache.toString() }));
       if (!res.ok) throw new Error(`Failed to fetch team profiles: ${res.status}`);
       const data = await res.json();
       dispatch(setLeagueTeamProfiles({ league: L, data }));
@@ -92,7 +93,7 @@ const useArb = () => {
       const res = await fetch(buildApiUrl('/api/v1/box-score', params), { method: 'GET', headers: { 'Content-Type': 'application/json' }});
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      setMlbBoxScore(BoxScoreResponse.fromJSON(data));
+      setMlbBoxScore(data);
     } catch {}
   }, []);
 
@@ -183,11 +184,43 @@ const useArb = () => {
     }
   }, [dispatch]);
 
+  // V2 fetch functions for Rolling Insights endpoints
+  const fetchScheduleV2Fn = useCallback(async (leagueArg: string, date: string) => {
+    const L = norm(leagueArg);
+    return dispatch(fetchScheduleV2({ league: L, date }));
+  }, [dispatch]);
+
+  const fetchCurrentGamesV2Fn = useCallback(async (leagueArg: string, start: string, end: string) => {
+    const L = norm(leagueArg);
+    return dispatch(fetchCurrentGamesV2({ league: L, start, end }));
+  }, [dispatch]);
+
+  const fetchBoxScoreV2Fn = useCallback(async (leagueArg: string, date: string, game_id: string) => {
+    const L = norm(leagueArg);
+    return dispatch(fetchBoxScoreV2({ league: L, date, game_id }));
+  }, [dispatch]);
+
+  const fetchTeamProfilesV2Fn = useCallback(async (leagueArg: string, team_id?: number) => {
+    const L = norm(leagueArg);
+    return dispatch(fetchTeamProfilesV2({ league: L, team_id }));
+  }, [dispatch]);
+
+  const fetchPlayerProfilesV2Fn = useCallback(async (leagueArg: string, team_id?: number) => {
+    const L = norm(leagueArg);
+    return dispatch(fetchPlayerProfilesV2({ league: L, team_id }));
+  }, [dispatch]);
+
   return {
     scores, teamProfiles, stadiums, standings, schedule, odds, currentGames, mlbBoxScore,
     scoresLoading, teamProfilesLoading, stadiumsLoading, standingsLoading, scheduleLoading, oddsLoading, currentGamesLoading,
     scoresError, teamProfilesError, stadiumsError, standingsError, scheduleError, oddsError, currentGamesError,
     fetchScores, fetchTeamProfiles, fetchBoxScore, fetchStadiums, fetchStandings, fetchSchedule, fetchCurrentGames, fetchOddsByDate: fetchOdds,
+    // V2 fetchers
+    fetchScheduleV2: fetchScheduleV2Fn,
+    fetchCurrentGamesV2: fetchCurrentGamesV2Fn,
+    fetchBoxScoreV2: fetchBoxScoreV2Fn,
+    fetchTeamProfilesV2: fetchTeamProfilesV2Fn,
+    fetchPlayerProfilesV2: fetchPlayerProfilesV2Fn,
   };
 };
 

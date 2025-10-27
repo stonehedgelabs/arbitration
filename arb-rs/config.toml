@@ -49,6 +49,7 @@ postseason_start = "04-01-2027"
 
 [api]
 sportsdata_base_url = "https://api.sportsdata.io/v3"
+rolling_insights_base_url = "http://rest.datafeeds.rolling-insights.com/api/v1/"
 twitter_base_url = "https://api.twitterapi.io"
 request_timeout = 30
 

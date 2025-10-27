@@ -26,7 +26,12 @@ export function Bases({
   const config = sizeConfig[size];
 
   return (
-    <Box bg="primary.25" position="relative" w={config.container} h={config.container}>
+    <Box
+      bg="primary.25"
+      position="relative"
+      w={config.container}
+      h={config.container}
+    >
       {/* Second Base (top center) */}
       <Box
         position="absolute"
