@@ -7,21 +7,21 @@ export class NBATeamProfile extends BaseDTO {
   TeamID!: number;
   Key!: string;
   Active!: boolean;
-  City!: string;
+  City!: string | null;
   Name!: string;
   LeagueID!: number;
-  StadiumID!: number;
-  Conference!: string;
-  Division!: string;
-  PrimaryColor!: string;
-  SecondaryColor!: string;
-  TertiaryColor!: string;
-  QuaternaryColor!: string;
-  WikipediaLogoUrl!: string;
-  WikipediaWordMarkUrl?: string;
+  StadiumID!: number | null;
+  Conference!: string | null;
+  Division!: string | null;
+  PrimaryColor!: string | null;
+  SecondaryColor!: string | null;
+  TertiaryColor!: string | null;
+  QuaternaryColor!: string | null;
+  WikipediaLogoUrl!: string | null;
+  WikipediaWordMarkUrl!: string | null;
   GlobalTeamID!: number;
-  NbaDotComTeamID!: number;
-  HeadCoach!: string;
+  NbaDotComTeamID!: number | null;
+  HeadCoach!: string | null;
 }
 
 /**

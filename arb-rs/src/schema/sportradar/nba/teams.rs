@@ -12,7 +12,7 @@ pub struct NBATeamProfile {
     pub active: bool,
 
     #[serde(rename = "City")]
-    pub city: String,
+    pub city: Option<String>,
 
     #[serde(rename = "Name")]
     pub name: String,
@@ -21,28 +21,28 @@ pub struct NBATeamProfile {
     pub league_id: i32,
 
     #[serde(rename = "StadiumID")]
-    pub stadium_id: i32,
+    pub stadium_id: Option<i32>,
 
     #[serde(rename = "Conference")]
-    pub conference: String,
+    pub conference: Option<String>,
 
     #[serde(rename = "Division")]
-    pub division: String,
+    pub division: Option<String>,
 
     #[serde(rename = "PrimaryColor")]
-    pub primary_color: String,
+    pub primary_color: Option<String>,
 
     #[serde(rename = "SecondaryColor")]
-    pub secondary_color: String,
+    pub secondary_color: Option<String>,
 
     #[serde(rename = "TertiaryColor")]
-    pub tertiary_color: String,
+    pub tertiary_color: Option<String>,
 
     #[serde(rename = "QuaternaryColor")]
-    pub quaternary_color: String,
+    pub quaternary_color: Option<String>,
 
     #[serde(rename = "WikipediaLogoUrl")]
-    pub wikipedia_logo_url: String,
+    pub wikipedia_logo_url: Option<String>,
 
     #[serde(rename = "WikipediaWordMarkUrl")]
     pub wikipedia_word_mark_url: Option<String>,
@@ -51,10 +51,10 @@ pub struct NBATeamProfile {
     pub global_team_id: i32,
 
     #[serde(rename = "NbaDotComTeamID")]
-    pub nba_dot_com_team_id: i32,
+    pub nba_dot_com_team_id: Option<i32>,
 
     #[serde(rename = "HeadCoach")]
-    pub head_coach: String,
+    pub head_coach: Option<String>,
 }
 
 // NBATeamProfilesResponse removed - use Vec<NBATeamProfile> directly

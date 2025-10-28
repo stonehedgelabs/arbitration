@@ -53,7 +53,7 @@ export enum GameStatus {
  * API Configuration
  */
 export const API_CONFIG = {
-  baseUrl: window.location.hostname === 'arbi.gg' || window.location.hostname === 'www.arbi.gg' ? 'https://api.arbi.gg' : 'https://728b8ecb8758.ngrok.app',
+  baseUrl: window.location.hostname === 'arbi.gg' || window.location.hostname === 'www.arbi.gg' ? 'https://api.arbi.gg' : 'https://0fa26aa417da.ngrok.app',
   endpoints: {
     scores: '/api/v1/scores',
     boxScoreFinal: '/api/v1/box-score-final',

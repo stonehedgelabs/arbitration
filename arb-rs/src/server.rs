@@ -43,19 +43,13 @@ impl Server {
                 "/api/v1/current-games",
                 get(crate::uses::sportradar::current_games),
             )
-            .route(
-                "/api/v2/current-games",
-                get(crate::uses::sportradar::current_games),
-            )
             .route("/api/v1/headshots", get(crate::uses::sportradar::headshots))
             .route(
                 "/api/v1/play-by-play",
                 get(crate::uses::sportradar::play_by_play_handler),
             )
             .route("/api/v1/scores", get(crate::uses::sportradar::scores))
-            .route("/api/v2/scores", get(crate::uses::sportradar::scores))
             .route("/api/v1/box-score", get(crate::uses::sportradar::box_score))
-            .route("/api/v2/box-score", get(crate::uses::sportradar::box_score))
             .route(
                 "/api/v1/scores-by-date",
                 get(crate::uses::sportradar::game_by_date),

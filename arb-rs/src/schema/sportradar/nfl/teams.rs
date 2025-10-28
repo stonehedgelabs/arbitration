@@ -9,19 +9,19 @@ pub struct NFLTeamProfile {
     pub team_id: i32,
 
     #[serde(rename = "PlayerID")]
-    pub player_id: i32,
+    pub player_id: Option<i32>,
 
     #[serde(rename = "City")]
-    pub city: String,
+    pub city: Option<String>,
 
     #[serde(rename = "Name")]
     pub name: String,
 
     #[serde(rename = "Conference")]
-    pub conference: String,
+    pub conference: Option<String>,
 
     #[serde(rename = "Division")]
-    pub division: String,
+    pub division: Option<String>,
 
     #[serde(rename = "FullName")]
     pub full_name: String,

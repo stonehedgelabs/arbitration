@@ -25,7 +25,7 @@ use crate::{
             box_score::NBARollingInsightsBoxScoreGame,
             player_profile::NBARollingInsightsPlayerProfile,
             schedule::NBARollingInsightsScheduleGame,
-            team_profile::NBARollingInsightsTeamProfile,
+            teams::NBARollingInsightsTeamProfile,
         },
     },
 };

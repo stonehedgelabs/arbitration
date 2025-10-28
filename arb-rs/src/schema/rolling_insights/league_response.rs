@@ -5,8 +5,7 @@ use super::{
     nba::{
         box_score::NBARollingInsightsBoxScoreGame,
         player_profile::NBARollingInsightsPlayerProfile,
-        schedule::NBARollingInsightsScheduleGame,
-        team_profile::NBARollingInsightsTeamProfile,
+        schedule::NBARollingInsightsScheduleGame, teams::NBARollingInsightsTeamProfile,
     },
 };
 

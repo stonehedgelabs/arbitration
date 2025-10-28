@@ -7,21 +7,21 @@ export class MLBTeamProfile extends BaseDTO {
   TeamID!: number;
   Key!: string;
   Active!: boolean;
-  City!: string;
+  City!: string | null;
   Name!: string;
-  StadiumID!: number;
-  Conference!: string;
+  StadiumID!: number | null;
+  League!: string;
   Division!: string;
-  PrimaryColor!: string;
-  SecondaryColor!: string;
-  TertiaryColor!: string;
-  QuaternaryColor!: string;
+  PrimaryColor!: string | null;
+  SecondaryColor!: string | null;
+  TertiaryColor!: string | null;
+  QuaternaryColor!: string | null;
   WikipediaLogoUrl!: string;
-  WikipediaWordMarkUrl!: string;
+  WikipediaWordMarkUrl!: string | null;
   GlobalTeamID!: number;
-  HeadCoach!: string;
-  ConferenceID!: number;
-  DivisionID!: number;
+  HeadCoach!: string | null;
+  HittingCoach!: string | null;
+  PitchingCoach!: string | null;
 }
 
 /**
